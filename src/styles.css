@@ -238,6 +238,10 @@ button {
   left: 50%;
   width: 17cqw;
   height: 17cqw;
+  /* Pavement "sticker" outline on four sides plus a soft shadow, so it stands out on gold, navy and blue. */
+  filter: drop-shadow(0.7cqw 0 0 var(--pavement)) drop-shadow(-0.7cqw 0 0 var(--pavement))
+    drop-shadow(0 0.7cqw 0 var(--pavement)) drop-shadow(0 -0.7cqw 0 var(--pavement))
+    drop-shadow(0 0.8cqw 0.8cqw rgb(0 0 0 / 0.35));
   transition: transform 250ms linear;
 }
 
