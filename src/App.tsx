@@ -145,7 +145,12 @@ export default function App() {
         )}
       </main>
 
-      <footer className="footer">ANYONE CAN RUN. ANYONE CAN PACE.</footer>
+      <footer 
+      className="footer">
+      <p>ANYONE CAN RUN. ANYONE CAN PACE.</p>
+      <p className="footer_extra">Brought to you by VibeCoding, Monsieur Claude, and Sparkling Water.
+        </p>
+      </footer>
 
       <p className="visually-hidden" aria-live="assertive" aria-atomic="true">
         {announcement}
