@@ -13,7 +13,7 @@ Open the URL on your phone, tap **START PACING**, and the app alternates RUN and
 ## Features
 
 - **RUN / WALK alternation** that runs indefinitely, starting with RUN. Defaults: 90 s RUN, 60 s WALK.
-- **Big, glanceable display**: huge phase label, MM:SS countdown with tabular digits, a Duck Gold progress ring and a "NEXT:" hint. RUN is Crew Navy, WALK is Track Blue, and the phase is always spelled out, so colour is never the only cue.
+- **Big, glanceable display**: huge phase label, MM:SS countdown with tabular digits, a Duck Gold progress ring with the running duck riding its leading edge, and a "NEXT:" hint. RUN is Crew Navy, WALK is Track Blue, and the phase is always spelled out, so colour is never the only cue.
 - **Distraction-free focus mode**: only Pause/Resume, Edit Intervals and Skip are visible while pacing.
 - **Mid-run edits**: ±15 s steppers (15 s – 30 min). A change applies to the **next** occurrence of that phase. The running countdown is never reset, paused or restarted.
 - **Pause / Resume / Skip**: Resume continues from the exact remaining time. Skip jumps to the full opposite phase, and a paused session stays paused.
@@ -129,6 +129,7 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **Mid-run changes:** shorten RUN mid-interval. The current RUN finishes unchanged and the next one is shorter.
 - [ ] **Accidental taps:** pocket the unlocked phone for a minute. Nothing reset (End needs two taps).
 - [ ] **Interruptions:** take a call, switch apps and lock the phone for 2–3 minutes. On return the phase and time are correct, and there's no burst of old beeps.
+- [ ] **Duck:** the running duck is visible and sits on the end of the gold arc on both RUN and WALK, including at 15 s intervals and in the installed app (iPhone Safari too).
 - [ ] **Battery:** note battery use over a 45-minute session with the screen on.
 - [ ] **Offline:** start a session in airplane mode after one earlier visit.
 - [ ] **Install:** add to home screen on iOS and Android. The icon, name, standalone display and portrait layout all look right.
