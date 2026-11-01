@@ -1,4 +1,30 @@
-.DS_Store
+# Dependencies
 node_modules/
+
+# Build output (GitHub Actions builds and deploys it)
+dist/
+dev-dist/
+*.tsbuildinfo
+.vite/
+coverage/
+
+# Local environment files
 .env
 .env.*
+!.env.example
+
+# Logs and temp files
+*.log
+npm-debug.log*
+*.tmp
+.cache/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local Claude Code / editor launch configs (machine-specific paths)
+.claude/
