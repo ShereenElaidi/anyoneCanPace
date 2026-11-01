@@ -132,3 +132,6 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **Battery:** note battery use over a 45-minute session with the screen on.
 - [ ] **Offline:** start a session in airplane mode after one earlier visit.
 - [ ] **Install:** add to home screen on iOS and Android. The icon, name, standalone display and portrait layout all look right.
+
+## V2 To-Do List
+- [ ] **Lockscreen:** Somehow allow it to be controlled by the lockscreen without needing to put it on App Store / GPlay store. To allow for vibration cues & allow app to be used while locked.
