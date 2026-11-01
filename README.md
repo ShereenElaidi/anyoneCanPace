@@ -107,6 +107,16 @@ Three openly licensed fonts were compared: **JetBrains Mono**, **Space Mono** an
 - **JetBrains Mono** © 2020 The JetBrains Mono Project Authors, licensed under the [SIL Open Font License 1.1](src/assets/fonts/JetBrainsMono-OFL.txt).
 - Self-hosted WOFF2 files (Latin and Latin Extended subsets) are in `src/assets/fonts/` and precached for offline use.
 
+## App icon
+
+The running-duck mascot (source: `design/duck-mascot.webp`) is used for every icon in `public/`:
+
+- **Home-screen icons** (`apple-touch-icon.png`, `pwa-192x192.png`, `pwa-512x512.png`): the whole duck on Pavement.
+- **`maskable-512x512.png`**: the duck drawn smaller, so Android's circle and squircle crops don't clip it.
+- **`favicon-16x16.png`, `favicon-32x32.png`**: the head only, so it stays readable at tab size.
+
+Phones that already installed the app may keep the old icon for a while. Android refreshes it automatically. On iPhone, remove the app from the home screen and add it again.
+
 ## Manual field-testing checklist
 
 Automated tests cover the timer logic and UI flows. These need a real phone on a real run:

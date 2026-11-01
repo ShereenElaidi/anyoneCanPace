@@ -35,6 +35,8 @@ export default defineConfig({
       // Ask before swapping versions: an automatic reload could interrupt a
       // pacer mid-session. The app offers the update only when no session runs.
       registerType: 'prompt',
+      // Icons are already precached by globPatterns below.
+      includeManifestIcons: false,
       manifest: {
         name: 'AnyoneCanPace',
         short_name: 'AnyoneCanPace',
