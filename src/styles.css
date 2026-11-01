@@ -224,6 +224,23 @@ button {
   transition: stroke-dashoffset 250ms linear;
 }
 
+/* The duck rides the arc's leading edge: the orbit rotates, the duck counter-rotates to stay upright. */
+.duck-orbit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: transform 250ms linear;
+}
+
+.duck-orbit__duck {
+  position: absolute;
+  top: 5%; /* ring radius 45 of 100, measured from the top */
+  left: 50%;
+  width: 17cqw;
+  height: 17cqw;
+  transition: transform 250ms linear;
+}
+
 .readout {
   position: absolute;
   inset: 0;

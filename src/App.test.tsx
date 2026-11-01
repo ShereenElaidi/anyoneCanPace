@@ -164,4 +164,23 @@ describe('AnyoneCanPace app', () => {
     advance(60_000);
     expect(live.textContent).toContain('WALK now');
   });
+
+  it('moves the decorative duck along the ring with the remaining time', () => {
+    render(<App />);
+    const orbit = () => document.querySelector('.duck-orbit') as HTMLElement;
+    const duck = () => document.querySelector('.duck-orbit__duck') as HTMLElement;
+    expect(orbit().getAttribute('aria-hidden')).toBe('true');
+    expect(duck().getAttribute('alt')).toBe('');
+    expect(orbit().style.transform).toBe('rotate(360deg)');
+
+    tap('START PACING');
+    advance(45_000); // half of the 90 s run is left, so the duck is at 6 o'clock
+    expect(orbit().style.transform).toBe('rotate(180deg)');
+    expect(duck().style.transform).toContain('rotate(-180deg)');
+    expect(duck().style.transform).toContain('scaleX(1)');
+
+    advance(30_000); // 15 s left: past 3 o'clock, on the upper half, so the duck turns to face left
+    expect(orbit().style.transform).toBe('rotate(60deg)');
+    expect(duck().style.transform).toContain('scaleX(-1)');
+  });
 });

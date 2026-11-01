@@ -1,3 +1,4 @@
+import duck from '../assets/duck-runner.webp';
 import { displaySeconds, formatClock, spokenDuration } from '../timer/format';
 import { otherPhase, type TimerState } from '../timer/engine';
 
@@ -14,6 +15,10 @@ export function TimerDisplay({ state, remainingMs }: Props) {
   const seconds = displaySeconds(remainingMs);
   const fraction = intervalMs > 0 ? Math.min(1, Math.max(0, remainingMs / intervalMs)) : 0;
   const label = phase.toUpperCase();
+  // The arc's leading edge sits `fraction` of a turn clockwise from 12 o'clock and retreats
+  // counter-clockwise as time runs out, so the duck faces left on the top half and right below.
+  const angle = fraction * 360;
+  const facingLeft = fraction < 0.25 || fraction > 0.75;
 
   return (
     <section className={`panel panel--${phase}`} aria-label="Current interval">
@@ -31,6 +36,21 @@ export function TimerDisplay({ state, remainingMs }: Props) {
             strokeDashoffset={CIRCUMFERENCE * (1 - fraction)}
           />
         </svg>
+        <div
+          // Remounted per phase, like the arc, so the duck doesn't sweep back around on a phase change.
+          key={`duck-${phase}`}
+          className="duck-orbit"
+          aria-hidden="true"
+          style={{ transform: `rotate(${angle}deg)` }}
+        >
+          <img
+            className="duck-orbit__duck"
+            src={duck}
+            alt=""
+            draggable={false}
+            style={{ transform: `translate(-50%, -50%) rotate(${-angle}deg) scaleX(${facingLeft ? -1 : 1})` }}
+          />
+        </div>
         <div className="readout">
           <p className="phase-label">{label}</p>
           <p className="countdown" role="timer" aria-label={`${label}, ${spokenDuration(seconds)} left`}>
