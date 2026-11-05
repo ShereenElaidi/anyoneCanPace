@@ -96,7 +96,8 @@ All routes so far were drawn with [On The Go Map](https://onthegomap.com) on Ope
 ## Daily Dashboard
 
 - **Weather at run time.** Pick when the run starts. The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The page then shows feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
-- **What to wear**, always as text: a headline, a list of items and notes. The duck next to it is decoration only. It will be dressed in Stage 3.
+- **What to wear**, always as text: a headline, a list of items and notes.
+- **The duck dresses for it.** The mascot wears one drawn layer per outfit item (a gold tee, navy long sleeve, gold raincoat and cap, toque and mittens, a safety-yellow vest and headlamp in the dark…), with rain or snow falling behind it (off when the phone asks for reduced motion). It's decoration only, hidden from screen readers; the text list carries the meaning. The pieces are drafts meant to be redrawn: see `src/assets/duck-outfit/README.md`.
 - **Dress for the run feel, not the weather.** Run feel is the feels-like temperature **+ 7 °C** (`RUN_FEEL_OFFSET_C`), lower than the usual racing advice of about +10 °C because pacers run/walk and stand around at the start.
 
 | Run feel | Starting point |
@@ -128,6 +129,40 @@ The tiers and thresholds are starting points. Tune them in the `TIERS` and `MODI
 - The last forecast is kept on the phone, with "Updated 7:42 a.m." shown.
 - Offline, or if the request fails, the page uses the saved forecast and says when it's from. It adds "may be out of date" after 6 hours.
 - If there is no forecast, or it no longer covers the coming hours, the page says **Check outside**.
+
+## Advisories
+
+Short notices about a route (a closure, a detour, stairs) or about every run. They show on the route page (that route's notices, then general ones) and in the dashboard's **Route advisories** (all of them), each as text with where, when and a source link, plus "Last checked" for the list.
+
+**Adding a notice:** edit `src/data/advisories.json` in a pull request. Set `lastChecked` to today, and add to `notices`:
+
+```json
+{
+  "id": "commune-sewer-2026-11",
+  "route": "sample-loop",
+  "text": "Rue de la Commune Ouest closed for sewer work. Use the north sidewalk.",
+  "fromKm": 1.1,
+  "toKm": 2.1,
+  "start": "2026-10-30",
+  "end": "2026-11-06",
+  "source": "https://donnees.montreal.ca/dataset/info-travaux"
+}
+```
+
+- `route` is a route id (`sample-loop`, `pi-day`, `canal-test`) or `"global"`.
+- `fromKm`/`toKm`, `start`/`end` and `source` are optional. Dates are inclusive, in Montréal time.
+- A notice shows from its `start` and **disappears by itself** after its `end`. Without an `end` it stays until removed.
+- `npm test` checks the file and explains any mistake in plain words (bad date, unknown route, duplicate id). CI runs the same check.
+- A route's own `advisories` list in its JSON still works, but the central file is easier to review.
+
+**Automatic road-closure flags (researched, not built).** Montréal publishes road works daily as open data ("Entraves et travaux en cours", `info-travaux`, CC BY 4.0, no key needed). Each item is a single point with a date range and a separate list of impacts (street closed, lane, sidewalk closed or narrowed, bike path). On 2026-11-04 about 1,700 items were active. Within 25 m of each route there were 14 (Sample Loop), 18 (Pi Day) and 5 (Canal Test), mostly sidewalk work and parking-lane obstructions. Keeping only street closures, closed sidewalks and closed bike paths left about 6, 7 and 2. Limits:
+- Points, not street segments, so cross streets near an intersection give false positives.
+- There is no link to each individual permit.
+- The time stamps look shifted by a time-zone bug, so only the dates are trustworthy.
+- The Lachine Canal path itself isn't covered.
+- Québec 511's open feed covers only provincial highways (it flagged the Ville-Marie tunnel under the Sample Loop, a false positive), and Montréal's real-time closures feed currently returns 404.
+
+A daily GitHub Action could build a "possible closures" file from this, with the caveats that scheduled workflows can be delayed and are switched off after about 60 days without repository activity. It is not built until the crew decides it's worth it.
 
 ## Privacy and offline
 
@@ -164,7 +199,10 @@ src/
   sixk/                   6K mode: library, route page, follow view, hooks, styles
   sixk/map/               MapLibre map, brand style, offline map file (lazy)
   weather/                Pure: GEM request/parsing, outfit rules, run time, sun/UV estimate, cache
-  dashboard/              Daily Dashboard UI and useForecast (lazy)
+  dashboard/              Daily Dashboard UI, useForecast, dressed duck (dashboard/duck/) (lazy)
+  advisories/             Pure notice filtering/validation and the shared NoticeList
+  assets/duck-outfit/     Duck base drawing + one SVG per outfit item (drafts; see its README)
+  data/advisories.json    Hand-edited notices (changed by pull request)
   data/routes/            Processed routes (JSON + GeoJSON + manifest), hand-editable
   hooks/                  useIntervalTimer, useWakeLock, useGeolocation
   lib/cues.ts             Beeps and vibration (timer and route cues)
@@ -314,6 +352,13 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **Battery:** note battery use over a 45-minute session with the screen on.
 - [ ] **Offline:** start a session in airplane mode after one earlier visit.
 - [ ] **Install:** add to home screen on iOS and Android. The icon, name, standalone display and portrait layout all look right.
+
+### Dressed duck and advisories: check
+
+- [ ] **The duck matches the list:** for a few run times (morning, evening, a rainy hour) the duck wears what the text says. Rain or snow falls behind it only when the list mentions rain or snow.
+- [ ] **Reduced motion:** with the phone's "Reduce motion" on (iPhone: Settings → Accessibility → Motion), the falling rain or snow is gone.
+- [ ] **Readable without the duck:** cover the duck with your thumb. The advice still makes complete sense.
+- [ ] **A notice:** add a test notice for a route in `src/data/advisories.json` with tomorrow as `start`. It doesn't show today, shows tomorrow, and disappears the day after its `end`.
 
 ### Daily Dashboard: field check
 

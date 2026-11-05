@@ -43,6 +43,11 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 ## Dashboard rules
 - The only runtime request to another site is the GEM weather request in `forecast.ts`, with fixed Montréal coordinates, never the user's location. Fetch only when the dashboard opens or comes back into view and the saved copy is >30 min old, or on REFRESH. Keep the last forecast in localStorage and always show when it's from; fall back to "Check outside".
 - The outfit is always shown as text; the duck is decorative (`aria-hidden`). Credit Open-Meteo (CC BY 4.0) and Environment Canada's GEM on the page.
+- Dressed duck: `src/dashboard/duck/` (`pieces.ts` has `LAYER_ORDER` and is pure; `DressedDuck.tsx` stacks `src/assets/duck-outfit/<item>.svg` over `duck-base.webp`). Every outfit ItemId except `singlet` needs a piece (a test enforces it). Falling rain/snow is CSS, off for reduced motion.
+
+## Advisories rules
+- `src/data/advisories.json` is hand-edited by pull request. `src/advisories/notices.ts` is pure (filtering by route and date, expiry, validation). A test validates the real file. Always show "Last checked".
+- Automated sources (a road-closures file from a scheduled Action, Environment Canada warnings) plug in as more `Notice[]` lists with a `kind`. The closures Action is **researched, not built**: ask before adding workflow files (they need the `workflow` scope and the user's go-ahead). Montréal `info-travaux` facts and noise numbers are in the README.
 - Credit "© OpenStreetMap contributors" and the route's source (e.g. On The Go Map) in the UI. Raw GPX stays in `routes/`; only processed files ship.
 - The duck is the 6K position marker (no progress ring there). Banner text always states the direction; icons and colours are extras.
 
