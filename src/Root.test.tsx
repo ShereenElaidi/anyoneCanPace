@@ -161,6 +161,7 @@ describe('6K Route Library', () => {
     expect(turns.querySelectorAll('li').length).toBeGreaterThan(4);
     expect(turns.textContent).toMatch(/Start on /);
     expect(screen.getByText('No advisories for this route right now.')).toBeTruthy();
+    expect(screen.getByText(/^Last checked /)).toBeTruthy();
     expect(screen.getByText(/OpenStreetMap contributors/)).toBeTruthy();
     expect(screen.getByText(/On The Go Map/)).toBeTruthy();
 

@@ -1,7 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { formatKm, turnPhrase } from '../nav/banner';
 import { ElevationProfile } from './ElevationProfile';
-import { activeAdvisories, type LoadedRoute } from './data';
+import advisoriesFile from '../data/advisories.json';
+import { NoticeList } from '../advisories/NoticeList';
+import { activeNotices, collectNotices, routeNotices, type NoticeFile } from '../advisories/notices';
+import { localDate } from '../weather/runTime';
+import type { LoadedRoute } from './data';
 import { KIND_LABEL } from './Library';
 import { TurnIcon } from './TurnIcon';
 
@@ -14,7 +18,8 @@ interface Props {
 
 export function RoutePage({ route, onStart }: Props) {
   const { data, track } = route;
-  const advisories = activeAdvisories(data);
+  const file = advisoriesFile as NoticeFile;
+  const notices = activeNotices(collectNotices(file.notices, routeNotices(data)), data.id, localDate(Date.now()));
   return (
     <article className="route-page" aria-label={data.name}>
       <dl className="route-stats">
@@ -98,24 +103,7 @@ export function RoutePage({ route, onStart }: Props) {
         <h3 id="advisories-title" className="sixk__h3">
           Advisories
         </h3>
-        {advisories.length === 0 ? (
-          <p className="empty">No advisories for this route right now.</p>
-        ) : (
-          <ul className="plain-list">
-            {advisories.map((a, i) => (
-              <li key={i}>
-                {a.text}
-                {a.fromKm !== undefined && ` (km ${a.fromKm}${a.toKm !== undefined ? `–${a.toKm}` : ''})`}
-                {a.source && (
-                  <>
-                    {' '}
-                    <a href={a.source}>Source</a>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <NoticeList notices={notices} lastChecked={file.lastChecked} empty="No advisories for this route right now." />
       </section>
 
       <p className="credits">

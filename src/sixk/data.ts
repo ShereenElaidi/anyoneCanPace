@@ -39,9 +39,3 @@ export function loadRoute(id: string): Promise<LoadedRoute> {
   }
   return p;
 }
-
-/** Advisories still in force today (no dates means always). */
-export function activeAdvisories(data: RouteData, today = new Date()) {
-  const day = today.toISOString().slice(0, 10);
-  return data.advisories.filter((a) => (!a.start || a.start <= day) && (!a.end || a.end >= day));
-}

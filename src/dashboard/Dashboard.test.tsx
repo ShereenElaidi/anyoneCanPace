@@ -65,6 +65,8 @@ describe('Daily Dashboard', () => {
     const items = [...wear.querySelectorAll('.wear__items li')].map((li) => li.textContent);
     expect(duck.querySelectorAll('img[data-piece]').length).toBeGreaterThan(0);
     expect(items.length).toBeGreaterThanOrEqual(duck.querySelectorAll('img[data-piece]').length);
+    const advisories = screen.getByRole('region', { name: 'Route advisories' });
+    expect(advisories.textContent).toMatch(/No advisories right now\.Last checked/);
     expect(screen.getByText(/Weather data by/).textContent).toMatch(/Open-Meteo.*Environment and Climate Change Canada/);
     // Saved for offline use.
     expect(localStorage.getItem('anyonecanpace:weather:v1')).toContain('"hours"');

@@ -4,10 +4,19 @@ import { hourAt, sunFor, weatherText } from '../weather/forecast';
 import { whatToWear } from '../weather/outfit';
 import { defaultRunTime, outfitInputFor, runTimeChoices } from '../weather/runTime';
 import { clockTime, dayLabel, degrees, runTimeLabel } from './format';
+import advisoriesFile from '../data/advisories.json';
+import manifestFile from '../data/routes/manifest.json';
+import { NoticeList } from '../advisories/NoticeList';
+import { activeNotices, type NoticeFile } from '../advisories/notices';
+import type { RouteManifest } from '../nav/types';
+import { localDate } from '../weather/runTime';
 import { DressedDuck } from './duck/DressedDuck';
 import { duckWeather } from './duck/pieces';
 import { useForecast } from './useForecast';
 import './dashboard.css';
+
+const advisories = advisoriesFile as NoticeFile;
+const routeNames = Object.fromEntries((manifestFile as unknown as RouteManifest).routes.map((r) => [r.id, r.name]));
 
 /** A saved forecast older than this gets an "may be out of date" warning. */
 const OLD_FORECAST_MS = 6 * 3_600_000;
@@ -145,6 +154,18 @@ export default function DashboardMode({ onSwitchMode }: Props) {
             </section>
           </>
         )}
+
+        <section className="dash-card" aria-labelledby="notices-title">
+          <h2 id="notices-title" className="dash__h2">
+            Route advisories
+          </h2>
+          <NoticeList
+            notices={activeNotices(advisories.notices, null, localDate(now))}
+            lastChecked={advisories.lastChecked}
+            routeNames={routeNames}
+            empty="No advisories right now."
+          />
+        </section>
 
         <p className="credits">
           Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0), from Environment and Climate
