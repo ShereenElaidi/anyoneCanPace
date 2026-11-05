@@ -11,7 +11,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - `npm run preview` serves the production build. Service workers only register there, not in dev.
 - `npm run routes` rebuilds `src/data/routes/` from `routes/*.gpx` (keeps hand-edited name/turns/notes/advisories; `--offline`, `--reset-turns`). `npm run map` re-cuts `public/maps/montreal.pmtiles` (then bump `MAP_VERSION` in `src/sixk/map/offlineMap.ts`).
 - Simulated run (dev only): `npm run dev`, open `/anyoneCanPace/?sim` (`?sim=pi-day`, `&away=300`, `&speed=10`). `src/dev/simulateGps.ts` replaces `navigator.geolocation` and adds a RUN / speed / GO OFF / restart panel; `main.tsx` only loads it when `import.meta.env.DEV`, so it never ships.
-- GPS needs HTTPS: `npm run dev:https` (self-signed, `.cache/dev-cert/`) or a Cloudflare/ngrok tunnel. Scripts are `.ts` run by Node 22.18+ directly.
+- GPS needs HTTPS: `npm run dev:https` (self-signed, `.cache/dev-cert/`) or a Cloudflare/ngrok tunnel. Scripts are `.ts` run by Node directly. Node 26 is pinned in `.nvmrc` (CI, deploy and `engines` use it).
 
 ## Layout
 - `src/timer/engine.ts`: pure interval logic (start/pause/resume/skip/sync). No clocks, no React.
@@ -54,7 +54,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 
 ## Paths and deploy
 - GitHub Pages project site. `vite.config.ts` derives `base` (`/anyoneCanPace/`) from `GITHUB_REPOSITORY` or the git remote. In `index.html` reference public files as `/file.png`, never `%BASE_URL%` (Vite adds the base itself).
-- Pushing to `main` runs `.github/workflows/deploy.yml`: typecheck, test, build, deploy. It does not run on pull requests or other branches. Repo is public (Pages on free plan).
+- Pushing to `main` runs `.github/workflows/deploy.yml`: typecheck, test, build, deploy. Pull requests run `.github/workflows/ci.yml` (typecheck, test, build, `npm audit --audit-level=high`), which never deploys. Actions are pinned to verified commit SHAs (comment = release). Repo is public (Pages on free plan).
 - Feature work happens on branches. Never merge into `main` or open PRs unless asked.
 - Pushing workflow-file changes needs gh's `workflow` scope (`gh auth refresh -s workflow`).
 - **Ask before pushing.** Committing locally is fine.

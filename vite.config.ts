@@ -96,7 +96,7 @@ export default defineConfig({
       output: {
         // Keep the map libraries in a separate vendor chunk so its file name (and the
         // service worker's cached copy) survives app updates that don't touch them.
-        advancedChunks: {
+        codeSplitting: {
           groups: [{ name: 'maplibre', test: /node_modules[\\/](maplibre-gl|pmtiles)[\\/]/ }],
         },
       },

@@ -4,8 +4,13 @@
  *
  * "First load" = the entry script in dist/index.html plus every module and
  * stylesheet it preloads. MapLibre and PMTiles must only appear in lazy chunks.
+ *
+ * Lazy loading keeps code from being downloaded and run when the app opens.
+ * It does not keep it off the phone: once installed, the service worker
+ * downloads everything in its precache (lazy chunks included) in the
+ * background. So this reports both numbers.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,7 +31,7 @@ if (!firstLoad.some((f) => f.endsWith('.js'))) throw new Error('No entry script 
 const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KiB`;
 let failed = false;
 let firstLoadBytes = 0;
-console.log('\nFirst-load files (what the timer downloads):');
+console.log('\nEntry (first-load) files: downloaded and run when the app opens:');
 for (const ref of firstLoad) {
   const file = join(DIST, ref.replace(/^.*?assets\//, 'assets/'));
   const text = readFileSync(file, 'utf8');
@@ -41,13 +46,27 @@ for (const ref of firstLoad) {
 }
 console.log(`  total ${kb(firstLoadBytes)} (uncompressed)`);
 
-console.log('\nLazy chunks:');
+console.log('\nLazy chunks: run only when that part of the app opens:');
 for (const f of readdirSync(join(DIST, 'assets')).sort()) {
   const ref = `assets/${f}`;
   if (firstLoad.some((r) => r.endsWith(ref))) continue;
   if (!/\.(m?js|css)$/.test(f)) continue;
   console.log(`  ${ref}  ${kb(statSync(join(DIST, ref)).size)}`);
 }
+
+// Everything the service worker downloads after install (workbox precache manifest in sw.js).
+const sw = existsSync(join(DIST, 'sw.js')) ? readFileSync(join(DIST, 'sw.js'), 'utf8') : '';
+const precached = [...new Set([...sw.matchAll(/url:"([^"]+)"/g)].map((m) => m[1]))];
+let precacheBytes = 0;
+for (const url of precached) {
+  const file = join(DIST, url);
+  if (existsSync(file)) precacheBytes += statSync(file).size;
+}
+console.log(
+  `\nService worker precache: ${precached.length} files, ${(precacheBytes / 1024 / 1024).toFixed(2)} MiB in total.` +
+    '\n  Downloaded in the background after the app is installed (lazy chunks included), not run until used.' +
+    '\n  Not included: the street map file (public/maps/*.pmtiles), saved on demand by the Route Library.',
+);
 
 if (failed) process.exit(1);
 console.log('\n✓ Map libraries are not in the first-load bundle.');

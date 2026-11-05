@@ -7,10 +7,12 @@
  *   npm run map -- --build=20261104   a specific Protomaps build
  *
  * The CLI is downloaded once into .cache/tools/ (git-ignored) if it isn't on
- * your PATH. Only the tiles inside the box are fetched (HTTP range requests).
+ * your PATH, and only run after its archive matches the SHA-256 pinned below.
+ * Only the tiles inside the box are fetched (HTTP range requests).
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { arch, platform } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +21,19 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TOOLS = join(ROOT, '.cache', 'tools');
 const OUT = join(ROOT, 'public', 'maps', 'montreal.pmtiles');
 const PMTILES_VERSION = '1.31.2';
+/**
+ * SHA-256 of each release archive, as computed by GitHub for the uploaded assets
+ * (`gh api repos/protomaps/go-pmtiles/releases/tags/v1.31.2 --jq '.assets[] | .name + " " + .digest'`).
+ * Update together with PMTILES_VERSION.
+ */
+const PMTILES_ARCHIVES: Record<string, { file: string; sha256: string }> = {
+  'Darwin-arm64': { file: 'go-pmtiles-1.31.2_Darwin_arm64.zip', sha256: '40528f7f616fcbf91207cd48c8fc023d213f6d86c0cbf1f748732803d1880f3d' },
+  'Darwin-x86_64': { file: 'go-pmtiles-1.31.2_Darwin_x86_64.zip', sha256: '1f0dc02eee6c58312dd6c509faee1b5c32f0596568af1bf51f1b034e7a88a65b' },
+  'Linux-arm64': { file: 'go-pmtiles_1.31.2_Linux_arm64.tar.gz', sha256: 'f8bd47e7ea866863489cad588fbaf2f31f42e5821f7a03f009b3769f05801cb1' },
+  'Linux-x86_64': { file: 'go-pmtiles_1.31.2_Linux_x86_64.tar.gz', sha256: '3ed7dbf4ec2e6dfe5e25b6f70d1ffc932729f93c86db353bf514dd71010a312f' },
+};
+
+const sha256 = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 const ROUTES_DIR = join(ROOT, 'src', 'data', 'routes');
 /** Map margin around the routes, so the area near the start and any detour shows. */
@@ -49,23 +64,29 @@ function findCli(): string {
     // Not on PATH: use or fetch a local copy.
   }
   const local = join(TOOLS, 'pmtiles');
-  if (existsSync(local)) return local;
   const os = platform() === 'darwin' ? 'Darwin' : platform() === 'linux' ? 'Linux' : null;
   const cpu = arch() === 'arm64' ? 'arm64' : arch() === 'x64' ? 'x86_64' : null;
-  if (!os || !cpu) throw new Error('Install the pmtiles CLI from https://github.com/protomaps/go-pmtiles/releases');
-  const ext = os === 'Darwin' ? 'zip' : 'tar.gz';
-  const url = `https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}/go-pmtiles_${PMTILES_VERSION}_${os}_${cpu}.${ext}`;
-  const altUrl = url.replace('go-pmtiles_', 'go-pmtiles-');
+  const pinned = os && cpu ? PMTILES_ARCHIVES[`${os}-${cpu}`] : undefined;
+  if (!pinned) throw new Error('Install the pmtiles CLI from https://github.com/protomaps/go-pmtiles/releases');
+  // A local copy is reused only if it came from the archive with the pinned checksum.
+  const marker = join(TOOLS, 'pmtiles.sha256');
+  if (existsSync(local) && existsSync(marker) && readFileSync(marker, 'utf8').trim() === pinned.sha256) return local;
+
   mkdirSync(TOOLS, { recursive: true });
-  const archive = join(TOOLS, `pmtiles.${ext}`);
+  const archive = join(TOOLS, pinned.file);
+  const url = `https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}/${pinned.file}`;
   console.log(`Downloading pmtiles CLI v${PMTILES_VERSION}…`);
-  try {
-    execFileSync('curl', ['-fsSL', '-o', archive, altUrl], { stdio: 'inherit' });
-  } catch {
-    execFileSync('curl', ['-fsSL', '-o', archive, url], { stdio: 'inherit' });
+  execFileSync('curl', ['-fsSL', '-o', archive, url], { stdio: 'inherit' });
+  const got = sha256(archive);
+  if (got !== pinned.sha256) {
+    rmSync(archive, { force: true });
+    throw new Error(`pmtiles download failed its checksum (expected ${pinned.sha256}, got ${got}). Not running it.`);
   }
-  if (ext === 'zip') execFileSync('unzip', ['-o', '-q', archive, 'pmtiles', '-d', TOOLS]);
+  rmSync(local, { force: true });
+  if (pinned.file.endsWith('.zip')) execFileSync('unzip', ['-o', '-q', archive, 'pmtiles', '-d', TOOLS]);
   else execFileSync('tar', ['-xzf', archive, '-C', TOOLS, 'pmtiles']);
+  writeFileSync(marker, `${pinned.sha256}\n`);
+  console.log(`Verified pmtiles CLI (sha256 ${pinned.sha256.slice(0, 12)}…).`);
   return local;
 }
 

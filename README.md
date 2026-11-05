@@ -228,18 +228,22 @@ A daily GitHub Action could build a "possible closures" file from this, with the
 
 React 19 · TypeScript · Vite 8 · plain CSS · `vite-plugin-pwa` (Workbox) · Vitest + Testing Library. No backend.
 
-The 6K mode adds **MapLibre GL JS** and the **PMTiles** reader. They are loaded only when a 6K map is shown, so the timer never downloads them on first load. `npm run build` runs `scripts/check-bundle.ts`, which fails the build if either library appears in the first-load bundle.
+The Route Library adds **MapLibre GL JS** and the **PMTiles** reader. They are loaded only when a route map is shown, so opening the app (picker and timer) never downloads or runs them. `npm run build` runs `scripts/check-bundle.ts`, which fails the build if either library appears in the first-load bundle, and prints two different totals:
 
-| Bundle (minified) | Size | gzip |
+- **Entry (first-load):** what the browser downloads and runs to open the app.
+- **Service worker precache:** everything the installed app downloads *in the background* so it works offline, lazy chunks included. Lazy loading keeps code from running (and from blocking the first screen), not from being downloaded once the app is installed.
+
+| Bundle (minified, Nov 2026) | Size | gzip |
 |---|---|---|
-| First load (timer + picker) JS | 241 kB (was 237 kB) | 75.9 kB (was 74.7 kB) |
-| 6K mode chunk (lazy) | 31 kB | 11 kB |
-| Daily Dashboard chunk (lazy) | 15 kB + 2 kB CSS | 6 kB |
-| MapLibre + PMTiles chunk (lazy) | 1,088 kB | 298 kB |
+| Entry JS (picker + timer) | 235 kB | 74 kB |
+| Route Library chunk (lazy) | 39 kB + 8 kB CSS | 13 kB |
+| Daily Dashboard chunk (lazy) | 31 kB + 5 kB CSS | 17 kB |
+| MapLibre + PMTiles chunk (lazy) | 1,088 kB + 71 kB CSS | 298 kB |
 | MapLibre worker (lazy) | 519 kB | |
+| **Service worker precache, total** | **52 files, about 2.8 MB** | |
 | Street map file (saved on demand, not precached) | 9.9 MB | |
 
-The service worker precaches the lazy chunks too (about 2.6 MB instead of 0.6 MB), so the 6K mode works offline even if it was never opened online. The map libraries sit in their own vendor chunk, so app updates that don't touch them don't download them again.
+The map libraries sit in their own vendor chunk (`codeSplitting` group in `vite.config.ts`), so app updates that don't touch them don't download them again.
 
 ```
 src/
@@ -272,6 +276,8 @@ The timer never counts down by subtracting 1 every tick. While a session is acti
 `now` comes from `performance.now()`, which is monotonic, so changing the phone's clock or time zone doesn't affect the timer. Some phones stop that clock while the device sleeps, so it is cross-checked against `Date.now()`, and any sleep gap over 1 s is added back. When the page becomes visible again, the engine applies every interval boundary that passed while it was hidden and shows the correct phase. Missed beeps are **not** replayed. A cue only plays for a change that happened in the last 2 seconds while the page was visible.
 
 ## Local development
+
+Use **Node 26** (the version in `.nvmrc`, also used by CI and the deploy; `package.json` `engines` says the same). The scripts in `scripts/` are TypeScript run by Node directly.
 
 You need Node.js 22.18+ (CI uses the current LTS). The scripts in `scripts/` are TypeScript run directly by Node, `npm run build` included.
 
@@ -312,7 +318,11 @@ Service workers only register in `npm run preview` (or `preview:https`), not in 
 
 ## Deploying to GitHub Pages
 
-Deployment is automatic: `.github/workflows/deploy.yml` type-checks, tests, builds and deploys on every push to `main`. You can also run it by hand from the **Actions** tab. It does **not** run on pull requests or other branches, so run `npm test`, `npm run typecheck` and `npm run build` locally before merging.
+Deployment is automatic: `.github/workflows/deploy.yml` type-checks, tests, builds and deploys on every push to `main`. You can also run it by hand from the **Actions** tab.
+
+**Pull requests** run `.github/workflows/ci.yml`: type check, tests, production build (with the bundle check) and `npm audit --audit-level=high`. It never deploys. Both workflows use Node from `.nvmrc` and pin each GitHub Action to a verified release commit (the comment says which release); bump the SHA and comment together. Pushing workflow changes needs gh's `workflow` scope.
+
+**Dependency audit (Nov 2026).** `npm audit` reports 4 moderate and 2 low findings, all in the PWA build chain (`vite-plugin-pwa` → `workbox-build` → `glob`/`minimatch`, and `@rollup/plugin-node-resolve` → `deepmerge`). They run only on the developer's machine or CI while generating the service worker, on the project's own config and files; none of this code ships to phones. The only automatic "fix" downgrades `vite-plugin-pwa` to 1.1.0, so it isn't applied: `glob`'s fix is three majors away from the range `workbox-build` declares, and `deepmerge` has no fixed release. Re-check when `vite-plugin-pwa` or `workbox-build` release updates. CI fails on any high or critical finding.
 
 **One-time setup:** in the repository, go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
 
