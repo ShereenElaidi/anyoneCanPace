@@ -177,6 +177,21 @@ export function update(route: PreparedRoute, state: NavState, fix: Fix): NavResu
   return { state: next, events };
 }
 
+/**
+ * Should the duck look confused? Off route (going rogue included), or started
+ * but not yet on the route because the last good fix is too far from it.
+ * Before Start ("head to the start") the duck stays normal.
+ */
+export function duckLost(state: NavState): boolean {
+  if (state.offRoute) return true;
+  return (
+    state.status === 'following' &&
+    !state.anchored &&
+    state.distanceFromRouteM !== null &&
+    state.distanceFromRouteM > OFF_ROUTE_M
+  );
+}
+
 /** The pacer said "yes, going rogue": stop nagging until they're back on the route. */
 export function goRogue(state: NavState): NavState {
   return state.offRoute ? { ...state, rogue: true } : state;

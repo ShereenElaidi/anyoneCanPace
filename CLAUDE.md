@@ -37,7 +37,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - Progress is forward-only and matched in a window around current progress (it grows during GPS gaps). Never snap to the globally nearest point: routes overlap and a loop's start and finish are close.
 - Turn cues fire once per stage (heads-up ~150 m, now ~30 m). Turns passed in a GPS gap (>10 s without a fix) are skipped silently; a turn jumped over between close fixes (≤60 m past) still gets a late "now". Cue only for fresh fixes while visible; never replay.
 - Vitest's on-disk module cache is off (`fsModuleCache: false`) because it missed new routes picked up by `import.meta.glob`.
-- Off route: >30 m for 5 s → banner, the confused duck (`duck-runner-lost.webp`, source `design/duck-confused.webp`) with a "?", "Going rogue?" dialog. Going rogue calms the banner but keeps the confused duck until back on route. Finish only after 90 % covered and near the end. Ending a route needs the menu and two taps.
+- Off route: >30 m for 5 s → banner, the confused duck (`duck-runner-lost.webp`, source `design/duck-confused.webp`) with a "?", "Going rogue?" dialog. Going rogue calms the banner but keeps the confused duck until back on route. Started but not yet joined and >30 m away also shows the confused duck (`duckLost` in `tracker.ts`), with no dialog or buzz. Finish only after 90 % covered and near the end. Ending a route needs the menu and two taps.
 - Privacy: GPS positions live in memory for the current route only. Never store, log or send them.
 
 ## Dashboard rules

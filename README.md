@@ -53,7 +53,7 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
   - If one jittery fix cuts a sharp corner and jumps just past a turn (up to 60 m, no gap), the "now" cue still fires, a moment late rather than never.
 - **Off route**:
   - Triggers after about 5 s more than ~30 m from the route.
-  - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, GEWWW AWAEYYY!** calms the banner (the duck stays confused until you're back on the route); **NO, GUIDE ME BACK** keeps the warning.
+  - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, GEWWW AWAEYYY!** calms the banner (the duck stays confused until you're back on the route); **NO, GUIDE ME BACK** keeps the warning. Pressing Start while you're more than 30 m from the route also shows the confused duck (on your GPS dot, with "Head to the route") until you join it, without the buzz or the dialog.
   - Answer yes and the app stops nagging until you're back on the route.
 - **Finish**: triggers near the last point, only after about 90 % of the distance is covered.
 - **Ending a route** needs **MENU → END ROUTE** and a second tap. The phone's back gesture opens that menu instead of leaving mid-route.

@@ -189,6 +189,9 @@ describe('6K Route Library', () => {
     expect(screen.getByText(/to the south/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'START ANYWAY' })).toBeTruthy();
 
+    // Before Start the duck is on the GPS dot and looks normal, even 600 m away.
+    expect((await screen.findByTestId('route-map')).getAttribute('data-duck')).toBe('shown');
+
     // At the start.
     let t = 1_002_000;
     gps(route.points[0].lat, route.points[0].lon, t);
@@ -241,6 +244,25 @@ describe('6K Route Library', () => {
     tap('TAP AGAIN TO END ROUTE');
     expect(await screen.findByRole('button', { name: 'START ROUTE' })).toBeTruthy();
     Reflect.deleteProperty(navigator, 'vibrate');
+  });
+
+  it('starting away from the route: the duck looks confused until it joins the route', async () => {
+    const route = sampleRoute();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(1_000_000);
+    await openLibrary();
+    tap(/Sample Loop/);
+    fireEvent.click(await screen.findByRole('button', { name: 'START ROUTE' }));
+    const far = offsetPoint(route.points[0], 0, 600);
+    gps(far.lat, far.lon, 1_001_000);
+    tap('START ANYWAY');
+    expect(document.querySelector('.banner__primary')?.textContent).toMatch(/^Head to the route/);
+    expect((await screen.findByTestId('route-map')).getAttribute('data-duck')).toBe('lost');
+    // No "Going rogue?" for someone who hasn't joined yet.
+    expect(document.querySelector('dialog[aria-labelledby="rogue-title"]')?.hasAttribute('open')).toBe(false);
+
+    gps(route.points[0].lat, route.points[0].lon, 1_002_000);
+    expect(screen.getByTestId('route-map').getAttribute('data-duck')).toBe('shown');
   });
 
   it('explains when location is blocked', async () => {

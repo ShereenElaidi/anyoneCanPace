@@ -4,7 +4,7 @@ import { useWakeLock } from '../hooks/useWakeLock';
 import { canVibrate, unlockAudio } from '../lib/cues';
 import { loadPrefs, savePrefs, type Prefs } from '../lib/prefs';
 import { describe as describeBanner, statsLine, type Banner } from '../nav/banner';
-import { approachInfo } from '../nav/tracker';
+import { approachInfo, duckLost } from '../nav/tracker';
 import { bearingAt, pointAt, splitAt } from '../nav/route';
 import type { LoadedRoute } from './data';
 import { TurnIcon } from './TurnIcon';
@@ -46,11 +46,12 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
     if (started && state.anchored) {
       const p = pointAt(prepared, state.progressM);
       const b = bearingAt(prepared, Math.min(state.progressM, prepared.lengthM - 1));
-      return { lon: p.lon, lat: p.lat, facingLeft: b > 180, lost: state.offRoute };
+      return { lon: p.lon, lat: p.lat, facingLeft: b > 180, lost: duckLost(state) };
     }
-    if (state.lastFix) return { lon: state.lastFix.lon, lat: state.lastFix.lat, facingLeft: false, lost: false };
+    // Not joined yet: the duck is on the GPS dot, confused if the route has started and it's too far away.
+    if (state.lastFix) return { lon: state.lastFix.lon, lat: state.lastFix.lat, facingLeft: false, lost: duckLost(state) };
     return null;
-  }, [started, state.anchored, state.progressM, state.offRoute, state.lastFix, prepared]);
+  }, [started, state, prepared]);
 
   const split = useMemo(
     () => (started && state.anchored ? splitAt(prepared, state.progressM) : null),

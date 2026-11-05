@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FINISH_FRACTION, OFF_ROUTE_MS, START_RADIUS_M } from './constants';
 import { distanceM, offsetPoint } from './geo';
 import { bearingAt, pointAt, prepareRoute } from './route';
-import { approachInfo, begin, createNav, goRogue, update, type NavEvent } from './tracker';
+import { approachInfo, begin, createNav, duckLost, goRogue, observe, update, type NavEvent } from './tracker';
 import { describe as describeBanner } from './banner';
 import { allRoutes, lastAt, line, replay, sampleRoute, walk } from './testing/replay';
 
@@ -204,6 +204,38 @@ describe('sample loop replay', () => {
     const r2 = replay(route, onRoute, r.state);
     expect(r2.state.anchored).toBe(true);
     expect(r2.state.progressM).toBeGreaterThan(250);
+  });
+
+  it('the duck looks confused when started away from the route, and not before Start or once joined', () => {
+    const faraway = { ...offsetPoint(route.points[0], 0, 1200), accuracyM: 8, at: 1000 };
+    // Before Start ("head to the start"): normal duck, however far away.
+    expect(duckLost(observe(createNav(route), faraway))).toBe(false);
+    // Started 1.2 km away: not joined, confused.
+    const started = begin(route, observe(createNav(route), faraway), null, 1000);
+    expect(started.state.anchored).toBe(false);
+    expect(duckLost(started.state)).toBe(true);
+    // A very inaccurate fix doesn't say how far away we are: no change either way.
+    const fresh = begin(route, createNav(route), null, 0).state;
+    expect(duckLost(update(route, fresh, { ...faraway, accuracyM: 150 }).state)).toBe(false);
+    // Joining the route: back to normal.
+    const joined = replay(route, walk(route, { fromM: 50, toM: 300, startAt: 2000 }), started.state);
+    expect(joined.state.anchored).toBe(true);
+    expect(duckLost(joined.state)).toBe(false);
+  });
+
+  it('the duck stays confused while off route, going rogue included', () => {
+    const fixes = walk(route, { fromM: 0, toM: 1000 });
+    const on = replay(route, fixes);
+    expect(duckLost(on.state)).toBe(false);
+    const away = offsetPoint(pointAt(route, 1000), bearingAt(route, 1000) + 90, 150);
+    const off = replay(
+      route,
+      Array.from({ length: 7 }, (_, i) => ({ ...away, accuracyM: 8, at: lastAt(fixes) + (i + 1) * 1000 })),
+      on.state,
+    );
+    expect(off.state.offRoute).toBe(true);
+    expect(duckLost(off.state)).toBe(true);
+    expect(duckLost(goRogue(off.state))).toBe(true);
   });
 
   it('ignores very inaccurate fixes for progress', () => {
