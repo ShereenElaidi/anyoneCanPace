@@ -1,0 +1,182 @@
+/**
+ * The one weather request the app makes, and pure parsing of its answer.
+ *
+ * Source: Open-Meteo's Environment Canada GEM endpoint, for fixed Montréal
+ * coordinates (never the user's location). Times are requested as Unix
+ * timestamps so nothing depends on the phone's time zone.
+ */
+
+export const MONTREAL = { lat: 45.5017, lon: -73.5673, timeZone: 'America/Toronto' } as const;
+
+const HOURLY = [
+  'temperature_2m',
+  'apparent_temperature',
+  'precipitation_probability',
+  'precipitation',
+  'rain',
+  'showers',
+  'snowfall',
+  'snow_depth',
+  'weather_code',
+  'cloud_cover',
+  'wind_speed_10m',
+  'wind_gusts_10m',
+  'is_day',
+] as const;
+
+export function forecastUrl(): string {
+  const q = new URLSearchParams({
+    latitude: String(MONTREAL.lat),
+    longitude: String(MONTREAL.lon),
+    hourly: HOURLY.join(','),
+    daily: 'sunrise,sunset',
+    timezone: MONTREAL.timeZone,
+    timeformat: 'unixtime',
+    forecast_days: '2',
+  });
+  return `https://api.open-meteo.com/v1/gem?${q}`;
+}
+
+export interface HourWeather {
+  /** Start of the hour, epoch ms. */
+  at: number;
+  tempC: number;
+  feelsC: number;
+  /** Chance of precipitation, %, or null if the model has none. */
+  precipProb: number | null;
+  precipMm: number;
+  rainMm: number;
+  showersMm: number;
+  snowCm: number;
+  snowDepthM: number;
+  /** WMO weather code. */
+  code: number;
+  cloudPct: number;
+  windKmh: number;
+  gustKmh: number;
+  isDay: boolean;
+}
+
+export interface DaySun {
+  /** Local midnight, epoch ms. */
+  date: number;
+  sunrise: number;
+  sunset: number;
+}
+
+export interface Forecast {
+  /** When it was downloaded, epoch ms. */
+  fetchedAt: number;
+  hours: HourWeather[];
+  days: DaySun[];
+}
+
+export class ForecastError extends Error {}
+
+type Raw = Record<string, unknown>;
+const arr = (o: Raw, key: string): unknown[] => {
+  const v = o[key];
+  if (!Array.isArray(v)) throw new ForecastError(`Forecast is missing ${key}`);
+  return v;
+};
+const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+
+/** Turns the API's JSON into a Forecast. Throws ForecastError on a broken shape. */
+export function parseGem(json: unknown, fetchedAt: number): Forecast {
+  if (!json || typeof json !== 'object') throw new ForecastError('Forecast is not an object');
+  const root = json as Raw;
+  if (root.error) throw new ForecastError(String(root.reason ?? 'Forecast error'));
+  const hourly = root.hourly as Raw | undefined;
+  const daily = root.daily as Raw | undefined;
+  if (!hourly || !daily) throw new ForecastError('Forecast has no hourly or daily data');
+
+  const times = arr(hourly, 'time');
+  const col = (key: string) => arr(hourly, key);
+  const [temp, feels, prob, precip, rain, showers, snow, depth, code, cloud, wind, gust, isDay] = [
+    'temperature_2m',
+    'apparent_temperature',
+    'precipitation_probability',
+    'precipitation',
+    'rain',
+    'showers',
+    'snowfall',
+    'snow_depth',
+    'weather_code',
+    'cloud_cover',
+    'wind_speed_10m',
+    'wind_gusts_10m',
+    'is_day',
+  ].map(col);
+
+  const hours: HourWeather[] = [];
+  times.forEach((t, i) => {
+    const at = num(t);
+    const tempC = num(temp[i]);
+    if (at === null || tempC === null) return; // an hour without a temperature is useless
+    hours.push({
+      at: at * 1000,
+      tempC,
+      feelsC: num(feels[i]) ?? tempC,
+      precipProb: num(prob[i]),
+      precipMm: num(precip[i]) ?? 0,
+      rainMm: num(rain[i]) ?? 0,
+      showersMm: num(showers[i]) ?? 0,
+      snowCm: num(snow[i]) ?? 0,
+      snowDepthM: num(depth[i]) ?? 0,
+      code: num(code[i]) ?? 0,
+      cloudPct: num(cloud[i]) ?? 0,
+      windKmh: num(wind[i]) ?? 0,
+      gustKmh: num(gust[i]) ?? num(wind[i]) ?? 0,
+      isDay: num(isDay[i]) === 1,
+    });
+  });
+  if (!hours.length) throw new ForecastError('Forecast has no usable hours');
+
+  const dTimes = arr(daily, 'time');
+  const rises = arr(daily, 'sunrise');
+  const sets = arr(daily, 'sunset');
+  const days: DaySun[] = [];
+  dTimes.forEach((t, i) => {
+    const date = num(t);
+    const sunrise = num(rises[i]);
+    const sunset = num(sets[i]);
+    if (date !== null && sunrise !== null && sunset !== null) {
+      days.push({ date: date * 1000, sunrise: sunrise * 1000, sunset: sunset * 1000 });
+    }
+  });
+
+  return { fetchedAt, hours, days };
+}
+
+/** The forecast hour containing `at`, if the forecast covers it. */
+export function hourAt(f: Forecast, at: number): HourWeather | null {
+  return f.hours.find((h) => at >= h.at && at < h.at + 3_600_000) ?? null;
+}
+
+/** Sunrise and sunset for the local day containing `at`. */
+export function sunFor(f: Forecast, at: number): DaySun | null {
+  return f.days.find((d) => at >= d.date && at < d.date + 86_400_000) ?? null;
+}
+
+const CODE_TEXT: [number[], string][] = [
+  [[0], 'Clear'],
+  [[1], 'Mostly clear'],
+  [[2], 'Partly cloudy'],
+  [[3], 'Overcast'],
+  [[45, 48], 'Fog'],
+  [[51, 53, 55], 'Drizzle'],
+  [[56, 57], 'Freezing drizzle'],
+  [[61, 63, 65], 'Rain'],
+  [[66, 67], 'Freezing rain'],
+  [[71, 73, 75], 'Snow'],
+  [[77], 'Snow grains'],
+  [[80, 81, 82], 'Rain showers'],
+  [[85, 86], 'Snow showers'],
+  [[95], 'Thunderstorm'],
+  [[96, 99], 'Thunderstorm with hail'],
+];
+
+/** Plain words for a WMO weather code. */
+export function weatherText(code: number): string {
+  return CODE_TEXT.find(([codes]) => codes.includes(code))?.[1] ?? 'Unknown';
+}
