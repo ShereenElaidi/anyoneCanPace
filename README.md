@@ -367,7 +367,7 @@ Three openly licensed fonts were compared: **JetBrains Mono**, **Space Mono** an
 
 - **JetBrains Mono** © 2020 The JetBrains Mono Project Authors, licensed under the [SIL Open Font License 1.1](src/assets/fonts/JetBrainsMono-OFL.txt).
 - Self-hosted WOFF2 files (Latin and Latin Extended subsets) are in `src/assets/fonts/` and precached for offline use.
-- **The duck's speech bubble** in the Route Library uses the phone's own **Comic Sans MS** (Windows, macOS), or **Chalkboard SE** on iPhone. Comic Sans is Microsoft's and can't be shipped with the app, so nothing is downloaded: phones without either (most Android phones) show the bubble in JetBrains Mono. To match everywhere, self-host **Comic Neue** (SIL OFL 1.1), which the font list already names.
+- **The duck's speech bubble** in the Route Library uses the device's own **Comic Sans MS** where it exists (Windows, macOS). Comic Sans is Microsoft's and can't be shipped with the app, so everywhere else (iPhone, Android) the bubble uses **Comic Neue** Bold, a Comic Sans lookalike: © 2014 The Comic Neue Project Authors, [SIL Open Font License 1.1](src/assets/fonts/ComicNeue-OFL.txt), from [Fontsource](https://fontsource.org/fonts/comic-neue) 5.3.0. One Latin WOFF2 file (~19 KB) in `src/assets/fonts/`, declared in the Route Library's CSS, so it's only downloaded by devices without Comic Sans when the library opens, and precached for offline use.
 
 ## Beta channel (testing on a phone before release)
 
@@ -390,6 +390,7 @@ The live app at `/anyoneCanPace/` only changes when `main` is pushed. Unreleased
 - The sample route was drawn with [On The Go Map](https://onthegomap.com).
 - Elevation: Natural Resources Canada, Canadian Digital Elevation Model, used at build time only. Contains information licensed under the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada).
 - Map label font: Noto Sans © The Noto Project Authors, SIL OFL 1.1 (`public/maps/fonts/OFL.txt`).
+- Speech bubble font: Comic Neue © 2014 The Comic Neue Project Authors, SIL OFL 1.1 (`src/assets/fonts/ComicNeue-OFL.txt`).
 - MapLibre GL JS (BSD-3-Clause) and PMTiles (BSD-3-Clause).
 - Weather: [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0), from Environment and Climate Change Canada's GEM model.
 

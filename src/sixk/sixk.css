@@ -1,5 +1,16 @@
 /* Route Library styles. Loaded with the Route Library chunk only. */
 
+/* Comic Neue Bold (SIL OFL 1.1, src/assets/fonts/ComicNeue-OFL.txt), only for the duck's speech
+   bubble. Declared here so it's part of the Route Library chunk, and only downloaded by phones
+   without Comic Sans. Latin subset, ~19 KB, precached for offline use. */
+@font-face {
+  font-family: 'Comic Neue';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Comic Neue Bold'), local('ComicNeue-Bold'), url('../assets/fonts/comic-neue-latin-700-normal.woff2') format('woff2');
+}
+
 .brand--small {
   font-size: 0.75rem;
   font-weight: 800;
@@ -66,9 +77,9 @@
   border-radius: 16px;
   background: var(--paper);
   color: var(--navy);
-  /* The duck's voice. Comic Sans where the phone has it; iPhones have Chalkboard SE instead, a
-     close cousin. Elsewhere (most Android phones) it falls back to the app's font. */
-  font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Comic Neue', var(--font);
+  /* The duck's voice: Comic Sans where the device has it (Windows, macOS), else the bundled
+     Comic Neue (iPhone, Android). */
+  font-family: 'Comic Sans MS', 'Comic Sans', 'Comic Neue', 'Chalkboard SE', var(--font);
   font-size: 1.15rem;
   font-weight: 700;
   line-height: 1.25;
