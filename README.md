@@ -49,7 +49,8 @@ If you used the timer before modes existed, the app still opens straight into th
   - A heads-up about 150 m before each turn and a "now" cue at about 30 m. Each fires once.
   - Vibration patterns: one pulse for left, two for right, one long buzz for a U-turn. Matching beeps play if Sound is on, so iPhones (no vibration) still get a cue.
   - Screen readers hear turns, not distance ticks.
-  - A turn you passed during a GPS gap is skipped silently. Missed cues are never replayed.
+  - A turn you passed during a GPS gap (no fix for 10 s or more) is skipped silently. Missed cues are never replayed.
+  - If one jittery fix cuts a sharp corner and jumps just past a turn (up to 60 m, no gap), the "now" cue still fires, a moment late rather than never.
 - **Off route**:
   - Triggers after about 5 s more than ~30 m from the route.
   - You get a dashed warning banner that points back toward the route, a "?" on the duck, a buzz, and **"Going rogue?"**.
@@ -75,20 +76,26 @@ Source GPX files live in `routes/` and are committed. The app ships only the pro
 
 Elevation comes from the [Open-Meteo Elevation API](https://open-meteo.com/en/docs/elevation-api) (Copernicus DEM GLO-90, about 90 m resolution, CC BY 4.0), and only at build time. Street names come from OpenStreetMap through the Overpass API. Both lookups are cached in `routes/cache/`, so `npm run routes -- --offline` rebuilds without a network. Turn directions are first guesses: always check them against the map.
 
-The sample route (`routes/onthegomap-6.4-km-route.gpx`) was drawn with [On The Go Map](https://onthegomap.com) on OpenStreetMap data. It is a 6.36 km loop after cleaning (6.43 km raw, 4 spurs removed) with about 127 m of climb.
+All routes so far were drawn with [On The Go Map](https://onthegomap.com) on OpenStreetMap data:
+
+| Route | Source GPX | After cleaning | Climb |
+|---|---|---|---|
+| Sample Loop | `onthegomap-6.4-km-route.gpx` | 6.36 km loop, 4 spurs removed | +127 m |
+| Pi Day | `onthegomap-4.7-km-route.gpx` | 4.61 km loop, 4 spurs removed | +39 m |
+| Canal Test | `onthegomap-12.5-km-route.gpx` | 12.36 km loop along the Lachine Canal, 2 spurs removed | +29 m |
 
 ### The street map
 
-- **Vector tiles**: a self-hosted [PMTiles](https://protomaps.com/docs/pmtiles) file, `public/maps/montreal.pmtiles`. It is a 4.7 MB extract of central Montréal (about 5 × 5 km around the sample loop, zoom 0–15) from the [Protomaps](https://protomaps.com) daily OpenStreetMap build, drawn with MapLibre GL JS in the brand colours.
+- **Vector tiles**: a self-hosted [PMTiles](https://protomaps.com/docs/pmtiles) file, `public/maps/montreal.pmtiles`. It is a 9.9 MB extract of south-central Montréal (about 8 × 10 km, from downtown and the Plateau's edge down the Lachine Canal past Angrignon, zoom 0–15) from the [Protomaps](https://protomaps.com) daily OpenStreetMap build, drawn with MapLibre GL JS in the brand colours.
 - **Labels**: street-name glyphs (Noto Sans Medium, SIL OFL) are self-hosted in `public/maps/fonts/` and precached, so labels work offline. No sprites are used.
-- **Re-cutting the map**: run `npm run map`. It downloads the `pmtiles` CLI into `.cache/tools/` if needed and extracts the default box. Use `npm run map -- --bbox=W,S,E,N` for another area.
+- **Re-cutting the map**: run `npm run map` after adding a route outside the current map. It downloads the `pmtiles` CLI into `.cache/tools/` if needed, and covers every route in `src/data/routes/` plus about 1.1 km around them. Use `npm run map -- --bbox=W,S,E,N` for a fixed area instead.
   - The whole island (`-73.98,45.40,-73.47,45.71`) is about **55 MB**, which is too big for a one-time download on a phone. Prefer a box around the routes.
   - After re-cutting, bump `MAP_VERSION` in `src/sixk/map/offlineMap.ts` so phones fetch the new file.
 - **Offline**: the map file is not cached piece by piece. The first time you open the route library (online, and not in data-saver mode), the whole file is saved to the phone's Cache Storage, and the map then reads from that copy. The library shows the status honestly ("Map saved for offline use on …", "Saving… 40 %", "not saved") with a **SAVE MAP FOR OFFLINE** button. The map shows "Online map (not saved for offline)" while it is streaming from the network.
 
 ## Daily Dashboard
 
-- **Weather at run time.** Pick when the run starts. The default is the next whole hour between 6:00 and 21:00, or your **usual start** if you saved one. The page then shows feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
+- **Weather at run time.** Pick when the run starts. The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`), or your **usual start** if you saved one. The page then shows feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
 - **What to wear**, always as text: a headline, a list of items and notes. The duck next to it is decoration only. It will be dressed in Stage 3.
 - **Dress for the run feel, not the weather.** Run feel is the feels-like temperature **+ 7 °C** (`RUN_FEEL_OFFSET_C`), lower than the usual racing advice of about +10 °C because pacers run/walk and stand around at the start.
 
@@ -143,7 +150,7 @@ The 6K mode adds **MapLibre GL JS** and the **PMTiles** reader. They are loaded 
 | Daily Dashboard chunk (lazy) | 15 kB + 2 kB CSS | 6 kB |
 | MapLibre + PMTiles chunk (lazy) | 1,088 kB | 298 kB |
 | MapLibre worker (lazy) | 519 kB | |
-| Street map file (saved on demand, not precached) | 4.7 MB | |
+| Street map file (saved on demand, not precached) | 9.9 MB | |
 
 The service worker precaches the lazy chunks too (about 2.6 MB instead of 0.6 MB), so the 6K mode works offline even if it was never opened online. The map libraries sit in their own vendor chunk, so app updates that don't touch them don't download them again.
 
@@ -310,7 +317,7 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 
 ### Daily Dashboard: field check
 
-- [ ] **First open online:** "Updated <time>" and an outfit appear within a few seconds. The run time defaults to the next sensible hour.
+- [ ] **First open online:** "Updated <time>" and an outfit appear within a few seconds. The run time defaults to the next 10 a.m.
 - [ ] **Run time:** pick tonight and tomorrow morning. The outfit changes (reflective vest when it's dark). Save a usual start, close and reopen: it's the default.
 - [ ] **Offline:** in airplane mode, reopen. It shows "Offline: showing the forecast from …" and the same outfit. With storage cleared and offline, it shows "Check outside".
 - [ ] **Does the outfit match reality?** For a week of runs, note the run feel, what the app said and what you actually wore. Tune `RUN_FEEL_OFFSET_C` and the tiers.
