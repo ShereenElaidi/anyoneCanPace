@@ -33,7 +33,7 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
 
 ## Route Library
 
-- **Library**: the duck asks "Where are we running today?". Each route card shows the name, where it is ("Downtown → Old Port"), distance and kind with a time estimate ("6.4 km loop · ~48 min"), the climb in words ("Mostly flat", "Some gentle hills"; exact numbers are on the route page), tags such as **Shape run** or **Waterfront**, whether the directions have been checked, and a small outline on a faint street grid.
+- **Library**: the duck asks "Where are we running today?" (in Comic Sans, see "Typography and licensing"). Each route card shows the name, where it is ("Downtown → Old Port"), distance and kind with a time estimate ("6.4 km loop · ~48 min"), the climb in words ("Mostly flat", "Some gentle hills"; exact numbers are on the route page), tags such as **Shape run** or **Waterfront**, a "⚠ Unverified directions" warning when nobody has checked the turns, and a small outline on a faint street grid. A checked route says so (who and when) on its route page, before START ROUTE.
   - **Settings** (gear next to MODES): **your pace** for the time estimates (default 7:30 /km, 4:00–12:00 in 15 s steps, with presets). It's saved on the phone. **Show routes** filters the list (Shape runs, Under 5 km, Flat, Waterfront, 10 km+; only filters that match a route are offered). The filter lasts for the visit only, and a "Showing … routes · Show all" line says when one is on.
   - The offline map status only takes space at the top when it needs attention (not saved, saving, outdated, failed). Once the map is saved it's a quiet "✓ Works offline" line at the bottom.
 - **Route page**: map preview, stats, elevation profile, turn list, notes, advisories and **START ROUTE**.
@@ -367,6 +367,7 @@ Three openly licensed fonts were compared: **JetBrains Mono**, **Space Mono** an
 
 - **JetBrains Mono** © 2020 The JetBrains Mono Project Authors, licensed under the [SIL Open Font License 1.1](src/assets/fonts/JetBrainsMono-OFL.txt).
 - Self-hosted WOFF2 files (Latin and Latin Extended subsets) are in `src/assets/fonts/` and precached for offline use.
+- **The duck's speech bubble** in the Route Library uses the phone's own **Comic Sans MS** (Windows, macOS), or **Chalkboard SE** on iPhone. Comic Sans is Microsoft's and can't be shipped with the app, so nothing is downloaded: phones without either (most Android phones) show the bubble in JetBrains Mono. To match everywhere, self-host **Comic Neue** (SIL OFL 1.1), which the font list already names.
 
 ## Beta channel (testing on a phone before release)
 

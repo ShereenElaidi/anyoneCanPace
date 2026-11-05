@@ -142,9 +142,14 @@ describe('Route Library', () => {
 
   it('says whether directions were checked, in the list and before starting', async () => {
     await openLibrary();
-    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('✓ Field-checked directions');
-    expect(screen.getByRole('button', { name: /Canal Test/ }).textContent).toContain('✓ Field-checked directions');
+    // The list only flags unchecked directions; checked ones say so on the route page.
     expect(screen.getByRole('button', { name: /Pi Day/ }).textContent).toContain('⚠ Unverified directions');
+    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).not.toMatch(/directions/);
+    tap(/Sample Loop/);
+    expect((await screen.findByRole('region', { name: 'Directions: Field-checked' })).textContent).toMatch(
+      /✓ Field-checked directions[\s\S]*Crew run \(Les Stooopids\) on 2026-11-05/,
+    );
+    tap('‹ ROUTES');
     tap(/Pi Day/);
     const note = await screen.findByRole('note', { name: 'Directions: Unverified' });
     expect(note.textContent).toMatch(/suggested automatically and haven’t been checked by a person or on the ground/);

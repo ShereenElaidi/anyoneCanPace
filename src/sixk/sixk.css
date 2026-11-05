@@ -66,8 +66,11 @@
   border-radius: 16px;
   background: var(--paper);
   color: var(--navy);
-  font-size: 1.1rem;
-  font-weight: 800;
+  /* The duck's voice. Comic Sans where the phone has it; iPhones have Chalkboard SE instead, a
+     close cousin. Elsewhere (most Android phones) it falls back to the app's font. */
+  font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Comic Neue', var(--font);
+  font-size: 1.15rem;
+  font-weight: 700;
   line-height: 1.25;
 }
 
