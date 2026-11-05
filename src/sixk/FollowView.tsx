@@ -236,11 +236,14 @@ function RogueDialog(props: { open: boolean; distanceM: number | null; onYes: ()
           You’re {props.distanceM ? `about ${Math.round(props.distanceM / 5) * 5} m` : 'a bit'} off the route. Going off
           on purpose? We’ll stop nagging until you’re back on it.
         </p>
-        <button type="button" className="btn btn--primary btn--block" onClick={props.onYes}>
-          YES, GEWWW AWAEYYY!
+        {/* Short, scannable actions first; the Stooopids voice as the second line. */}
+        <button type="button" className="btn btn--primary btn--block rogue-btn" onClick={props.onYes}>
+          YES, ON PURPOSE
+          <span className="rogue-btn__fun">Gewww awaeyyy!</span>
         </button>
-        <button type="button" className="btn btn--secondary btn--block" onClick={props.onNo}>
-          AM STOOOPIDLY LOST. FINDING MY WAY BACK.
+        <button type="button" className="btn btn--secondary btn--block rogue-btn" onClick={props.onNo}>
+          NO, GUIDE ME BACK
+          <span className="rogue-btn__fun">Am stooopidly lost. Finding my way back.</span>
         </button>
       </div>
     </dialog>
@@ -353,7 +356,8 @@ function FollowMenu(props: {
           <ul>
             <li>GPS only works while this page is open and the screen is on. Locking the phone or switching apps pauses tracking; it catches up when you return, without replaying missed cues.</li>
             <li>Your location stays on this phone, only for this session. It is never saved or sent anywhere.</li>
-            <li>The duck shows your place on the route. The small blue dot is the raw GPS position.</li>
+            <li>The duck is where your phone thinks you are; the blue halo around it shows how precise that is. Gold dashes are the part of the route you’ve covered.</li>
+            <li>If GPS drops out or gets too rough, a gold warning appears and the directions are greyed out until it recovers.</li>
           </ul>
         </details>
       </div>

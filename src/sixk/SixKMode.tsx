@@ -74,7 +74,7 @@ export default function SixKMode({ onSwitchMode }: Props) {
   }, []);
 
   const loaded = route && id && route.data.id === id ? route : null;
-  const title = view.name === 'library' ? '6K Route Library' : (manifest.routes.find((r) => r.id === id)?.name ?? 'Route');
+  const title = view.name === 'library' ? 'Route Library' : (manifest.routes.find((r) => r.id === id)?.name ?? 'Route');
 
   if (view.name === 'follow') {
     if (!loaded) return <p className="loading">{error ?? 'Loading route…'}</p>;

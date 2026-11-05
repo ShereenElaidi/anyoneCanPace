@@ -9,7 +9,9 @@ const TIMEOUT_MS = 10_000;
 /**
  * The last known forecast, refreshed when the dashboard opens (or comes back
  * into view) and the saved copy is older than 30 minutes. One small request
- * for fixed Montréal coordinates; nothing about the user is sent.
+ * for fixed Montréal coordinates, never the user's location. It goes straight
+ * from the phone to Open-Meteo, so like any web request it shows them the
+ * phone's IP address and browser details.
  */
 export function useForecast() {
   const [forecast, setForecast] = useState<Forecast | null>(loadForecast);

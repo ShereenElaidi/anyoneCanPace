@@ -75,9 +75,24 @@ export function routeNotices(data: RouteData): Notice[] {
   return data.advisories.map((a, i) => ({ id: `${data.id}-${i}`, route: data.id, kind: 'manual', ...a }));
 }
 
-/** All notices from every source, each tagged with a kind. */
+/** Same advisory, wherever it was written: same route, text, stretch and dates. */
+const sameKey = (n: Notice) =>
+  [n.route, n.text.trim().replace(/\s+/g, ' ').toLowerCase(), n.fromKm ?? '', n.toKm ?? '', n.start ?? '', n.end ?? ''].join('|');
+
+/**
+ * All notices from every source (central file first, then each route's own),
+ * each tagged with a kind. An advisory written in both places is shown once,
+ * keeping the copy with a source link if only one has it.
+ */
 export function collectNotices(...lists: Notice[][]): Notice[] {
-  return lists.flat().map((n) => ({ kind: 'manual', ...n }));
+  const byKey = new Map<string, Notice>();
+  for (const n of lists.flat()) {
+    const key = sameKey(n);
+    const prev = byKey.get(key);
+    if (!prev) byKey.set(key, { kind: 'manual', ...n });
+    else if (!prev.source && n.source) byKey.set(key, { ...prev, source: n.source });
+  }
+  return [...byKey.values()];
 }
 
 /** In force today: started (or no start) and not ended (or no end). Expired notices disappear. */

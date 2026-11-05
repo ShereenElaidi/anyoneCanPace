@@ -8,7 +8,7 @@ The app always opens on **"What are we doing today?"**, a mode picker:
 
 - **Daily Dashboard**: the weather at your run time and what to wear for it.
 - **ACR Run/Walk Timer**: open the URL on your phone, tap **START PACING**, and the app alternates RUN and WALK until you stop it. Adjust intervals mid-run without interrupting the group.
-- **6K Route Library**: pick a ~6 km route and follow it on a street map, with the duck marking your place, a direction banner and turn cues.
+- **Route Library**: pick a route (they range from about 4.6 to 12.4 km) and follow it on a street map, with the duck marking your place, a direction banner and turn cues.
 
 The app doesn't remember the last mode, so it always starts here. Your timer intervals and other settings are still remembered. To change modes, use **Settings → Switch mode** in the timer (two taps while a session is running), or **MODES** in the route library and dashboard.
 
@@ -31,7 +31,7 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
 - **Remembers your settings** (RUN, WALK, sound, vibration) in local storage. No accounts, tracking, cookies or analytics.
 - **Accessible**: semantic HTML, labelled controls, visible focus, touch targets of 44 px or more, reduced-motion support. Screen readers hear RUN, WALK, Paused and Resumed, not every second.
 
-## 6K Route Library
+## Route Library
 
 - **Library**: each route shows its name, distance, climb and descent, and a small outline.
 - **Route page**: map preview, stats, elevation profile, turn list, notes, advisories and **START ROUTE**.
@@ -44,16 +44,19 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
   - Before you start, the banner says "Head to the start: 420 m" with an arrow and a compass direction.
   - Anywhere within about 250 m of the start counts as "at the start".
   - **START ANYWAY** is always there, so a pacer who joins mid-way is placed where they are on the route.
+  - **Joining is never a guess.** Near the start, the beginning of the route wins, even on a loop whose finish is nearby; if you really are on a later part near the start (finishing), tap **JOIN AT x KM**. Where several parts of the route pass the same spot (an out-and-back, overlapping laps), the app waits until a few reliable fixes show which way you're moving, or you tap **JOIN AT x KM**.
 - **Progress only moves forward.** Each GPS fix is matched only to the stretch of route just behind or ahead of you, never to the nearest point overall. Routes can overlap themselves (the sample loop's finish is 37 m from its start), and GPS jitter or a short gap won't throw you around.
 - **Turn cues**:
   - A heads-up about 150 m before each turn and a "now" cue at about 30 m. Each fires once.
   - Vibration patterns: one pulse for left, two for right, one long buzz for a U-turn. Matching beeps play if Sound is on, so iPhones (no vibration) still get a cue.
   - Screen readers hear turns, not distance ticks.
-  - A turn you passed during a GPS gap (no fix for 10 s or more) is skipped silently. Missed cues are never replayed.
+  - A turn you passed during a GPS gap (no *usable* fix for 10 s or more, counting a stretch of fixes worse than 60 m) is skipped silently. Missed cues are never replayed.
+  - One cue per moment: an immediate turn always wins over a heads-up for a later one. Close turns are said together ("Left on Rue A now, then right on Rue B in 60 metres"), and each announcement names its own turn and distance.
+  - **GPS warning:** when no usable fix has arrived for over 10 s (or only rough ones), a gold "GPS lost" / "GPS too rough" alert appears under the banner and the banner is greyed out, so frozen directions never look current.
   - If one jittery fix cuts a sharp corner and jumps just past a turn (up to 60 m, no gap), the "now" cue still fires, a moment late rather than never.
 - **Off route**:
   - Triggers after about 5 s more than ~30 m from the route.
-  - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, GEWWW AWAEYYY!** calms the banner (the duck stays confused until you're back on the route); **AM STOOOPIDLY LOST. FINDING MY WAY BACK.** keeps the warning. Pressing Start while you're more than 30 m from the route also shows the confused duck (on your GPS dot, with "Head to the route") until you join it, without the buzz or the dialog.
+  - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, ON PURPOSE** ("Gewww awaeyyy!") calms the banner (the duck stays confused until you're back on the route); **NO, GUIDE ME BACK** ("Am stooopidly lost. Finding my way back.") just closes the dialog and keeps the warning. Short labels first so they're quick to read mid-run; the Stooopids line sits underneath. Pressing Start while you're more than 30 m from the route also shows the confused duck (on your GPS dot, with "Head to the route") until you join it, without the buzz or the dialog.
   - Answer yes and the app stops nagging until you're back on the route.
 - **Finish**: triggers near the last point, only after about 90 % of the distance is covered.
 - **Ending a route** needs **MENU → END ROUTE** and a second tap. The phone's back gesture opens that menu instead of leaving mid-route.
@@ -145,7 +148,7 @@ Process for a new or changed route:
 ## Daily Dashboard
 
 - **Layout: the answer first.** The dressed duck, with a "feels like" sticker, the outfit headline and the item chips fill the first screen. Weather numbers and tips are folded under **Weather details and tips**. A fresh "Updated …" line and REFRESH sit at the bottom; an offline, failed or old forecast moves that line to the top. With no advisories there's one "No route advisories. Last checked …" line; active ones show as a card at the top.
-- **Weather at run time.** Pick when the run starts from a strip of hour chips (6 a.m. to 9 p.m., up to 3 days ahead; radio buttons, so arrow keys and screen readers work). The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The details show feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
+- **Weather at run time.** Pick when the run starts from a strip of hour chips (6 a.m. to 9 p.m., for as far as the forecast goes: it's requested for 2 days, which covers today and tomorrow and, late in the evening, a few hours of the day after; radio buttons, so arrow keys and screen readers work). The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The details show feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
 - **What to wear**, always as text: a headline, item chips (names only) and tips. Why an item is worn ("Cap: the brim keeps rain out of your eyes") is the item's `why` in `outfit.ts` and goes in the tips.
 - **The duck dresses for it.** The mascot wears one drawn layer per outfit item (a gold tee, navy long sleeve, gold raincoat and cap, toque and mittens, a safety-yellow vest and headlamp in the dark…), with rain or snow falling behind it (off when the phone asks for reduced motion). It's decoration only, hidden from screen readers; the text list carries the meaning. The pieces were drawn with ChatGPT from the brief in `design/duck-art-brief/` and fitted onto the duck. To swap one, see `src/assets/duck-outfit/README.md`.
 - **Dress for the run feel, not the weather.** Run feel is the feels-like temperature **+ 7 °C** (`RUN_FEEL_OFFSET_C`), lower than the usual racing advice of about +10 °C because pacers run/walk and stand around at the start.
@@ -217,7 +220,7 @@ A daily GitHub Action could build a "possible closures" file from this, with the
 
 - No backend, accounts, cookies, analytics or tracking.
 - **Your GPS position stays on your phone.** It is held in memory for the current route only. It is never stored, logged or sent anywhere, and the map tiles come from the app's own files, not a map service.
-- **The only request the app makes to another site** is the Daily Dashboard's weather request to `api.open-meteo.com`, for **fixed central-Montréal coordinates, never your location**. It is made only when you open the dashboard and the saved forecast is more than 30 minutes old (or you tap REFRESH). Everything else is the app's own files. Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
+- **The only request the app makes to another site** is the Daily Dashboard's weather request to `api.open-meteo.com`, for **fixed central-Montréal coordinates, never your location**. The request goes straight from your phone to Open-Meteo, so like any web request it shows them ordinary connection details (your IP address, browser and time of the request); your GPS position is never part of it. GPS positions stay on the phone, in memory, for the current route only. It is made only when you open the dashboard and the saved forecast is more than 30 minutes old (or you tap REFRESH). Everything else is the app's own files. Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
 - After one visit, the timer, routes, stats and map work offline. Anything that can go stale shows when it was saved.
 - Saved on the device: timer settings, the offline map and the last weather forecast.
 
@@ -240,12 +243,12 @@ The service worker precaches the lazy chunks too (about 2.6 MB instead of 0.6 MB
 
 ```
 src/
-  Root.tsx                Mode picker (always the first screen); lazy-loads the 6K mode and dashboard
+  Root.tsx                Mode picker (always the first screen); lazy-loads the route library and dashboard
   App.tsx                 The ACR timer (unchanged, plus "Switch mode" in Settings)
   timer/engine.ts         Pure timestamp-based interval logic (no clocks, no React)
   timer/clock.ts          Monotonic session clock with sleep correction
   nav/                    Pure route following: geo, route, tracker, banner, constants
-  sixk/                   6K mode: library, route page, follow view, hooks, styles
+  sixk/                   Route Library: library, route page, follow view, hooks, styles
   sixk/map/               MapLibre map, brand style, offline map file (lazy)
   weather/                Pure: GEM request/parsing, outfit rules, run time, cache
   dashboard/              Daily Dashboard UI, useForecast, dressed duck (dashboard/duck/) (lazy)
@@ -292,7 +295,7 @@ npm run dev        # http://localhost:5173/anyoneCanPace/
 
 ### Testing on a phone (GPS needs HTTPS)
 
-**Simulate a run at your desk (dev only).** `npm run dev`, then open http://localhost:5173/anyoneCanPace/?sim, pick the 6K Route Library → Sample Loop → START ROUTE. A dashed panel on the right edge fakes the GPS: **▶ RUN / ❚❚ PAUSE**, speed **×1 / ×3 / ×10** (×1 is about 6:00 /km), **GO OFF** (drift 80 m to the side to see the off-route banner, the confused duck and "Going rogue?") and **↺** to restart. Options: `?sim=pi-day` for another route, `&away=300` to begin 300 m from the start (to see "Head to the start" and the not-yet-joined duck), `&speed=10`. It only exists in `npm run dev` (`src/dev/simulateGps.ts`); production builds don't contain it.
+**Simulate a run at your desk (dev only).** `npm run dev`, then open http://localhost:5173/anyoneCanPace/?sim, pick the Route Library → Sample Loop → START ROUTE. A dashed panel on the right edge fakes the GPS: **▶ RUN / ❚❚ PAUSE**, speed **×1 / ×3 / ×10** (×1 is about 6:00 /km), **GO OFF** (drift 80 m to the side to see the off-route banner, the confused duck and "Going rogue?") and **↺** to restart. Options: `?sim=pi-day` for another route, `&away=300` to begin 300 m from the start (to see "Head to the start" and the not-yet-joined duck), `&speed=10`. It only exists in `npm run dev` (`src/dev/simulateGps.ts`); production builds don't contain it.
 
 Browsers only give GPS to secure (https) pages. A phone loading `http://<laptop-ip>:5173` gets **no GPS**. Two ways round it:
 
@@ -338,9 +341,9 @@ The app never reloads itself mid-session. When a new version has been downloaded
 - **Wake Lock** keeps the screen on in Safari 16.4+ and Chrome/Edge. It doesn't stop you locking the phone manually, and the system can still release it (for example in low-power mode). If it isn't available, the app says so. Set your phone's Auto-Lock to "Never" while pacing.
 - **Sound** starts after your first tap (browser rule). On iPhone, the ring/silent switch may mute web audio.
 - **Vibration** isn't supported by iPhone Safari, so the toggle is disabled there.
-- **GPS only works in the foreground.** Locking the phone or switching apps stops location updates; the 6K follow view says so before you start. When you come back, progress catches up from the next fix (within a forward limit), and turns you passed meanwhile are skipped, not replayed.
+- **GPS only works in the foreground.** Locking the phone or switching apps stops location updates; the route follow view says so before you start. When you come back, progress catches up from the next fix (within a forward limit), and turns you passed meanwhile are skipped, not replayed.
 - **GPS accuracy** in downtown streets is often 10–30 m. Off route needs more than ~30 m for ~5 s, and fixes worse than 60 m are ignored for progress, so expect the occasional late or early cue near tall buildings.
-- **The map needs WebGL.** On the rare phone without it, the 6K mode still shows directions and distances, just no map.
+- **The map needs WebGL.** On the rare phone without it, the Route Library still shows directions and distances, just no map.
 - **The weather is for central Montréal**, an hourly model forecast, not a reading outside your door. Glance outside too.
 - **Cache Storage can be cleared** by the browser when the phone is low on space (more likely on iPhone if the app isn't installed). The library then shows "not saved" again. Installing the app to the home screen helps.
 
@@ -420,7 +423,7 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **Readable** at arm's length outdoors. The list makes sense without the duck.
 - [ ] **No location prompt** ever appears on the dashboard.
 
-### 6K Route Library: field test on the real loop
+### Route Library: field test on the real loop
 
 Take a charged phone outside to walk or jog the sample loop, after one online visit. Use the deployed site or a tunnel, not plain http.
 

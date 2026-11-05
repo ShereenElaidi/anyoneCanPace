@@ -609,3 +609,16 @@
   font-family: var(--font);
   font-size: 10px;
 }
+
+/* "Going rogue?" answers: short label, playful second line. */
+.rogue-btn {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rogue-btn__fun {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}

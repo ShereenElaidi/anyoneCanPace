@@ -16,7 +16,8 @@ import { clockTime, dayLabel, degrees, hourLabel, runTimeLabel } from './format'
 import advisoriesFile from '../data/advisories.json';
 import manifestFile from '../data/routes/manifest.json';
 import { lastCheckedText, NoticeList } from '../advisories/NoticeList';
-import { activeNotices, type NoticeFile } from '../advisories/notices';
+import { activeNotices, collectNotices, type NoticeFile } from '../advisories/notices';
+import { ROUTE_NOTICES } from '../advisories/routeAdvisories';
 import type { RouteManifest } from '../nav/types';
 import { DressedDuck } from './duck/DressedDuck';
 import { duckWeather } from './duck/pieces';
@@ -59,7 +60,8 @@ export default function DashboardMode({ onSwitchMode }: Props) {
   const hour = forecast && runAt !== null ? hourAt(forecast, runAt) : null;
   const sun = forecast && runAt !== null ? sunFor(forecast, runAt) : null;
 
-  const notices = activeNotices(advisories.notices, null, localDate(now));
+  // Central advisories and each route's own, merged the same way the route pages do.
+  const notices = activeNotices(collectNotices(advisories.notices, ROUTE_NOTICES), null, localDate(now));
   const updatedAt = forecast?.fetchedAt ?? null;
   // Problems with the forecast go to the top; a fresh "Updated" line sits quietly at the bottom.
   const statusNeedsAttention =
@@ -181,7 +183,8 @@ export default function DashboardMode({ onSwitchMode }: Props) {
 
         <p className="credits">
           Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0) from Environment and Climate
-          Change Canada’s GEM model, for central Montréal.
+          Change Canada’s GEM model, for central Montréal. Your phone asks Open-Meteo directly, so they see an ordinary
+          web request (such as your IP address), but never your GPS location.
         </p>
       </main>
 

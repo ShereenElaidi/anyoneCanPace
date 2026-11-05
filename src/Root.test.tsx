@@ -73,12 +73,12 @@ describe('mode picker', () => {
     render(<Root />);
     expect(screen.getByRole('heading', { name: 'What are we doing today?' })).toBeTruthy();
     const order = [...document.querySelectorAll('.mode-card__name')].map((n) => n.textContent);
-    expect(order).toEqual(['Daily Dashboard', 'ACR Run/Walk Timer', '6K Route Library']);
+    expect(order).toEqual(['Daily Dashboard', 'ACR Run/Walk Timer', 'Route Library']);
     // The beta build (a "…-beta" repository) adds a BETA tag; the live build doesn't.
     expect(screen.getByRole('heading', { name: __BETA__ ? 'AnyoneCanPace BETA' : 'AnyoneCanPace' })).toBeTruthy();
     expect(screen.queryByText('BETA') !== null).toBe(__BETA__);
     expect(screen.getByRole('button', { name: /ACR Run\/Walk Timer/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /6K Route Library/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Route Library/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Daily Dashboard/ })).toHaveProperty('disabled', false);
   });
 
@@ -116,7 +116,7 @@ describe('mode picker', () => {
     expect(screen.getByRole('timer')).toBeTruthy(); // first tap only arms it
     tap('TAP AGAIN: END SESSION & SWITCH');
     expect(screen.queryByRole('timer')).toBeNull();
-    expect(screen.getByRole('button', { name: /6K Route Library/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Route Library/ })).toBeTruthy();
   });
 
   it('the switch arm expires, so a stray later tap does nothing', () => {
@@ -132,11 +132,11 @@ describe('mode picker', () => {
   });
 });
 
-describe('6K Route Library', () => {
+describe('Route Library', () => {
   const openLibrary = async () => {
     render(<Root />);
-    tap(/6K Route Library/);
-    return screen.findByRole('heading', { name: '6K Route Library' });
+    tap(/^Route Library/);
+    return screen.findByRole('heading', { name: 'Route Library' });
   };
 
   it('shows that directions are unverified, in the list and before starting', async () => {
@@ -241,8 +241,8 @@ describe('6K Route Library', () => {
     // The duck is where you are, not left behind on the route.
     const duckAt = () => screen.getByTestId('route-map').getAttribute('data-duck-at');
     expect(duckAt()).toBe(`${away.lat.toFixed(5)},${away.lon.toFixed(5)}`);
-    expect(screen.getByRole('button', { name: 'AM STOOOPIDLY LOST. FINDING MY WAY BACK.' })).toBeTruthy();
-    tap('YES, GEWWW AWAEYYY!');
+    expect(screen.getByRole('button', { name: /^NO, GUIDE ME BACK/ })).toBeTruthy();
+    tap(/^YES, ON PURPOSE/);
     expect(document.querySelector('.banner__primary')?.textContent).toBe('Going rogue');
     // Going rogue calms the banner, but the duck stays the confused one until back on the route,
     // and keeps following you.

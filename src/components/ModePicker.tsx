@@ -47,7 +47,7 @@ export function ModePicker({ onPick }: Props) {
           </li>
           <li>
             <button type="button" className="mode-card mode-card--sixk" onClick={() => onPick('sixk')}>
-              <span className="mode-card__name">6K Route Library</span>
+              <span className="mode-card__name">Route Library</span>
               <span className="mode-card__help">Pick a route and follow it on a street map.</span>
             </button>
           </li>

@@ -72,3 +72,31 @@ describe('checking the hand-edited file', () => {
     expect(noticeProblems(null, routeIds)).toHaveLength(1);
   });
 });
+
+describe('merging central and route advisories', () => {
+  const central = {
+    id: 'a',
+    route: 'sample-loop',
+    text: 'Sewer work on Rue de la Commune',
+    start: '2026-11-01',
+    end: '2026-11-30',
+  };
+  it('the same advisory in both places is shown once, keeping a source link', () => {
+    const fromRoute = { ...central, id: 'sample-loop-0', text: ' sewer work on  rue de la Commune ', source: 'https://example.org' };
+    const merged = collectNotices([central], [fromRoute]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].source).toBe('https://example.org');
+    expect(merged[0].route).toBe('sample-loop');
+  });
+
+  it('different dates or stretches are different advisories', () => {
+    expect(collectNotices([central], [{ ...central, id: 'b', end: '2026-12-15' }])).toHaveLength(2);
+    expect(collectNotices([central], [{ ...central, id: 'c', fromKm: 1 }])).toHaveLength(2);
+  });
+
+  it('route advisories are kept with their route for attribution, and expire by date', () => {
+    const merged = collectNotices([], routeNotices({ id: 'pi-day', advisories: [{ text: 'Bridge closed', end: '2026-11-10' }] } as RouteData));
+    expect(activeNotices(merged, null, '2026-11-05').map((n) => n.route)).toEqual(['pi-day']);
+    expect(activeNotices(merged, null, '2026-11-11')).toEqual([]);
+  });
+});

@@ -1,7 +1,7 @@
 # AnyoneCanPace
 
 Mobile-first PWA for volunteer pacers (AnyoneCanRun by Les Stooopids). React 19 + TypeScript + Vite 8 + plain CSS + vite-plugin-pwa. No backend, accounts, analytics or tracking.
-The app always opens on the mode picker (`src/Root.tsx`, no mode is remembered), in this order: **Daily Dashboard** (`src/dashboard/`, lazy-loaded), **ACR Run/Walk Timer** (`App.tsx`), **6K Route Library** (`src/sixk/`, lazy-loaded).
+The app always opens on the mode picker (`src/Root.tsx`, no mode is remembered), in this order: **Daily Dashboard** (`src/dashboard/`, lazy-loaded), **ACR Run/Walk Timer** (`App.tsx`), **Route Library** (`src/sixk/`, lazy-loaded).
 Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitations and the **V2 To-Do List** are in README.md.
 
 ## Commands
@@ -20,10 +20,10 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - `src/hooks/useWakeLock.ts`, `src/lib/cues.ts` (Web Audio beeps + vibration), `src/lib/prefs.ts` (localStorage).
 - `src/components/`: TimerDisplay, EditPanel, MenuSheet, ModePicker. `src/App.tsx` composes the timer page. Styles in `src/styles.css`.
 - `src/nav/`: pure route following (`geo`, `route`, `tracker`, `banner`). All tunables in `nav/constants.ts`. No clocks, DOM or `navigator`: fixes carry their own timestamps.
-- `src/sixk/`: 6K mode UI (SixKMode, Library, RoutePage, FollowView, useRouteNav, `sixk.css`). `src/sixk/map/`: RouteMap (MapLibre + PMTiles), `mapStyle.ts`, `offlineMap.ts` (whole map file in Cache Storage). `src/hooks/useGeolocation.ts`.
+- `src/sixk/`: Route Library UI (folder name kept from when it was "6K") (SixKMode, Library, RoutePage, FollowView, useRouteNav, `sixk.css`). `src/sixk/map/`: RouteMap (MapLibre + PMTiles), `mapStyle.ts`, `offlineMap.ts` (whole map file in Cache Storage). `src/hooks/useGeolocation.ts`.
 - `src/weather/`: pure weather logic. `forecast.ts` (GEM URL + parsing), `outfit.ts` (**TIERS / MODIFIERS tables**, `RUN_FEEL_OFFSET_C`), `runTime.ts` (default hour, daylight, outfit input), `cache.ts`. No UV or sunglasses (removed on purpose). `src/dashboard/`: DashboardMode, useForecast, `dashboard.css`. The `.duck-slot` is where Stage 3's dressed duck goes.
 - `scripts/`: `build-routes.ts` (+ pure `lib/process-route.ts`, `lib/elevation.ts`, `lib/turns.ts`), `cut-map.ts`, `check-bundle.ts`, `dev-cert.ts`. `routes/`: source GPX, `routes.config.json`, `cache/` (elevation, streets, proposed turns), `review/` (turn and elevation review reports: suggestions, not verified).
-- Tests: `src/**/*.test.ts(x)`, `scripts/**/*.test.ts`. `App.test.tsx` drives the real timer UI with fake timers (keep it untouched). `Root.test.tsx` covers the picker and 6K UI with mocked geolocation and a stubbed RouteMap. `src/nav/testing/replay.ts` replays synthetic GPS tracks.
+- Tests: `src/**/*.test.ts(x)`, `scripts/**/*.test.ts`. `App.test.tsx` drives the real timer UI with fake timers (keep it untouched). `Root.test.tsx` covers the picker and Route Library UI with mocked geolocation and a stubbed RouteMap. `src/nav/testing/replay.ts` replays synthetic GPS tracks.
 
 ## Rules that must not break
 - Timing: while active, store only `endsAt` and derive remaining = `endsAt - now`. Never count ticks down. New intervals start at the previous boundary, not at "now".
@@ -34,7 +34,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - Accessibility: touch targets ≥ 44 px, phase text never conveyed by colour alone, announce phase/pause changes (not every second), respect reduced motion.
 - No new heavy dependencies (no state libraries, UI kits or analytics). **Exception:** MapLibre GL JS and the PMTiles reader, for the 6K mode only, and only lazy-loaded. `scripts/check-bundle.ts` fails the build if either reaches the first-load bundle. Build-time-only dev dependencies for scripts are fine if justified.
 
-## 6K route rules
+## Route rules
 - Progress is forward-only and matched in a window around current progress (it grows during GPS gaps). Never snap to the globally nearest point: routes overlap and a loop's start and finish are close.
 - Turn cues fire once per stage (heads-up ~150 m, now ~30 m). Turns passed in a GPS gap (>10 s without a fix) are skipped silently; a turn jumped over between close fixes (≤60 m past) still gets a late "now". Cue only for fresh fixes while visible; never replay.
 - Vitest's on-disk module cache is off (`fsModuleCache: false`) because it missed new routes picked up by `import.meta.glob`.
@@ -50,7 +50,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - `src/data/advisories.json` is hand-edited by pull request. `src/advisories/notices.ts` is pure (filtering by route and date, expiry, validation). A test validates the real file. Always show "Last checked".
 - Automated sources (a road-closures file from a scheduled Action, Environment Canada warnings) plug in as more `Notice[]` lists with a `kind`. The closures Action is **researched, not built**: ask before adding workflow files (they need the `workflow` scope and the user's go-ahead). Montréal `info-travaux` facts and noise numbers are in the README.
 - Credit "© OpenStreetMap contributors" and the route's source (e.g. On The Go Map) in the UI. Raw GPX stays in `routes/`; only processed files ship.
-- The duck is the 6K position marker (no progress ring there) and always sits at the GPS fix, off route too; off route the camera frames it with the route point at current progress. Banner text always states the direction; icons and colours are extras.
+- The duck is the route position marker (no progress ring there) and always sits at the GPS fix, off route too; off route the camera frames it with the route point at current progress. Banner text always states the direction; icons and colours are extras.
 
 ## Paths and deploy
 - GitHub Pages project site. `vite.config.ts` derives `base` (`/anyoneCanPace/`) from `GITHUB_REPOSITORY` or the git remote. In `index.html` reference public files as `/file.png`, never `%BASE_URL%` (Vite adds the base itself).
