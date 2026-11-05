@@ -9,11 +9,23 @@
  * existing processed file are kept unless --reset-turns is given.
  * Elevation and street lookups are cached in routes/cache/ so builds are
  * repeatable offline.
+ *
+ * Turns and the start street are suggestions. Every candidate, with the
+ * decision and the reason, is written to routes/review/<id>.md (and .json,
+ * with the elevation processing stages) for a person to check.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RouteData, RouteManifest, RouteSource, TrackFeature, Turn } from '../src/nav/types.ts';
+import {
+  COPERNICUS_GLO90,
+  GPX_ELEVATION,
+  NRCAN_CDEM,
+  processElevation,
+  type ElevationResult,
+  type ElevationSource,
+} from './lib/elevation.ts';
 import {
   bbox,
   classify,
@@ -22,15 +34,11 @@ import {
   distanceToLine,
   outlinePath,
   parseGpx,
-  PROCESS,
-  proposeTurns,
   removeSpurs,
   resample,
   simplify,
-  streetBetween,
-  summariseElevation,
-  type Street,
 } from './lib/process-route.ts';
+import { analyseTurns, turnReviewMarkdown, type Street, type TurnAnalysis } from './lib/turns.ts';
 
 interface RouteConfig {
   id: string;
@@ -42,11 +50,12 @@ interface RouteConfig {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC_DIR = join(ROOT, 'routes');
 const CACHE_DIR = join(SRC_DIR, 'cache');
+const REVIEW_DIR = join(SRC_DIR, 'review');
 const OUT_DIR = join(ROOT, 'src', 'data', 'routes');
 const OFFLINE = process.argv.includes('--offline');
 const RESET_TURNS = process.argv.includes('--reset-turns');
 
-const ELEVATION_API = 'https://api.open-meteo.com/v1/elevation';
+const CDEM_PROFILE_API = 'https://geogratis.gc.ca/services/elevation/cdem/profile';
 const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
 
 const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 ** digits;
@@ -64,36 +73,54 @@ function formatJson(value: unknown): string {
   );
 }
 
-// ---------- Elevation (Open-Meteo, Copernicus DEM GLO-90) ----------
+// ---------- Elevation (NRCan CDEM, bare earth) ----------
 
 interface ElevationCache {
   source: string;
   coords: [number, number][];
-  elevations: number[];
+  elevations: (number | null)[];
 }
 
-async function lookupElevations(id: string, coords: [number, number][]): Promise<number[]> {
+const CDEM_CACHE_SOURCE =
+  'Natural Resources Canada, Canadian Digital Elevation Model (CDEM), via the GeoGratis elevation API. Contains information licensed under the Open Government Licence – Canada.';
+
+/** Bare-earth elevations for [lat, lon] pairs, 100 per request, cached per route. */
+async function lookupElevations(id: string, coords: [number, number][]): Promise<(number | null)[]> {
   const path = join(CACHE_DIR, `${id}.elevation.json`);
   const cached = readJson<ElevationCache>(path);
-  if (cached && JSON.stringify(cached.coords) === JSON.stringify(coords)) return cached.elevations;
+  if (cached && cached.source === CDEM_CACHE_SOURCE && JSON.stringify(cached.coords) === JSON.stringify(coords)) {
+    return cached.elevations;
+  }
   if (OFFLINE) throw new Error(`No cached elevation for ${id} matching the current track. Run without --offline.`);
 
-  const elevations: number[] = [];
+  const elevations: (number | null)[] = [];
   for (let i = 0; i < coords.length; i += 100) {
     const batch = coords.slice(i, i + 100);
-    const url = `${ELEVATION_API}?latitude=${batch.map((c) => c[0]).join(',')}&longitude=${batch.map((c) => c[1]).join(',')}`;
+    // A single point isn't a line: repeat it and keep the first answer.
+    const line = batch.length === 1 ? [batch[0], batch[0]] : batch;
+    const wkt = `LINESTRING(${line.map(([lat, lon]) => `${lon} ${lat}`).join(',')})`;
+    const url = `${CDEM_PROFILE_API}?path=${encodeURIComponent(wkt)}&steps=0`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Elevation lookup failed: ${res.status} ${await res.text()}`);
-    const body = (await res.json()) as { elevation: number[] };
-    elevations.push(...body.elevation);
+    const body = (await res.json()) as { altitude: number | null; vertex: boolean }[];
+    const vertices = body.filter((p) => p.vertex);
+    if (vertices.length !== line.length) throw new Error(`Elevation lookup returned ${vertices.length} points for ${line.length}`);
+    // No-data comes back as null or a large negative fill value.
+    elevations.push(
+      ...vertices.slice(0, batch.length).map((p) => (typeof p.altitude === 'number' && p.altitude > -500 ? p.altitude : null)),
+    );
   }
-  const cache: ElevationCache = {
-    source: 'Open-Meteo Elevation API (Copernicus DEM 2021 GLO-90), https://open-meteo.com',
-    coords,
-    elevations,
-  };
+  const cache: ElevationCache = { source: CDEM_CACHE_SOURCE, coords, elevations };
   writeFileSync(path, formatJson(cache));
   return elevations;
+}
+
+/** The earlier surface-model samples (Open-Meteo, Copernicus GLO-90), kept only to compare against. */
+function copernicusComparison(id: string): ElevationResult | null {
+  const old = readJson<{ coords: [number, number][]; elevations: number[] }>(join(CACHE_DIR, `${id}.elevation-copernicus.json`));
+  if (!old) return null;
+  const step = COPERNICUS_GLO90.sampleStepM;
+  return processElevation(old.elevations.map((ele, i) => ({ d: i * step, ele })), COPERNICUS_GLO90);
 }
 
 // ---------- Street names (OpenStreetMap via Overpass) ----------
@@ -172,9 +199,11 @@ async function buildRoute(config: RouteConfig) {
   console.log(`  distance: ${total.toFixed(0)} m, ${kind}`);
 
   // Elevation: from the GPX if every point has it, otherwise looked up.
-  const samples = resample(track, cum, PROCESS.elevationStepM);
-  let elevations: number[];
-  if (gpx.points.every((p) => p.ele !== undefined)) {
+  const fromGpx = gpx.points.every((p) => p.ele !== undefined);
+  const eleSource: ElevationSource = fromGpx ? GPX_ELEVATION : NRCAN_CDEM;
+  const samples = resample(track, cum, eleSource.sampleStepM);
+  let elevations: (number | null)[];
+  if (fromGpx) {
     const denseCum = cumulative(cleaned);
     elevations = samples.map((s) => {
       let best = 0;
@@ -186,7 +215,7 @@ async function buildRoute(config: RouteConfig) {
           best = i;
         }
       });
-      return cleaned[best].ele ?? 0;
+      return cleaned[best].ele ?? null;
     });
   } else {
     elevations = await lookupElevations(
@@ -194,17 +223,19 @@ async function buildRoute(config: RouteConfig) {
       samples.map((s) => [round(s.p.lat, 5), round(s.p.lon, 5)]),
     );
   }
-  const ele = summariseElevation(samples.map((s, i) => ({ d: s.d, ele: elevations[i] })));
-  console.log(`  elevation: +${ele.gainM} m / -${ele.lossM} m, ${ele.minEleM}–${ele.maxEleM} m`);
+  const eleResult = processElevation(samples.map((s, i) => ({ d: s.d, ele: elevations[i] })), eleSource);
+  const ele = eleResult.summary;
+  if (!ele) throw new Error(`${config.id}: no elevation data along the route`);
+  console.log(`  elevation (${eleSource.name}): +${ele.gainM} m / -${ele.lossM} m, ${ele.minEleM}–${ele.maxEleM} m`);
+  if (eleResult.missingM) console.warn(`  ! ${eleResult.missingM} m of the route had no elevation; bridged with straight lines`);
+  if (eleResult.spikes.length) console.log(`  elevation spikes replaced: ${eleResult.spikes.length}`);
 
   const streets = await lookupStreets(config.id, box, track);
-  const proposed: Turn[] = proposeTurns(track, cum).map((t) => ({
-    atM: t.atM,
-    dir: t.dir,
-    street: streetBetween(track, cum, streets, t.atM + 10, t.atM + 60),
-  }));
+  const analysis = analyseTurns(track, cum, streets);
+  const proposed: Turn[] = analysis.turns.map((t) => ({ atM: t.atM, dir: t.dir, street: t.street }));
   writeFileSync(join(CACHE_DIR, `${config.id}.proposed-turns.json`), formatJson(proposed));
-  console.log(`  proposed turns: ${proposed.length} (see routes/cache/${config.id}.proposed-turns.json)`);
+  const flagged = analysis.review.filter((r) => r.needsReview).length;
+  console.log(`  proposed turns: ${proposed.length}, ${flagged} candidate(s) need review (see routes/review/${config.id}.md)`);
 
   const jsonPath = join(OUT_DIR, `${config.id}.json`);
   const existing = readJson<RouteData>(jsonPath);
@@ -223,7 +254,7 @@ async function buildRoute(config: RouteConfig) {
       maxEleM: ele.maxEleM,
     },
     track: `${config.id}.geojson`,
-    startStreet: keep && existing.startStreet !== undefined ? existing.startStreet : streetBetween(track, cum, streets, 0, 60),
+    startStreet: keep && existing.startStreet !== undefined ? existing.startStreet : analysis.startStreet,
     bbox: box.map((v) => round(v, 6)) as RouteData['bbox'],
     profile: ele.profile,
     turns: keep ? existing.turns : proposed,
@@ -240,11 +271,80 @@ async function buildRoute(config: RouteConfig) {
 
   writeFileSync(jsonPath, formatJson(data));
   writeFileSync(join(OUT_DIR, `${config.id}.geojson`), JSON.stringify(feature) + '\n');
+  writeReview(config, data, analysis, eleSource, eleResult, keep ? existing.turns : null);
   return { data, outline: outlinePath(track) };
+}
+
+// ---------- Review report ----------
+
+function writeReview(
+  config: RouteConfig,
+  data: RouteData,
+  analysis: TurnAnalysis,
+  eleSource: ElevationSource,
+  ele: ElevationResult,
+  handEdited: Turn[] | null,
+) {
+  const s = ele.summary!;
+  const surface = copernicusComparison(config.id)?.summary;
+  const md = [
+    `# ${data.name}: route review`,
+    '',
+    'Generated by `npm run routes`. Everything below is an automated suggestion, not a verified instruction:',
+    'check each line marked "yes" against the map, or on the ground, before trusting it.',
+    '',
+    handEdited
+      ? `The app uses the turns in \`src/data/routes/${config.id}.json\` (kept from before; ${handEdited.length} turns). Compare them with these suggestions, or rebuild with \`--reset-turns\` to take the suggestions.`
+      : `The app uses these suggestions as they are (\`src/data/routes/${config.id}.json\`). Edit that file by hand to correct them.`,
+    '',
+    '## Turns',
+    '',
+    turnReviewMarkdown(analysis),
+    '## Elevation',
+    '',
+    `Source: ${eleSource.name}, sampled every ${eleSource.sampleStepM} m. Climb and descent count changes over ${ele.thresholdM} m.`,
+    '',
+    '| | Climb | Descent | Lowest | Highest |',
+    '| --- | --: | --: | --: | --: |',
+    `| Used in the app | ${s.gainM} m | ${s.lossM} m | ${s.minEleM} m | ${s.maxEleM} m |`,
+    `| Raw samples, same threshold | ${ele.rawGainM} m | ${ele.rawLossM} m | | |`,
+    surface
+      ? `| Surface model for comparison (Copernicus GLO-90, roofs and trees) | ${surface.gainM} m | ${surface.lossM} m | ${surface.minEleM} m | ${surface.maxEleM} m |`
+      : '',
+    '',
+    ele.spikes.length
+      ? `Spikes replaced: ${ele.spikes.map((p) => `${(p.d / 1000).toFixed(2)} km (${p.raw} → ${p.replacedBy} m)`).join(', ')}.`
+      : 'No spikes replaced.',
+    ele.missingM ? `No data for ${ele.missingM} m of the route (bridged with straight lines).` : '',
+    '',
+  ]
+    .filter((line, i, all) => line !== '' || all[i - 1] !== '')
+    .join('\n');
+  writeFileSync(join(REVIEW_DIR, `${config.id}.md`), md);
+  writeFileSync(
+    join(REVIEW_DIR, `${config.id}.json`),
+    formatJson({
+      id: config.id,
+      note: 'Automated suggestions for manual review. Nothing here has been verified.',
+      startStreet: analysis.startStreet,
+      startNote: analysis.startNote,
+      turns: analysis.review,
+      elevation: {
+        source: eleSource,
+        thresholdM: ele.thresholdM,
+        summary: { gainM: s.gainM, lossM: s.lossM, minEleM: s.minEleM, maxEleM: s.maxEleM },
+        raw: { gainM: ele.rawGainM, lossM: ele.rawLossM },
+        missingM: ele.missingM,
+        spikes: ele.spikes,
+        samples: ele.stages,
+      },
+    }),
+  );
 }
 
 async function main() {
   mkdirSync(CACHE_DIR, { recursive: true });
+  mkdirSync(REVIEW_DIR, { recursive: true });
   mkdirSync(OUT_DIR, { recursive: true });
   const configs = readJson<RouteConfig[]>(join(SRC_DIR, 'routes.config.json'));
   if (!configs?.length) throw new Error('routes/routes.config.json lists no routes');

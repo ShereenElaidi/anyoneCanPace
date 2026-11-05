@@ -26,23 +26,23 @@
   },
   {
     "atM": 5597,
-    "dir": "sharp-left",
+    "dir": "left",
     "street": "Boulevard Angrignon"
   },
   {
     "atM": 5797,
-    "dir": "sharp-left",
+    "dir": "left",
     "street": "Rue Saint-Patrick"
   },
   {
-    "atM": 10801,
-    "dir": "slight-right",
-    "street": "Piste multifonctionnelle - Parcs Canada"
+    "atM": 9426,
+    "dir": "slight-left",
+    "street": "Piste multifonctionnelle"
   },
   {
     "atM": 10962,
     "dir": "slight-left",
-    "street": "Piste multifonctionnelle"
+    "street": ""
   },
   {
     "atM": 11170,
@@ -62,11 +62,6 @@
   {
     "atM": 11947,
     "dir": "left",
-    "street": "Piste Atwater - Des Seigneurs"
-  },
-  {
-    "atM": 12217,
-    "dir": "slight-left",
     "street": "Piste Atwater - Des Seigneurs"
   }
 ]

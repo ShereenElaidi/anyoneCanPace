@@ -15,12 +15,7 @@
     "street": "Rue de la Commune Ouest"
   },
   {
-    "atM": 2164,
-    "dir": "right",
-    "street": "Rue de la Commune Ouest"
-  },
-  {
-    "atM": 2195,
+    "atM": 2147,
     "dir": "left",
     "street": "Rue de la Commune Ouest"
   },

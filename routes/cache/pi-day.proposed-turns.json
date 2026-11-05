@@ -16,7 +16,7 @@
   },
   {
     "atM": 1530,
-    "dir": "sharp-right",
+    "dir": "right",
     "street": "Rue Saint-Hubert"
   },
   {
@@ -27,11 +27,6 @@
   {
     "atM": 1875,
     "dir": "left",
-    "street": "Rue Berri"
-  },
-  {
-    "atM": 2375,
-    "dir": "slight-right",
     "street": "Rue Berri"
   },
   {

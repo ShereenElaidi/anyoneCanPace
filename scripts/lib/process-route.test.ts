@@ -2,21 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { distanceM, offsetPoint, type LatLon } from '../../src/nav/geo.ts';
-import {
-  classify,
-  cumulative,
-  dedupe,
-  gainLoss,
-  outlinePath,
-  parseGpx,
-  proposeTurns,
-  removeSpurs,
-  simplify,
-  smooth,
-  streetBetween,
-  summariseElevation,
-  turnDir,
-} from './process-route.ts';
+import { classify, cumulative, dedupe, outlinePath, parseGpx, removeSpurs, simplify } from './process-route.ts';
+import { proposeTurns } from './turns.ts';
 
 const SAMPLE = readFileSync(resolve(process.cwd(), 'routes/onthegomap-6.4-km-route.gpx'), 'utf8');
 const total = (pts: LatLon[]) => cumulative(pts).at(-1) as number;
@@ -127,83 +114,5 @@ describe('measuring and classifying', () => {
     expect(Math.min(...nums)).toBeGreaterThanOrEqual(0);
     expect(Math.max(...nums)).toBeLessThanOrEqual(100);
     expect(path.startsWith('M')).toBe(true);
-  });
-});
-
-describe('elevation', () => {
-  it('ignores noise smaller than the threshold', () => {
-    const noisy = Array.from({ length: 100 }, (_, i) => 50 + (i % 2 ? 1.2 : -1.2));
-    expect(gainLoss(noisy)).toEqual({ gainM: 0, lossM: 0 });
-  });
-
-  it('counts real climbs and descents', () => {
-    const hill = [...Array.from({ length: 21 }, (_, i) => 20 + i), ...Array.from({ length: 21 }, (_, i) => 40 - i)];
-    expect(gainLoss(hill)).toEqual({ gainM: 18, lossM: 18 }); // threshold steps of 3 m
-  });
-
-  it('smoothing flattens spikes; the summary reports min/max and a profile', () => {
-    const raw = Array.from({ length: 41 }, (_, i) => ({ d: i * 25, ele: i === 20 ? 80 : 30 }));
-    expect(Math.max(...smooth(raw.map((r) => r.ele), 5))).toBeLessThan(41);
-    const s = summariseElevation(raw);
-    expect(s.maxEleM).toBeLessThan(41);
-    expect(s.gainM).toBeLessThan(15);
-    expect(s.profile[0]).toEqual([0, 30]);
-    expect(s.profile.at(-1)?.[0]).toBe(1000);
-  });
-});
-
-describe('turn proposals', () => {
-  const start = { lat: 45.5, lon: -73.5 };
-
-  it('names turn directions by angle', () => {
-    expect(turnDir(-90)).toBe('left');
-    expect(turnDir(90)).toBe('right');
-    expect(turnDir(45)).toBe('slight-right');
-    expect(turnDir(-140)).toBe('sharp-left');
-    expect(turnDir(175)).toBe('u-turn');
-  });
-
-  it('ignores a gentle curve but finds a left turn', () => {
-    // Gentle 40° arc over 400 m, then a 90° left.
-    const pts: LatLon[] = [start];
-    let bearing = 0;
-    for (let i = 0; i < 40; i++) {
-      bearing += 1;
-      pts.push(offsetPoint(pts[pts.length - 1], bearing, 10));
-    }
-    const corner = pts[pts.length - 1];
-    pts.push(...leg(corner, bearing - 90, 300));
-    const simple = simplify(pts);
-    const turns = proposeTurns(simple, cumulative(simple));
-    expect(turns).toHaveLength(1);
-    expect(turns[0].dir).toBe('left');
-    expect(turns[0].atM).toBeGreaterThan(380);
-    expect(turns[0].atM).toBeLessThan(420);
-  });
-
-  it('a rounded corner is one turn, not two', () => {
-    const north = leg(start, 0, 300);
-    const c1 = north[north.length - 1];
-    const c2 = offsetPoint(c1, 45, 8);
-    const pts = [start, ...north, c2, ...leg(c2, 90, 300)];
-    const turns = proposeTurns(pts, cumulative(pts));
-    expect(turns).toHaveLength(1);
-    expect(turns[0].dir).toBe('right');
-  });
-
-  it('fills street names from nearby streets', () => {
-    const north = leg(start, 0, 300);
-    const corner = north[north.length - 1];
-    const east = leg(corner, 90, 300);
-    const pts = [start, ...north, ...east];
-    const toCoords = (ps: LatLon[]) => ps.map((p) => [p.lon, p.lat] as [number, number]);
-    const streets = [
-      { name: 'avenue du Parc', coords: toCoords([start, corner]) },
-      { name: 'rue Rachel', coords: toCoords([corner, east[east.length - 1]]) },
-    ];
-    const cum = cumulative(pts);
-    expect(streetBetween(pts, cum, streets, 0, 60)).toBe('avenue du Parc');
-    expect(streetBetween(pts, cum, streets, 310, 360)).toBe('rue Rachel');
-    expect(streetBetween(pts, cum, [], 310, 360)).toBe('');
   });
 });

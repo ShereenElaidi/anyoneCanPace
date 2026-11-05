@@ -159,7 +159,8 @@ describe('6K Route Library', () => {
     expect(screen.getByRole('img', { name: /Elevation from \d+ to \d+ metres/ })).toBeTruthy();
     const turns = screen.getByRole('heading', { name: 'Turns' }).nextElementSibling as HTMLElement;
     expect(turns.querySelectorAll('li').length).toBeGreaterThan(4);
-    expect(turns.textContent).toMatch(/Start on /);
+    // The first entry is the start ("Start", or "Start on <street>" when the first leg has a known name).
+    expect(turns.querySelector('li')?.textContent).toMatch(/Start/);
     expect(screen.getByText('No advisories for this route right now.')).toBeTruthy();
     expect(screen.getByText(/^Last checked /)).toBeTruthy();
     expect(screen.getByText(/OpenStreetMap contributors/)).toBeTruthy();

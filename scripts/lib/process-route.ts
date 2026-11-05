@@ -2,15 +2,8 @@
  * Pure route-processing steps used by scripts/build-routes.ts.
  * No file system or network access here, so every step is unit-tested.
  */
-import {
-  bearingDeg,
-  createProjector,
-  distanceM,
-  headingChange,
-  projectOnSegment,
-  type LatLon,
-} from '../../src/nav/geo.ts';
-import type { RouteKind, TurnDir } from '../../src/nav/types.ts';
+import { createProjector, distanceM, projectOnSegment, type LatLon } from '../../src/nav/geo.ts';
+import type { RouteKind } from '../../src/nav/types.ts';
 
 export interface GpxPoint extends LatLon {
   ele?: number;
@@ -35,21 +28,8 @@ export const PROCESS = {
   loopCloseM: 100,
   /** Return half within this of the outbound half on average: out-and-back. */
   outAndBackM: 30,
-  /** Elevation sample spacing. */
-  elevationStepM: 25,
-  /** Moving-average window for the elevation profile. */
-  elevationSmoothM: 100,
-  /** Ignore climbs/descents smaller than this when summing gain and loss. */
-  elevationThresholdM: 3,
-  /** Profile spacing in the route JSON. */
-  profileStepM: 50,
-  /** Heading measured over this distance before and after each point. */
-  turnArmM: 20,
-  /** Smaller heading changes are gentle curves, not turns. */
-  turnMinDeg: 35,
-  /** Turn candidates closer than this are one turn. */
-  turnMergeM: 30,
 };
+// Elevation tunables live in elevation.ts, turn tunables in turns.ts.
 
 // ---------- GPX ----------
 
@@ -261,180 +241,6 @@ function retracesItself(points: LatLon[], cum: number[], total: number): boolean
   if (!back.length || outbound.length < 2) return false;
   const mean = back.reduce((sum, s) => sum + distanceToLine(s.p, outbound), 0) / back.length;
   return mean <= PROCESS.outAndBackM;
-}
-
-// ---------- Elevation ----------
-
-/** Centred moving average over a window of `windowSamples` samples. */
-export function smooth(values: number[], windowSamples: number): number[] {
-  const half = Math.max(0, Math.floor(windowSamples / 2));
-  return values.map((_, i) => {
-    let sum = 0;
-    let n = 0;
-    for (let k = Math.max(0, i - half); k <= Math.min(values.length - 1, i + half); k++) {
-      sum += values[k];
-      n++;
-    }
-    return sum / n;
-  });
-}
-
-/**
- * Total climb and descent, ignoring wiggles smaller than `thresholdM`
- * (hysteresis: a change only counts once it exceeds the threshold from the
- * last turning point).
- */
-export function gainLoss(values: number[], thresholdM = PROCESS.elevationThresholdM): { gainM: number; lossM: number } {
-  let gain = 0;
-  let loss = 0;
-  if (!values.length) return { gainM: 0, lossM: 0 };
-  let ref = values[0];
-  for (const v of values) {
-    const diff = v - ref;
-    if (diff >= thresholdM) {
-      gain += diff;
-      ref = v;
-    } else if (diff <= -thresholdM) {
-      loss -= diff;
-      ref = v;
-    }
-  }
-  return { gainM: gain, lossM: loss };
-}
-
-export interface ElevationSummary {
-  gainM: number;
-  lossM: number;
-  minEleM: number;
-  maxEleM: number;
-  profile: [number, number][];
-}
-
-/** Smooths raw samples (every `stepM`) and summarises them. */
-export function summariseElevation(
-  samples: { d: number; ele: number }[],
-  stepM = PROCESS.elevationStepM,
-): ElevationSummary {
-  const raw = samples.map((s) => s.ele);
-  const smoothed = smooth(raw, Math.round(PROCESS.elevationSmoothM / stepM) + 1);
-  const { gainM, lossM } = gainLoss(smoothed);
-  const profile: [number, number][] = [];
-  const every = Math.max(1, Math.round(PROCESS.profileStepM / stepM));
-  samples.forEach((s, i) => {
-    if (i % every === 0 || i === samples.length - 1) profile.push([Math.round(s.d), round1(smoothed[i])]);
-  });
-  return {
-    gainM: Math.round(gainM),
-    lossM: Math.round(lossM),
-    minEleM: Math.round(Math.min(...smoothed)),
-    maxEleM: Math.round(Math.max(...smoothed)),
-    profile,
-  };
-}
-
-const round1 = (v: number) => Math.round(v * 10) / 10;
-
-// ---------- Turns ----------
-
-export interface ProposedTurn {
-  atM: number;
-  dir: TurnDir;
-  angle: number;
-}
-
-export function turnDir(angle: number): TurnDir {
-  const a = Math.abs(angle);
-  const side = angle < 0 ? 'left' : 'right';
-  if (a >= 160) return 'u-turn';
-  if (a >= 125) return `sharp-${side}`;
-  if (a >= 60) return side;
-  return `slight-${side}`;
-}
-
-/**
- * Proposes turns where the heading changes sharply. Heading is measured over
- * a short arm before and after each point, so a gentle curve (many small
- * changes) is ignored and a rounded corner still counts as one turn.
- */
-export function proposeTurns(points: LatLon[], cum: number[]): ProposedTurn[] {
-  const total = cum[cum.length - 1];
-  const arm = PROCESS.turnArmM;
-  const candidates: ProposedTurn[] = [];
-  for (let i = 1; i < points.length - 1; i++) {
-    const d = cum[i];
-    if (d < arm || d > total - arm) continue;
-    const before = pointAlong(points, cum, d - arm);
-    const after = pointAlong(points, cum, d + arm);
-    const angle = headingChange(bearingDeg(before, points[i]), bearingDeg(points[i], after));
-    if (Math.abs(angle) >= PROCESS.turnMinDeg) candidates.push({ atM: d, dir: turnDir(angle), angle });
-  }
-  // Merge runs of nearby candidates into the strongest one, measuring its
-  // angle over a longer arm so a two-vertex corner reads as one full turn.
-  const merged: ProposedTurn[] = [];
-  let group: ProposedTurn[] = [];
-  const flush = () => {
-    if (!group.length) return;
-    const centre = group.reduce((a, b) => (Math.abs(b.angle) > Math.abs(a.angle) ? b : a));
-    const span = Math.max(arm, (group[group.length - 1].atM - group[0].atM) / 2 + arm);
-    const before = pointAlong(points, cum, Math.max(0, centre.atM - span));
-    const after = pointAlong(points, cum, Math.min(total, centre.atM + span));
-    const at = pointAlong(points, cum, centre.atM);
-    const angle = headingChange(bearingDeg(before, at), bearingDeg(at, after));
-    if (Math.abs(angle) >= PROCESS.turnMinDeg) {
-      merged.push({ atM: Math.round(centre.atM), dir: turnDir(angle), angle: Math.round(angle) });
-    }
-    group = [];
-  };
-  for (const c of candidates) {
-    if (group.length && c.atM - group[group.length - 1].atM > PROCESS.turnMergeM) flush();
-    group.push(c);
-  }
-  flush();
-  return merged;
-}
-
-// ---------- Street names ----------
-
-export interface Street {
-  name: string;
-  /** [lon, lat] pairs. */
-  coords: [number, number][];
-}
-
-/** Name of the street that best matches the route between two distances (majority vote of samples). */
-export function streetBetween(
-  points: LatLon[],
-  cum: number[],
-  streets: Street[],
-  fromM: number,
-  toM: number,
-  maxDistM = 15,
-): string {
-  const votes = new Map<string, number>();
-  const total = cum[cum.length - 1];
-  for (let d = Math.max(0, fromM); d <= Math.min(total, toM); d += 10) {
-    const p = pointAlong(points, cum, d);
-    let bestName = '';
-    let best = maxDistM;
-    for (const s of streets) {
-      const line = s.coords.map(([lon, lat]) => ({ lat, lon }));
-      const dist = distanceToLine(p, line);
-      if (dist < best) {
-        best = dist;
-        bestName = s.name;
-      }
-    }
-    if (bestName) votes.set(bestName, (votes.get(bestName) ?? 0) + 1);
-  }
-  let winner = '';
-  let max = 0;
-  for (const [name, n] of votes) {
-    if (n > max) {
-      max = n;
-      winner = name;
-    }
-  }
-  return winner;
 }
 
 // ---------- Thumbnail ----------

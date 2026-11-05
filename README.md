@@ -68,13 +68,39 @@ Source GPX files live in `routes/` and are committed. The app ships only the pro
    - removes the routing tool's tiny dead-end spurs and duplicate points (a real out-and-back turnaround is kept)
    - simplifies the line to about 5 m while keeping corners
    - measures the distance and classifies the route (loop, out-and-back or point-to-point)
-   - looks up elevation, smooths it and ignores changes under 3 m, to get realistic climb and descent
-   - proposes turns from heading changes (gentle curves are ignored)
-   - fills street names from OpenStreetMap
-   - writes `<id>.json`, `<id>.geojson` and `manifest.json`
+   - looks up bare-earth elevation every 10 m and cleans it (see "Elevation" below)
+   - proposes turns from heading changes and fills street names from OpenStreetMap (see "Turn suggestions" below)
+   - writes `<id>.json`, `<id>.geojson` and `manifest.json`, plus a review report in `routes/review/<id>.md` (and `.json`)
 3. Edit `src/data/routes/<id>.json` by hand: `name`, `startStreet`, and each turn's `dir`, `street` and `note`. Also `notes` and `advisories`. Re-running the script keeps these hand edits. `npm run routes -- --reset-turns` replaces the turns with fresh proposals, which are also always written to `routes/cache/<id>.proposed-turns.json` for comparison.
 
-Elevation comes from the [Open-Meteo Elevation API](https://open-meteo.com/en/docs/elevation-api) (Copernicus DEM GLO-90, about 90 m resolution, CC BY 4.0), and only at build time. Street names come from OpenStreetMap through the Overpass API. Both lookups are cached in `routes/cache/`, so `npm run routes -- --offline` rebuilds without a network. Turn directions are first guesses: always check them against the map.
+Elevation comes from Natural Resources Canada's [Canadian Digital Elevation Model](https://open.canada.ca/data/en/dataset/7f245e4d-76c2-4caa-951a-45d1d2051333) (CDEM) through the GeoGratis elevation API, and only at build time. Street names come from OpenStreetMap through the Overpass API. Both lookups are cached in `routes/cache/`, so `npm run routes -- --offline` rebuilds without a network. Turn directions are first guesses: always check them against the map and the review report.
+
+#### Elevation
+
+Code: `scripts/lib/elevation.ts` (pure, tested in `elevation.test.ts`).
+
+- **Bare earth, not rooftops.** Until November 2026 the build used Open-Meteo's Copernicus GLO-90, a 90 m *surface* model: it measures roofs and tree tops. Downtown that gave the Sample Loop 127 m of climb (10–87 m raw). Two independent bare-earth models (NRCan's CDEM and the `dtm` layer of NRCan's elevation service) agree on about 45 m, and three surface models (Copernicus, NRCan's `dsm`, SRTM) all give 119–148 m, whatever the processing. No filter can take the buildings out of a surface model, so the source changed. The old samples are kept in `routes/cache/<id>.elevation-copernicus.json`, and the review report shows them for comparison.
+- **Processing, all measured in metres along the route:**
+  1. Runs of identical values (a nearest-cell DEM sampled more densely than its grid) become one point per cell, joined by straight lines, so the profile has no stairs.
+  2. Spikes: a Hampel filter replaces a value only when it's further from the median of the values within 1.5 cells either side than both 3 robust standard deviations and the DEM's error. One bad cell is outvoted; a steady climb is untouched.
+  3. A moving average two cells wide removes ups and downs shorter than the grid can represent (the sampling theorem).
+  4. Climb and descent use hysteresis: a change of direction only counts once the elevation has moved by more than the DEM's point-to-point error (2 m) plus its 1 m rounding, and every confirmed climb counts in full.
+  5. Missing values are bridged with straight lines and reported. With no data at all, the build stops rather than writing 0 m.
+- **Limitations.** The CDEM is built from older survey data at about 20 m resolution. NRCan publishes no single point-to-point accuracy for it, so 2 m is assumed. Bridges, tunnels and overpasses are shown at ground level, not at the height you actually run. Expect a few metres of uncertainty in the totals: the Sample Loop is 44 m with this method and 45–47 m from other bare-earth data.
+
+#### Turn suggestions
+
+Code: `scripts/lib/turns.ts` (pure, tested in `turns.test.ts`). Every candidate turn, with its decision and the reason, goes to `routes/review/<id>.md`. Lines marked "yes" need checking. None of it is verified.
+
+1. **Candidates:** points where the heading over 20 m before and after changes by 35° or more. Curves gentler than about a 65 m radius never qualify.
+2. **One manoeuvre:** candidates less than 40 m apart are grouped, because the app couldn't announce them separately anyway ("now" at 30 m, plus 10 m of grace past a turn). Each group is measured from its approach leg to its exit leg (30 m each):
+   - net change under 35° and the route stays within 20 m (about one Montréal street width) of the straight line: a **jog** (a crossing, lane or sidewalk change). Rejected, but reported.
+   - a clear net change and the route stays within 20 m of a single corner: **one turn** (consolidated).
+   - the exit is parallel to the approach but further to the side: a **dogleg**, or **round a short block**. Two instructions, the first move and the last.
+   - anything else: one instruction for the net change, flagged as **complex** (loops, ramps).
+3. **Kept even when it looks redundant:** a turn that stays on the same street (flagged "same street": a bend, or a turn that stays on it), and a small kink or jog where the named way changes (it may be a fork).
+4. **Start:** a turn within 30 m of the first point is folded into the start. The start street is named from the first leg only, and stays empty when no street matches there.
+5. **Street names:** matched per leg, only to OpenStreetMap streets running the same way as the route (within 35°), so a cross street at a corner doesn't win. A name change on its own never creates a turn.
 
 All routes so far were drawn with [On The Go Map](https://onthegomap.com) on OpenStreetMap data:
 
@@ -321,7 +347,7 @@ The live app at `/anyoneCanPace/` only changes when `main` is pushed. Unreleased
 
 - Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL). Vector tiles from the [Protomaps](https://protomaps.com) basemap build.
 - The sample route was drawn with [On The Go Map](https://onthegomap.com).
-- Elevation: [Open-Meteo](https://open-meteo.com) (CC BY 4.0), from the Copernicus DEM GLO-90, used at build time only.
+- Elevation: Natural Resources Canada, Canadian Digital Elevation Model, used at build time only. Contains information licensed under the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada).
 - Map label font: Noto Sans © The Noto Project Authors, SIL OFL 1.1 (`public/maps/fonts/OFL.txt`).
 - MapLibre GL JS (BSD-3-Clause) and PMTiles (BSD-3-Clause).
 - Weather: [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0), from Environment and Climate Change Canada's GEM model.
@@ -378,7 +404,7 @@ Take a charged phone outside to walk or jog the sample loop, after one online vi
 - [ ] **Approach:** from about 500 m away the banner says "Head to the start: N m" and the arrow and compass word point the right way on the north-up map. Within about 250 m it says "You're at the start".
 - [ ] **Start anyway:** start the route mid-way. Progress begins where you are, and earlier turns don't buzz.
 - [ ] **Turn cues:** every turn gives a heads-up at about 150 m and "now" at about 30 m, once each. Left is one buzz, right two, U-turn long (Android). With Sound on, the beeps match (iPhone too).
-- [ ] **Turn list accuracy:** note every turn that is missing, extra, in the wrong direction or has the wrong street, then fix them in `src/data/routes/sample-loop.json`. The first proposals (for example a "left on Rue Sainte-Catherine Ouest" 46 m after a Sainte-Catherine start, and three turns within 60 m on Rue de la Commune) need checking.
+- [ ] **Turn list accuracy:** note every turn that is missing, extra, in the wrong direction or has the wrong street, then fix them in `src/data/routes/sample-loop.json`. Start with the lines marked "yes" in `routes/review/sample-loop.md`: where the route really starts (the first 46 m have no street name), the dogleg at the Rue Mill junction on Rue de la Commune (2.15 and 2.23 km), the bend at 2.52 km and the Peel/Sherbrooke corner.
 - [ ] **Forward only:** stand still for a minute and walk on both sides of the street. The duck never goes backwards and the km done never drops.
 - [ ] **Start/finish ambiguity:** at the start, walk back and forth between the start and finish (37 m apart) before leaving. It must not say Finished.
 - [ ] **Off route:** walk one block off the route. Within about 5–10 s you see the dashed banner, the "?" on the duck, a buzz and "Going rogue?". "No" keeps guiding you back, "Yes" calms it, and returning to the route clears it.
