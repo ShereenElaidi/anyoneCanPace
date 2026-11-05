@@ -677,3 +677,28 @@ button {
     animation: none !important;
   }
 }
+
+/* ---------- A part of the app that didn't load ---------- */
+
+.load-failed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 24px 0;
+  padding: 16px;
+  border: var(--line) dashed var(--asphalt);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.load-failed__title {
+  color: var(--navy);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.load-failed__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

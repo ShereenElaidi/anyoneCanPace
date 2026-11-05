@@ -17,6 +17,7 @@ import duckImg from '../../assets/duck-runner.webp';
 import lostDuckImg from '../../assets/duck-runner-lost.webp';
 import { offsetPoint } from '../../nav/geo';
 import type { TrackFeature } from '../../nav/types';
+import { classifyMapError } from './mapErrors';
 import { BRAND, buildStyle } from './mapStyle';
 import { mapUrl, readSavedMap } from './offlineMap';
 
@@ -109,7 +110,11 @@ export default function RouteMap(props: RouteMapProps) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const duckRef = useRef<Marker | null>(null);
   const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<'device' | 'broken' | null>(null);
+  /** Some tiles didn't load (offline or flaky network): the map still works with what it has. */
+  const [tileTrouble, setTileTrouble] = useState(false);
+  /** Bumped by "try again" to rebuild the map from scratch. */
+  const [attempt, setAttempt] = useState(0);
   const [offline, setOffline] = useState<boolean | null>(null);
   const [userMoved, setUserMoved] = useState(false);
   const centredOnce = useRef(false);
@@ -140,8 +145,18 @@ export default function RouteMap(props: RouteMapProps) {
         m.touchZoomRotate.disableRotation();
         mapRef.current = m;
         m.on('dragstart', () => setUserMoved(true));
-        m.on('error', (e) => console.warn('Map error', e.error?.message));
+        let loaded = false;
+        m.on('error', (e) => {
+          const kind = classifyMapError(e as Parameters<typeof classifyMapError>[0], loaded);
+          console.warn('Map error', kind, e.error?.message);
+          if (disposed) return;
+          if (kind === 'tile') setTileTrouble(true);
+          else if (kind === 'fatal') setFailed('broken');
+        });
+        // The phone can drop the map's graphics context (memory pressure, backgrounding).
+        m.getCanvas().addEventListener('webglcontextlost', () => !disposed && setFailed('broken'));
         m.on('load', () => {
+          loaded = true;
           if (disposed) return;
           // The container may have settled its size after creation: fit the route again.
           m.resize();
@@ -164,7 +179,7 @@ export default function RouteMap(props: RouteMapProps) {
         });
       } catch (err) {
         console.warn('Map unavailable', err);
-        if (!disposed) setFailed(true);
+        if (!disposed) setFailed('device');
       }
     })();
     return () => {
@@ -174,8 +189,8 @@ export default function RouteMap(props: RouteMapProps) {
       map?.remove();
       mapRef.current = null;
     };
-    // The map is created once per route; later prop changes are applied below.
-  }, [track]);
+    // The map is created once per route (and per retry); later prop changes are applied below.
+  }, [track, attempt]);
 
   // Covered vs remaining line.
   useEffect(() => {
@@ -247,10 +262,26 @@ export default function RouteMap(props: RouteMapProps) {
     if (map && !duck) map.fitBounds(bbox, { padding: 28, duration: reducedMotion() ? 0 : 400 });
   };
 
+  const retry = () => {
+    setFailed(null);
+    setTileTrouble(false);
+    setReady(false);
+    centredOnce.current = false;
+    setAttempt((a) => a + 1);
+  };
+
   if (failed) {
     return (
       <div className="route-map route-map--failed" role="note">
-        The street map can’t be shown on this device. Directions and distances still work.
+        <p>
+          {failed === 'device'
+            ? 'The street map can’t be shown on this device.'
+            : 'The street map stopped working.'}{' '}
+          Directions and distances still work.
+        </p>
+        <button type="button" className="btn btn--secondary btn--small" onClick={retry}>
+          TRY MAP AGAIN
+        </button>
       </div>
     );
   }
@@ -258,8 +289,15 @@ export default function RouteMap(props: RouteMapProps) {
   return (
     <div className="route-map-wrap">
       <div className="route-map" ref={containerRef} role="region" aria-label={label} />
-      {offline === false && (
-        <p className="route-map__badge">Online map (not saved for offline)</p>
+      {tileTrouble ? (
+        <p className="route-map__badge route-map__badge--warn" role="status">
+          Some map areas didn’t load.{' '}
+          <button type="button" className="route-map__retry" onClick={retry}>
+            Retry
+          </button>
+        </p>
+      ) : (
+        offline === false && <p className="route-map__badge">Online map (not saved for offline)</p>
       )}
       {userMoved && (
         <button type="button" className="btn btn--small route-map__recenter" onClick={recenter}>

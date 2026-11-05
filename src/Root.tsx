@@ -1,12 +1,13 @@
-import { lazy, Suspense, useState } from 'react';
+import { useState } from 'react';
 import App from './App';
+import { Lazy, LoadFailed } from './components/LoadBoundary';
 import { ModePicker } from './components/ModePicker';
 import type { AppMode } from './lib/prefs';
 
-// The 6K mode (and its map library) loads only when it is opened, so the
-// timer's first load stays as small as before.
-const SixKMode = lazy(() => import('./sixk/SixKMode'));
-const DashboardMode = lazy(() => import('./dashboard/DashboardMode'));
+// The route library (and its map library) and the dashboard load only when
+// opened, so the timer's first load stays as small as before.
+const loadRoutes = () => import('./sixk/SixKMode');
+const loadDashboard = () => import('./dashboard/DashboardMode');
 
 /**
  * Always opens on the mode picker ("What are we doing today?").
@@ -17,18 +18,20 @@ export default function Root() {
   const toPicker = () => setMode(null);
 
   if (mode === 'timer') return <App onSwitchMode={toPicker} />;
-  if (mode === 'sixk') {
+  if (mode === 'sixk' || mode === 'dashboard') {
+    const routes = mode === 'sixk';
     return (
-      <Suspense fallback={<p className="loading">Loading routes…</p>}>
-        <SixKMode onSwitchMode={toPicker} />
-      </Suspense>
-    );
-  }
-  if (mode === 'dashboard') {
-    return (
-      <Suspense fallback={<p className="loading">Loading the dashboard…</p>}>
-        <DashboardMode onSwitchMode={toPicker} />
-      </Suspense>
+      <Lazy
+        key={mode}
+        load={routes ? loadRoutes : loadDashboard}
+        props={{ onSwitchMode: toPicker }}
+        loading={<p className="loading">{routes ? 'Loading routes…' : 'Loading the dashboard…'}</p>}
+        failed={(retry) => (
+          <div className="app">
+            <LoadFailed what={routes ? 'The route library' : 'The dashboard'} onRetry={retry} onBack={toPicker} />
+          </div>
+        )}
+      />
     );
   }
   return <ModePicker onPick={setMode} />;

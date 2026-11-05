@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Lazy } from '../components/LoadBoundary';
 import { GEO_ERROR_TEXT, useGeolocation } from '../hooks/useGeolocation';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { canVibrate, unlockAudio } from '../lib/cues';
@@ -12,7 +13,7 @@ import type { LoadedRoute } from './data';
 import { TurnIcon } from './TurnIcon';
 import { useRouteNav } from './useRouteNav';
 
-const RouteMap = lazy(() => import('./map/RouteMap'));
+const loadRouteMap = () => import('./map/RouteMap');
 
 interface Props {
   route: LoadedRoute;
@@ -128,18 +129,28 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
       {geo.error && !gpsProblem && <p className="notice notice--warn">{GEO_ERROR_TEXT[geo.error]}</p>}
 
       <div className="follow__map">
-        <Suspense fallback={<p className="route-map route-map--loading">Loading map…</p>}>
-          <RouteMap
-            track={track}
-            bbox={data.bbox}
-            label={`Map of ${data.name}. The duck shows your position.`}
-            follow
-            covered={split?.covered}
-            remaining={split?.remaining}
-            duck={duck}
-            fix={fix ? { lon: fix.lon, lat: fix.lat, accuracyM: fix.accuracyM } : null}
-          />
-        </Suspense>
+        <Lazy
+          load={loadRouteMap}
+          props={{
+            track,
+            bbox: data.bbox,
+            label: `Map of ${data.name}. The duck shows your position.`,
+            follow: true,
+            covered: split?.covered,
+            remaining: split?.remaining,
+            duck,
+            fix: fix ? { lon: fix.lon, lat: fix.lat, accuracyM: fix.accuracyM } : null,
+          }}
+          loading={<p className="route-map route-map--loading">Loading map…</p>}
+          failed={(retry) => (
+            <div className="route-map route-map--failed" role="note">
+              <p>The map didn’t load. Directions and distances still work.</p>
+              <button type="button" className="btn btn--secondary btn--small" onClick={retry}>
+                TRY MAP AGAIN
+              </button>
+            </div>
+          )}
+        />
       </div>
 
       <div className="follow__bar">

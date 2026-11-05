@@ -66,22 +66,23 @@ export function OfflineMapCard() {
   const status = useOfflineMap();
 
   // Save automatically the first time, unless offline or in data-saver mode.
+  const outdated = status.state === 'saved' && !!status.outdated;
   useEffect(() => {
-    if (status.state === 'missing' && shouldAutoSave()) void saveMap();
-  }, [status.state]);
+    if ((status.state === 'missing' || outdated) && shouldAutoSave()) void saveMap();
+  }, [status.state, outdated]);
 
-  const canSave = status.state === 'missing' || status.state === 'error';
+  const canSave = status.state === 'missing' || status.state === 'error' || outdated;
   return (
     <section className={`map-status map-status--${status.state}`} aria-live="polite">
       <p>
-        <span className="map-status__tag">{status.state === 'saved' ? 'OFFLINE ✓' : 'MAP'}</span> {mapStatusText(status)}
+        <span className="map-status__tag">{status.state === 'saved' && !outdated ? 'OFFLINE ✓' : 'MAP'}</span> {mapStatusText(status)}
       </p>
       {status.state === 'saving' && (
         <progress max={1} value={status.fraction ?? undefined} aria-label="Map download progress" />
       )}
       {canSave && (
         <button type="button" className="btn btn--secondary btn--small" onClick={() => void saveMap()}>
-          SAVE MAP FOR OFFLINE
+          {outdated ? 'UPDATE OFFLINE MAP' : 'SAVE MAP FOR OFFLINE'}
         </button>
       )}
     </section>

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { Lazy } from '../components/LoadBoundary';
 import { formatKm, turnPhrase } from '../nav/banner';
 import { ElevationProfile } from './ElevationProfile';
 import advisoriesFile from '../data/advisories.json';
@@ -9,7 +9,7 @@ import type { LoadedRoute } from './data';
 import { KIND_LABEL } from './Library';
 import { TurnIcon } from './TurnIcon';
 
-const RouteMap = lazy(() => import('./map/RouteMap'));
+const loadRouteMap = () => import('./map/RouteMap');
 
 interface Props {
   route: LoadedRoute;
@@ -42,9 +42,19 @@ export function RoutePage({ route, onStart }: Props) {
       </dl>
 
       <div className="route-page__map">
-        <Suspense fallback={<p className="route-map route-map--loading">Loading map…</p>}>
-          <RouteMap track={track} bbox={data.bbox} label={`Map of ${data.name}`} />
-        </Suspense>
+        <Lazy
+          load={loadRouteMap}
+          props={{ track, bbox: data.bbox, label: `Map of ${data.name}` }}
+          loading={<p className="route-map route-map--loading">Loading map…</p>}
+          failed={(retry) => (
+            <div className="route-map route-map--failed" role="note">
+              <p>The map didn’t load. You can still start the route.</p>
+              <button type="button" className="btn btn--secondary btn--small" onClick={retry}>
+                TRY MAP AGAIN
+              </button>
+            </div>
+          )}
+        />
       </div>
 
       <button type="button" className="btn btn--primary btn--block" onClick={onStart}>

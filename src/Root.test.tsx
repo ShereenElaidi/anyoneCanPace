@@ -256,6 +256,39 @@ describe('6K Route Library', () => {
     Reflect.deleteProperty(navigator, 'vibrate');
   });
 
+  it('GPS too rough mid-route: a prominent warning, and the frozen directions are marked out of date', async () => {
+    const route = sampleRoute();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(1_000_000);
+    await openLibrary();
+    tap(/Sample Loop/);
+    fireEvent.click(await screen.findByRole('button', { name: 'START ROUTE' }));
+    let t = 1_001_000;
+    gps(route.points[0].lat, route.points[0].lon, t);
+    tap('START ROUTE');
+    for (let d = 0; d <= 200; d += 3) {
+      t += 1000;
+      const p = pointAt(route, d);
+      gps(p.lat, p.lon, t);
+    }
+    expect(screen.queryByRole('alert')).toBeNull();
+    // 12 s of fixes only good to ±150 m.
+    for (let i = 0; i < 12; i++) {
+      t += 1000;
+      const p = pointAt(route, 200 + i * 3);
+      gps(p.lat, p.lon, t, 150);
+    }
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toMatch(/GPS too rough\. Location is only accurate to about 150 m/);
+    expect(screen.getByRole('region', { name: 'Directions (may be out of date)' })).toBeTruthy();
+    // A good fix again: the warning goes away.
+    t += 1000;
+    const p = pointAt(route, 240);
+    gps(p.lat, p.lon, t);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Directions' })).toBeTruthy();
+  });
+
   it('starting away from the route: the duck looks confused until it joins the route', async () => {
     const route = sampleRoute();
     vi.useFakeTimers({ toFake: ['Date'] });

@@ -27,7 +27,10 @@ function checkedRunTime() {
 async function openDashboard() {
   render(<Root />);
   fireEvent.click(screen.getByRole('button', { name: /Daily Dashboard/ }));
-  return screen.findByRole('heading', { name: 'Daily Dashboard' });
+  const heading = await screen.findByRole('heading', { name: 'Daily Dashboard' });
+  // The lazy mode sits inside a retry boundary: let its first effects (the forecast check) settle.
+  await act(async () => {});
+  return heading;
 }
 
 beforeEach(() => {
