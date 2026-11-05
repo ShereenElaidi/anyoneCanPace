@@ -36,7 +36,7 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
 - **Library**: each route shows its name, distance, climb and descent, and a small outline.
 - **Route page**: map preview, stats, elevation profile, turn list, notes, advisories and **START ROUTE**.
 - **Follow view**:
-  - A street map with the duck at your place on the route. It faces your direction of travel. A small blue dot with an accuracy halo shows the raw GPS fix.
+  - A street map with the duck at your GPS position, always (on route, off route and going rogue), facing the route's direction. A blue accuracy halo around it shows how precise the fix is. Off route, the map keeps the duck and your place on the route both in view.
   - A direction banner, always with text: "Right on Boulevard Saint-Laurent in 150 m", "Continue on … for 1.2 km", "Left now on …".
   - One stats line: "3.2 km done · 2.8 km to go".
   - No timer and no progress ring.
@@ -53,7 +53,7 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
   - If one jittery fix cuts a sharp corner and jumps just past a turn (up to 60 m, no gap), the "now" cue still fires, a moment late rather than never.
 - **Off route**:
   - Triggers after about 5 s more than ~30 m from the route.
-  - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, GEWWW AWAEYYY!** calms the banner (the duck stays confused until you're back on the route); **NO, GUIDE ME BACK** keeps the warning. Pressing Start while you're more than 30 m from the route also shows the confused duck (on your GPS dot, with "Head to the route") until you join it, without the buzz or the dialog.
+  - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, GEWWW AWAEYYY!** calms the banner (the duck stays confused until you're back on the route); **GUIDE ME BACK PLS, I WAS STOOOPID** keeps the warning. Pressing Start while you're more than 30 m from the route also shows the confused duck (on your GPS dot, with "Head to the route") until you join it, without the buzz or the dialog.
   - Answer yes and the app stops nagging until you're back on the route.
 - **Finish**: triggers near the last point, only after about 90 % of the distance is covered.
 - **Ending a route** needs **MENU → END ROUTE** and a second tap. The phone's back gesture opens that menu instead of leaving mid-route.

@@ -41,16 +41,20 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
   const following = state.status === 'following';
   const started = state.status !== 'approach';
 
-  // Duck: on the route at the current progress once joined, otherwise at the GPS fix.
+  // Duck: always at your GPS position (on route, off route, going rogue). Once joined, it faces the
+  // route's direction at your progress, and that point is kept in view while you're off route.
   const duck = useMemo(() => {
-    if (started && state.anchored) {
-      const p = pointAt(prepared, state.progressM);
-      const b = bearingAt(prepared, Math.min(state.progressM, prepared.lengthM - 1));
-      return { lon: p.lon, lat: p.lat, facingLeft: b > 180, lost: duckLost(state) };
-    }
-    // Not joined yet: the duck is on the GPS dot, confused if the route has started and it's too far away.
-    if (state.lastFix) return { lon: state.lastFix.lon, lat: state.lastFix.lat, facingLeft: false, lost: duckLost(state) };
-    return null;
+    const onRoute = started && state.anchored ? pointAt(prepared, state.progressM) : null;
+    const at = state.lastFix ?? onRoute;
+    if (!at) return null;
+    const facingLeft = onRoute ? bearingAt(prepared, Math.min(state.progressM, prepared.lengthM - 1)) > 180 : false;
+    return {
+      lon: at.lon,
+      lat: at.lat,
+      facingLeft,
+      lost: duckLost(state),
+      routePoint: onRoute ? { lon: onRoute.lon, lat: onRoute.lat } : undefined,
+    };
   }, [started, state, prepared]);
 
   const split = useMemo(
@@ -182,7 +186,7 @@ function RogueDialog(props: { open: boolean; distanceM: number | null; onYes: ()
           YES, GEWWW AWAEYYY!
         </button>
         <button type="button" className="btn btn--secondary btn--block" onClick={props.onNo}>
-          NO, GUIDE ME BACK
+          GUIDE ME BACK PLS, I WAS STOOOPID
         </button>
       </div>
     </dialog>

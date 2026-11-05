@@ -12,11 +12,12 @@ vi.mock('virtual:pwa-register/react', () => ({
 
 // MapLibre needs WebGL, which jsdom doesn't have: stub the map at its boundary.
 vi.mock('./sixk/map/RouteMap', () => ({
-  default: (props: { label: string; duck?: { lost: boolean } | null; covered?: unknown[] }) => (
+  default: (props: { label: string; duck?: { lost: boolean; lat: number; lon: number } | null; covered?: unknown[] }) => (
     <div
       data-testid="route-map"
       aria-label={props.label}
       data-duck={props.duck ? (props.duck.lost ? 'lost' : 'shown') : 'none'}
+      data-duck-at={props.duck ? `${props.duck.lat.toFixed(5)},${props.duck.lon.toFixed(5)}` : ''}
       data-covered={props.covered ? props.covered.length : 0}
     />
   ),
@@ -226,10 +227,19 @@ describe('6K Route Library', () => {
     expect(screen.getByText('Going rogue?')).toBeTruthy();
     expect(document.querySelector('.banner__primary')?.textContent).toMatch(/^Off route/);
     expect(screen.getByTestId('route-map').getAttribute('data-duck')).toBe('lost');
+    // The duck is where you are, not left behind on the route.
+    const duckAt = () => screen.getByTestId('route-map').getAttribute('data-duck-at');
+    expect(duckAt()).toBe(`${away.lat.toFixed(5)},${away.lon.toFixed(5)}`);
+    expect(screen.getByRole('button', { name: 'GUIDE ME BACK PLS, I WAS STOOOPID' })).toBeTruthy();
     tap('YES, GEWWW AWAEYYY!');
     expect(document.querySelector('.banner__primary')?.textContent).toBe('Going rogue');
-    // Going rogue calms the banner, but the duck stays the confused one until back on the route.
+    // Going rogue calms the banner, but the duck stays the confused one until back on the route,
+    // and keeps following you.
     expect(screen.getByTestId('route-map').getAttribute('data-duck')).toBe('lost');
+    const further = offsetPoint(away, 0, 50);
+    t += 1000;
+    gps(further.lat, further.lon, t);
+    expect(duckAt()).toBe(`${further.lat.toFixed(5)},${further.lon.toFixed(5)}`);
 
     // Back on the route.
     t += 1000;

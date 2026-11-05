@@ -50,7 +50,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - `src/data/advisories.json` is hand-edited by pull request. `src/advisories/notices.ts` is pure (filtering by route and date, expiry, validation). A test validates the real file. Always show "Last checked".
 - Automated sources (a road-closures file from a scheduled Action, Environment Canada warnings) plug in as more `Notice[]` lists with a `kind`. The closures Action is **researched, not built**: ask before adding workflow files (they need the `workflow` scope and the user's go-ahead). Montréal `info-travaux` facts and noise numbers are in the README.
 - Credit "© OpenStreetMap contributors" and the route's source (e.g. On The Go Map) in the UI. Raw GPX stays in `routes/`; only processed files ship.
-- The duck is the 6K position marker (no progress ring there). Banner text always states the direction; icons and colours are extras.
+- The duck is the 6K position marker (no progress ring there) and always sits at the GPS fix, off route too; off route the camera frames it with the route point at current progress. Banner text always states the direction; icons and colours are extras.
 
 ## Paths and deploy
 - GitHub Pages project site. `vite.config.ts` derives `base` (`/anyoneCanPace/`) from `GITHUB_REPOSITORY` or the git remote. In `index.html` reference public files as `/file.png`, never `%BASE_URL%` (Vite adds the base itself).

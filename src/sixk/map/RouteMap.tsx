@@ -58,8 +58,10 @@ export interface DuckMarker {
   lon: number;
   lat: number;
   facingLeft: boolean;
-  /** Off route: shows a "?" badge. */
+  /** Off route: the confused duck with a "?" badge. */
   lost: boolean;
+  /** Your place on the route (current progress). Off route, the camera keeps it in view next to the duck. */
+  routePoint?: { lon: number; lat: number };
 }
 
 export interface RouteMapProps {
@@ -219,12 +221,13 @@ export default function RouteMap(props: RouteMapProps) {
       const first = !centredOnce.current;
       centredOnce.current = true;
       const duration = reducedMotion() || first ? 0 : 600;
-      if (duck.lost && fix) {
-        // Off route: keep both the duck (on the route) and the pacer (blue dot) in view.
+      const back = duck.routePoint;
+      if (duck.lost && back) {
+        // Off route: keep both the duck (you) and your place on the route in view.
         map.fitBounds(
           [
-            [Math.min(duck.lon, fix.lon), Math.min(duck.lat, fix.lat)],
-            [Math.max(duck.lon, fix.lon), Math.max(duck.lat, fix.lat)],
+            [Math.min(duck.lon, back.lon), Math.min(duck.lat, back.lat)],
+            [Math.max(duck.lon, back.lon), Math.max(duck.lat, back.lat)],
           ],
           { padding: 60, maxZoom: 16.5, duration },
         );
@@ -236,7 +239,7 @@ export default function RouteMap(props: RouteMapProps) {
         duration,
       });
     }
-  }, [ready, duck, fix, follow, userMoved]);
+  }, [ready, duck, follow, userMoved]);
 
   const recenter = () => {
     setUserMoved(false);
