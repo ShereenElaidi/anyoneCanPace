@@ -53,7 +53,7 @@ describe('Daily Dashboard', () => {
     expect(url).toContain('api.open-meteo.com/v1/gem');
     expect(url).toContain('latitude=45.5017');
 
-    // Default run time: the next whole hour.
+    // Default run time: the next 10 a.m.
     expect((screen.getByLabelText('Run starts') as HTMLSelectElement).selectedOptions[0].textContent).toBe('Today 10 a.m.');
     expect(screen.getByText(/^Feels like/)).toBeTruthy();
     const wear = screen.getByRole('region', { name: 'What to wear' });
@@ -105,6 +105,13 @@ describe('Daily Dashboard', () => {
     await openDashboard();
     expect(screen.getByText('Check outside')).toBeTruthy();
     expect(screen.getByText(/doesn’t cover the coming hours/)).toBeTruthy();
+  });
+
+  it('after 10 a.m. the default is tomorrow 10 a.m.', async () => {
+    vi.setSystemTime(est(4, 13));
+    await openDashboard();
+    await screen.findByText(/^Updated /);
+    expect((screen.getByLabelText('Run starts') as HTMLSelectElement).selectedOptions[0].textContent).toBe('Tomorrow 10 a.m.');
   });
 
   it('choosing another run time updates the outfit; the usual start hour is remembered', async () => {

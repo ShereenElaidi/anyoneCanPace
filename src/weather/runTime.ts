@@ -6,7 +6,10 @@ import { hourAt, MONTREAL, sunFor, type Forecast } from './forecast';
 import { RUN_DURATION_MIN, type Light, type OutfitInput } from './outfit';
 import { estimateUvIndex, solarElevationDeg } from './sun';
 
-/** Earliest and latest start hours that count as "sensible" for a default. */
+/** Default run start (local hour) when the pacer hasn't saved a usual start. */
+export const DEFAULT_RUN_HOUR = 10;
+
+/** Earliest and latest start hours that count as "sensible" if 10:00 isn't in the forecast. */
 export const EARLIEST_RUN_HOUR = 6;
 export const LATEST_RUN_HOUR = 21;
 
@@ -29,17 +32,16 @@ export function localDate(at: number): string {
 }
 
 /**
- * Default run start: the next occurrence of the pacer's usual start hour if
- * they saved one, otherwise the next whole hour between 6:00 and 21:00.
- * Returns null when the forecast has no upcoming hours.
+ * Default run start: the next 10:00 (or the pacer's saved usual start hour
+ * instead). If the forecast doesn't reach it, the next whole hour between
+ * 6:00 and 21:00. Returns null when the forecast has no upcoming hours.
  */
 export function defaultRunTime(f: Forecast, now: number, usualHour: number | null): number | null {
   const upcoming = f.hours.map((h) => h.at).filter((at) => at >= now);
   if (!upcoming.length) return null;
-  if (usualHour !== null) {
-    const usual = upcoming.find((at) => localHour(at) === usualHour);
-    if (usual !== undefined) return usual;
-  }
+  const wanted = usualHour ?? DEFAULT_RUN_HOUR;
+  const next = upcoming.find((at) => localHour(at) === wanted);
+  if (next !== undefined) return next;
   return upcoming.find((at) => localHour(at) >= EARLIEST_RUN_HOUR && localHour(at) <= LATEST_RUN_HOUR) ?? upcoming[0];
 }
 

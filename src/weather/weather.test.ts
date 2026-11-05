@@ -8,7 +8,7 @@ import { loadForecast, loadUsualHour, saveForecast, saveUsualHour } from './cach
 const f = parseGem(fixture, 1_793_800_000_000);
 
 /** Epoch ms for a Montréal local time on 2026-11-04 (EST, UTC−5). */
-const est = (day: number, hour: number) => Date.UTC(2026, 10, day, hour + 5);
+const est = (day: number, hour: number, min = 0) => Date.UTC(2026, 10, day, hour + 5, min);
 
 describe('weather request', () => {
   it('asks the GEM endpoint for fixed Montréal coordinates, never the user’s', () => {
@@ -64,12 +64,16 @@ describe('parsing a recorded GEM forecast', () => {
 });
 
 describe('run time', () => {
-  it('defaults to the next whole hour in the daytime window', () => {
-    expect(defaultRunTime(f, est(4, 9) + 10 * 60_000, null)).toBe(est(4, 10));
+  it('defaults to the next 10 a.m.: today before 10, tomorrow after', () => {
+    expect(defaultRunTime(f, est(4, 7, 30), null)).toBe(est(4, 10));
+    expect(defaultRunTime(f, est(4, 9, 59), null)).toBe(est(4, 10));
+    expect(defaultRunTime(f, est(4, 10, 1), null)).toBe(est(5, 10));
+    expect(defaultRunTime(f, est(4, 22, 1), null)).toBe(est(5, 10));
   });
 
-  it('late at night, defaults to the next morning, not 2 a.m.', () => {
-    expect(localHour(defaultRunTime(f, est(4, 22) + 60_000, null)!)).toBe(6);
+  it('if the forecast no longer reaches 10 a.m., the next sensible hour', () => {
+    expect(localHour(defaultRunTime(f, est(5, 11, 1), null)!)).toBe(12); // only today's afternoon is left
+    expect(localHour(defaultRunTime(f, est(5, 22, 1), null)!)).toBe(23); // late: whatever is left
   });
 
   it('uses the pacer’s usual start hour when saved', () => {
