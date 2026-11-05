@@ -140,6 +140,9 @@ export default function RouteMap(props: RouteMapProps) {
         m.on('error', (e) => console.warn('Map error', e.error?.message));
         m.on('load', () => {
           if (disposed) return;
+          // The container may have settled its size after creation: fit the route again.
+          m.resize();
+          if (!follow) m.fitBounds(bbox, { padding: 28, duration: 0 });
           addRouteLayers(m, track);
           const coords = track.geometry.coordinates;
           new Marker({ element: makeEl('map-pin map-pin--start', '<span>START</span>') })
@@ -208,13 +211,25 @@ export default function RouteMap(props: RouteMapProps) {
     if (follow && !userMoved) {
       const first = !centredOnce.current;
       centredOnce.current = true;
+      const duration = reducedMotion() || first ? 0 : 600;
+      if (duck.lost && fix) {
+        // Off route: keep both the duck (on the route) and the pacer (blue dot) in view.
+        map.fitBounds(
+          [
+            [Math.min(duck.lon, fix.lon), Math.min(duck.lat, fix.lat)],
+            [Math.max(duck.lon, fix.lon), Math.max(duck.lat, fix.lat)],
+          ],
+          { padding: 60, maxZoom: 16.5, duration },
+        );
+        return;
+      }
       map.easeTo({
         center: [duck.lon, duck.lat],
         zoom: first ? 16.5 : map.getZoom(),
-        duration: reducedMotion() || first ? 0 : 600,
+        duration,
       });
     }
-  }, [ready, duck, follow, userMoved]);
+  }, [ready, duck, fix, follow, userMoved]);
 
   const recenter = () => {
     setUserMoved(false);

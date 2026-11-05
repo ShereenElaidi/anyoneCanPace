@@ -246,6 +246,7 @@ describe('6K Route Library', () => {
     await openLibrary();
     tap(/Sample Loop/);
     fireEvent.click(await screen.findByRole('button', { name: 'START ROUTE' }));
+    expect(screen.getByText('No GPS yet')).toBeTruthy();
     expect(screen.getByText(/Location is blocked/)).toBeTruthy();
   });
 

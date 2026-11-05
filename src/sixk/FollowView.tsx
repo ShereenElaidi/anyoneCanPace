@@ -3,7 +3,7 @@ import { GEO_ERROR_TEXT, useGeolocation } from '../hooks/useGeolocation';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { canVibrate, unlockAudio } from '../lib/cues';
 import { loadPrefs, savePrefs, type Prefs } from '../lib/prefs';
-import { describe as describeBanner, statsLine } from '../nav/banner';
+import { describe as describeBanner, statsLine, type Banner } from '../nav/banner';
 import { approachInfo } from '../nav/tracker';
 import { bearingAt, pointAt, splitAt } from '../nav/route';
 import type { LoadedRoute } from './data';
@@ -33,7 +33,11 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
     if (menuRequest > 0) setMenuOpen(true);
   }, [menuRequest]);
 
-  const banner = describeBanner(prepared, state, data.startStreet);
+  // No fix because GPS is blocked or failing: say so in the banner itself.
+  const gpsProblem = geo.error && !state.lastFix ? geo.error : null;
+  const banner: Banner = gpsProblem
+    ? { icon: 'gps', primary: 'No GPS yet', secondary: GEO_ERROR_TEXT[gpsProblem], tone: 'warning' }
+    : describeBanner(prepared, state, data.startStreet);
   const following = state.status === 'following';
   const started = state.status !== 'approach';
 
@@ -73,7 +77,7 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
       </section>
 
       {started && <p className="follow__stats">{statsLine(prepared, state)}</p>}
-      {geo.error && <p className="notice notice--warn">{GEO_ERROR_TEXT[geo.error]}</p>}
+      {geo.error && !gpsProblem && <p className="notice notice--warn">{GEO_ERROR_TEXT[geo.error]}</p>}
 
       <div className="follow__map">
         <Suspense fallback={<p className="route-map route-map--loading">Loading map…</p>}>
