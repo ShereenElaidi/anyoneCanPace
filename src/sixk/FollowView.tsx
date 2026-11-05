@@ -178,7 +178,7 @@ function RogueDialog(props: { open: boolean; distanceM: number | null; onYes: ()
           on purpose? We’ll stop nagging until you’re back on it.
         </p>
         <button type="button" className="btn btn--primary btn--block" onClick={props.onYes}>
-          YES, LET ME BE
+          YES, GEWWW AWAEYYY!
         </button>
         <button type="button" className="btn btn--secondary btn--block" onClick={props.onNo}>
           NO, GUIDE ME BACK

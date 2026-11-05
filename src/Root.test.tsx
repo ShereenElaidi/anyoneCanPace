@@ -223,8 +223,10 @@ describe('6K Route Library', () => {
     expect(screen.getByText('Going rogue?')).toBeTruthy();
     expect(document.querySelector('.banner__primary')?.textContent).toMatch(/^Off route/);
     expect(screen.getByTestId('route-map').getAttribute('data-duck')).toBe('lost');
-    tap('YES, LET ME BE');
+    tap('YES, GEWWW AWAEYYY!');
     expect(document.querySelector('.banner__primary')?.textContent).toBe('Going rogue');
+    // Going rogue calms the banner, but the duck stays the confused one until back on the route.
+    expect(screen.getByTestId('route-map').getAttribute('data-duck')).toBe('lost');
 
     // Back on the route.
     t += 1000;

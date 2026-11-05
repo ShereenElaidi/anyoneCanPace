@@ -14,6 +14,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { FetchSource, PMTiles, Protocol, type RangeResponse, type Source } from 'pmtiles';
 import duckImg from '../../assets/duck-runner.webp';
+import lostDuckImg from '../../assets/duck-runner-lost.webp';
 import { offsetPoint } from '../../nav/geo';
 import type { TrackFeature } from '../../nav/types';
 import { BRAND, buildStyle } from './mapStyle';
@@ -149,7 +150,13 @@ export default function RouteMap(props: RouteMapProps) {
             .setLngLat(coords[0])
             .addTo(m);
           duckRef.current = new Marker({
-            element: makeEl('map-duck', `<img src="${duckImg}" alt="" draggable="false"><span class="map-duck__lost">?</span>`),
+            // Both drawings are in the marker from the start, so going off route swaps instantly (and offline).
+            element: makeEl(
+              'map-duck',
+              `<img class="map-duck__img" src="${duckImg}" alt="" draggable="false">` +
+                `<img class="map-duck__img map-duck__img--lost" src="${lostDuckImg}" alt="" draggable="false">` +
+                '<span class="map-duck__lost">?</span>',
+            ),
           });
           setReady(true);
         });

@@ -484,6 +484,16 @@
   display: block;
 }
 
+/* Off route (going rogue included): the confused duck replaces the running one. */
+.map-duck__img--lost,
+.map-duck.is-lost .map-duck__img:not(.map-duck__img--lost) {
+  display: none;
+}
+
+.map-duck.is-lost .map-duck__img--lost {
+  display: block;
+}
+
 .map-pin {
   padding: 2px 6px;
   border: 2px solid var(--asphalt);

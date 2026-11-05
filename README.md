@@ -53,7 +53,7 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
   - If one jittery fix cuts a sharp corner and jumps just past a turn (up to 60 m, no gap), the "now" cue still fires, a moment late rather than never.
 - **Off route**:
   - Triggers after about 5 s more than ~30 m from the route.
-  - You get a dashed warning banner that points back toward the route, a "?" on the duck, a buzz, and **"Going rogue?"**.
+  - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, GEWWW AWAEYYY!** calms the banner (the duck stays confused until you're back on the route); **NO, GUIDE ME BACK** keeps the warning.
   - Answer yes and the app stops nagging until you're back on the route.
 - **Finish**: triggers near the last point, only after about 90 % of the distance is covered.
 - **Ending a route** needs **MENU → END ROUTE** and a second tap. The phone's back gesture opens that menu instead of leaving mid-route.
@@ -408,7 +408,7 @@ Take a charged phone outside to walk or jog the sample loop, after one online vi
 - [ ] **Turn list accuracy:** note every turn that is missing, extra, in the wrong direction or has the wrong street, then fix them in `src/data/routes/sample-loop.json`. Start with the lines marked "yes" in `routes/review/sample-loop.md`: where the route really starts (the first 46 m have no street name), the dogleg at the Rue Mill junction on Rue de la Commune (2.15 and 2.23 km), the bend at 2.52 km and the Peel/Sherbrooke corner.
 - [ ] **Forward only:** stand still for a minute and walk on both sides of the street. The duck never goes backwards and the km done never drops.
 - [ ] **Start/finish ambiguity:** at the start, walk back and forth between the start and finish (37 m apart) before leaving. It must not say Finished.
-- [ ] **Off route:** walk one block off the route. Within about 5–10 s you see the dashed banner, the "?" on the duck, a buzz and "Going rogue?". "No" keeps guiding you back, "Yes" calms it, and returning to the route clears it.
+- [ ] **Off route:** walk one block off the route. Within about 5–10 s you see the dashed banner, the confused duck with its "?", a buzz and "Going rogue?". "No" keeps guiding you back, "Yes" calms it, and returning to the route clears it.
 - [ ] **GPS gap:** lock the phone for a minute while walking past a turn, then unlock. The duck jumps ahead, with no burst of old buzzes.
 - [ ] **Finish:** "Finished!" appears at the finish, not before about 90 % of the distance.
 - [ ] **Readability:** the banner is readable at arm's length in sunlight while jogging. The thick navy route and the dashed gold "covered" line are easy to tell apart.
