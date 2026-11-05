@@ -11,7 +11,12 @@ import { clampSeconds, type Phase } from './timer/engine';
 
 const STATUS_LABEL = { ready: 'READY', active: 'ACTIVE', paused: 'PAUSED' } as const;
 
-export default function App() {
+interface AppProps {
+  /** Shows "Switch mode" in Settings. Omitted when the timer runs on its own. */
+  onSwitchMode?: () => void;
+}
+
+export default function App({ onSwitchMode }: AppProps = {}) {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -172,6 +177,7 @@ export default function App() {
         onToggleVibration={() => setPrefs((p) => ({ ...p, vibration: !p.vibration }))}
         onReset={timer.reset}
         onUpdate={() => void updateServiceWorker(true)}
+        onSwitchMode={onSwitchMode}
       />
     </div>
   );

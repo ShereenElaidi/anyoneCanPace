@@ -87,3 +87,15 @@ describe('banner text', () => {
     expect(describeBanner(route, state).primary).toBe('Finished! 2.0 km');
   });
 });
+
+describe('splitting the line for covered vs remaining', () => {
+  it('splits at the progress point', async () => {
+    const { splitAt } = await import('./route');
+    const { covered, remaining } = splitAt(route, 1500);
+    expect(covered).toHaveLength(3);
+    expect(remaining).toHaveLength(2);
+    expect(covered.at(-1)).toEqual(remaining[0]);
+    const mid = { lon: remaining[0][0], lat: remaining[0][1] };
+    expect(distanceM(corner, mid)).toBeCloseTo(500, 0);
+  });
+});

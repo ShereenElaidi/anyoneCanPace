@@ -104,3 +104,18 @@ export function nearestBetween(route: PreparedRoute, p: LatLon, fromM: number, t
   }
   return best;
 }
+
+/**
+ * Splits the route at distance d into the covered part and the part still to
+ * go, as GeoJSON [lon, lat] lines (both include the split point).
+ */
+export function splitAt(route: PreparedRoute, d: number): { covered: [number, number][]; remaining: [number, number][] } {
+  const at = Math.max(0, Math.min(route.lengthM, d));
+  const i = segmentIndexAt(route, at);
+  const p = pointAt(route, at);
+  const mid: [number, number] = [p.lon, p.lat];
+  const toCoord = (q: LatLon): [number, number] => [q.lon, q.lat];
+  const covered = [...route.points.slice(0, i + 1).map(toCoord), mid];
+  const remaining = [mid, ...route.points.slice(i + 1).map(toCoord)];
+  return { covered, remaining };
+}

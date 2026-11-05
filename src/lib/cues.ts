@@ -72,3 +72,69 @@ export function vibrateCue(phase: Phase): void {
     // Ignore: some browsers block vibration without recent interaction.
   }
 }
+
+// ---------- Route-following cues ----------
+
+/** What a route cue is about. Turn directions are grouped: slight/sharp count as left/right. */
+export type NavCue = 'left' | 'right' | 'u-turn' | 'straight' | 'off-route' | 'finished';
+
+/** One pulse for left, two for right, one long for a U-turn. */
+export const NAV_VIBRATION: Record<NavCue, number[]> = {
+  left: [220],
+  right: [150, 120, 150],
+  'u-turn': [700],
+  straight: [80],
+  'off-route': [90, 70, 90, 70, 90],
+  finished: [200, 100, 200, 100, 500],
+};
+
+export function navCueFor(dir: string): NavCue {
+  if (dir.endsWith('left')) return 'left';
+  if (dir.endsWith('right')) return 'right';
+  if (dir === 'u-turn') return 'u-turn';
+  return 'straight';
+}
+
+export function vibrateNav(cue: NavCue): void {
+  if (!canVibrate()) return;
+  try {
+    navigator.vibrate(NAV_VIBRATION[cue]);
+  } catch {
+    // Ignore, as for the timer cues.
+  }
+}
+
+/** Beeps that mirror the vibration patterns, so phones without vibration (iPhone) still get a cue. */
+export function playNavCue(cue: NavCue): void {
+  if (!ctx || ctx.state !== 'running') return;
+  try {
+    const t = ctx.currentTime + 0.01;
+    switch (cue) {
+      case 'left':
+        beep(ctx, t, 784, 0.18);
+        break;
+      case 'right':
+        beep(ctx, t, 784, 0.12);
+        beep(ctx, t + 0.2, 784, 0.12);
+        break;
+      case 'u-turn':
+        beep(ctx, t, 523, 0.6);
+        break;
+      case 'straight':
+        beep(ctx, t, 659, 0.08);
+        break;
+      case 'off-route':
+        beep(ctx, t, 440, 0.1);
+        beep(ctx, t + 0.16, 440, 0.1);
+        beep(ctx, t + 0.32, 440, 0.1);
+        break;
+      case 'finished':
+        beep(ctx, t, 659, 0.14);
+        beep(ctx, t + 0.18, 784, 0.14);
+        beep(ctx, t + 0.36, 988, 0.3);
+        break;
+    }
+  } catch {
+    // Never let a sound failure affect navigation.
+  }
+}

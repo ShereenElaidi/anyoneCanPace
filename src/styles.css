@@ -546,6 +546,95 @@ button {
   cursor: not-allowed;
 }
 
+/* ---------- Mode picker ---------- */
+
+.picker__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.picker__duck {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.picker__title {
+  color: var(--navy);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 88px;
+  padding: 14px 16px 14px 20px;
+  border: var(--line) solid var(--asphalt);
+  border-left-width: 14px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 var(--press) 0 var(--asphalt);
+  touch-action: manipulation;
+}
+
+.mode-card:active:not(:disabled) {
+  transform: translateY(var(--press));
+  box-shadow: none;
+}
+
+.mode-card--timer {
+  border-left-color: var(--navy);
+}
+
+.mode-card--sixk {
+  border-left-color: var(--gold);
+}
+
+.mode-card:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.mode-card__name {
+  color: var(--navy);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.mode-card__help {
+  font-size: 0.85rem;
+}
+
+.picker__note {
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.loading {
+  padding: 40px 16px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--navy);
+}
+
 /* ---------- Small and short screens ---------- */
 
 @media (max-height: 640px) {
