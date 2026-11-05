@@ -343,7 +343,10 @@
     "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
   },
   "verification": {
-    "status": "unverified"
+    "status": "field-verified",
+    "reviewer": "Crew run (Les Stooopids)",
+    "date": "2026-11-05",
+    "notes": "Run as a crew following the app."
   },
   "geometry": "ef2396ad44b3541c"
 }

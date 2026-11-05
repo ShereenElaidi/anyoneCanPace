@@ -140,10 +140,12 @@ describe('Route Library', () => {
     return screen.findByRole('heading', { name: 'Route Library' });
   };
 
-  it('shows that directions are unverified, in the list and before starting', async () => {
+  it('says whether directions were checked, in the list and before starting', async () => {
     await openLibrary();
-    expect(screen.getAllByText(/⚠ Unverified directions/).length).toBeGreaterThanOrEqual(3);
-    tap(/Sample Loop/);
+    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('✓ Field-checked directions');
+    expect(screen.getByRole('button', { name: /Canal Test/ }).textContent).toContain('✓ Field-checked directions');
+    expect(screen.getByRole('button', { name: /Pi Day/ }).textContent).toContain('⚠ Unverified directions');
+    tap(/Pi Day/);
     const note = await screen.findByRole('note', { name: 'Directions: Unverified' });
     expect(note.textContent).toMatch(/suggested automatically and haven’t been checked by a person or on the ground/);
     // It comes before the start button.

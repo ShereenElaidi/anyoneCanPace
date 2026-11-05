@@ -117,7 +117,7 @@ All routes so far were drawn with [On The Go Map](https://onthegomap.com) on Ope
 | Pi Day | `onthegomap-4.7-km-route.gpx` | 4.61 km loop, 4 spurs removed | +25 m |
 | Canal Test | `onthegomap-12.5-km-route.gpx` | 12.36 km loop along the Lachine Canal, 2 spurs removed | +11 m |
 
-(Climb is the bare-earth CDEM figure the app shows, from `src/data/routes/<id>.json`; the review report also lists the raw and surface-model numbers. All three routes are **unverified**.)
+(Climb is the bare-earth CDEM figure the app shows, from `src/data/routes/<id>.json`; the review report also lists the raw and surface-model numbers. Sample Loop and Canal Test are **field-verified** (run as a crew following the app, 2026-11-05); Pi Day is **unverified**.)
 
 ### Reviewing and releasing a route
 

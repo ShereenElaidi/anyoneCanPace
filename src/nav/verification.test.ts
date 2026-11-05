@@ -16,9 +16,12 @@ describe('route verification status', () => {
   });
 
   it('no route claims a review the repository has no record of', () => {
-    // routes/review/*.md are automated suggestions only; nobody has signed a route off yet.
-    // When someone does, record reviewer and date in the route file and update this list.
-    const reviewed: Record<string, true> = {};
+    // routes/review/*.md are automated suggestions only. A route listed here was signed off by a
+    // person: record reviewer and date in the route file and update this list.
+    const reviewed: Record<string, true> = {
+      'sample-loop': true, // field-verified on a crew run, 2026-11-05
+      'canal-test': true, // field-verified on a crew run, 2026-11-05
+    };
     for (const { data } of allRoutes()) {
       if (!reviewed[data.id]) expect((data as RouteData).verification.status, data.id).toBe('unverified');
     }
