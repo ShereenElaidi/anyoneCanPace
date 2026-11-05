@@ -2,15 +2,21 @@
 
 **Run together. Walk together.**
 
-A minimalist RUN/WALK interval timer for volunteer pacers leading beginner-friendly group runs. Part of the **AnyoneCanRun (ACR)** initiative by **Les Stooopids**.
+Tools for volunteer pacers leading beginner-friendly group runs. Part of the **AnyoneCanRun (ACR)** initiative by **Les Stooopids**.
 
-Open the URL on your phone, tap **START PACING**, and the app alternates RUN and WALK until you stop it. Adjust intervals mid-run without interrupting the group.
+The app opens on a mode picker and then remembers your choice:
+
+- **ACR Run/Walk Timer**: open the URL on your phone, tap **START PACING**, and the app alternates RUN and WALK until you stop it. Adjust intervals mid-run without interrupting the group.
+- **6K Route Library**: pick a ~6 km route and follow it on a street map, with the duck marking your place, a direction banner and turn cues.
+- **Daily Dashboard**: coming soon (today's weather and what to wear).
+
+If you used the timer before modes existed, the app still opens straight into the timer. To change modes, use **Settings → Switch mode** in the timer (two taps while a session is running), or **MODES** in the route library.
 
 **Live site (once deployed):** https://shereenelaidi.github.io/anyoneCanPace/
 
 ---
 
-## Features
+## ACR Run/Walk Timer
 
 - **RUN / WALK alternation** that runs indefinitely, starting with RUN. Defaults: 90 s RUN, 60 s WALK.
 - **Big, glanceable display**: huge phase label, MM:SS countdown with tabular digits, a Duck Gold progress ring with the running duck riding its leading edge, and a "NEXT:" hint. RUN is Crew Navy, WALK is Track Blue, and the phase is always spelled out, so colour is never the only cue.
@@ -25,19 +31,102 @@ Open the URL on your phone, tap **START PACING**, and the app alternates RUN and
 - **Remembers your settings** (RUN, WALK, sound, vibration) in local storage. No accounts, tracking, cookies or analytics.
 - **Accessible**: semantic HTML, labelled controls, visible focus, touch targets of 44 px or more, reduced-motion support. Screen readers hear RUN, WALK, Paused and Resumed, not every second.
 
+## 6K Route Library
+
+- **Library**: each route shows its name, distance, climb and descent, and a small outline.
+- **Route page**: map preview, stats, elevation profile, turn list, notes, advisories and **START ROUTE**.
+- **Follow view**:
+  - A street map with the duck at your place on the route. It faces your direction of travel. A small blue dot with an accuracy halo shows the raw GPS fix.
+  - A direction banner, always with text: "Right on Boulevard Saint-Laurent in 150 m", "Continue on … for 1.2 km", "Left now on …".
+  - One stats line: "3.2 km done · 2.8 km to go".
+  - No timer and no progress ring.
+- **Starting**:
+  - Before you start, the banner says "Head to the start: 420 m" with an arrow and a compass direction.
+  - Anywhere within about 250 m of the start counts as "at the start".
+  - **START ANYWAY** is always there, so a pacer who joins mid-way is placed where they are on the route.
+- **Progress only moves forward.** Each GPS fix is matched only to the stretch of route just behind or ahead of you, never to the nearest point overall. Routes can overlap themselves (the sample loop's finish is 37 m from its start), and GPS jitter or a short gap won't throw you around.
+- **Turn cues**:
+  - A heads-up about 150 m before each turn and a "now" cue at about 30 m. Each fires once.
+  - Vibration patterns: one pulse for left, two for right, one long buzz for a U-turn. Matching beeps play if Sound is on, so iPhones (no vibration) still get a cue.
+  - Screen readers hear turns, not distance ticks.
+  - A turn you passed during a GPS gap is skipped silently. Missed cues are never replayed.
+- **Off route**:
+  - Triggers after about 5 s more than ~30 m from the route.
+  - You get a dashed warning banner that points back toward the route, a "?" on the duck, a buzz, and **"Going rogue?"**.
+  - Answer yes and the app stops nagging until you're back on the route.
+- **Finish**: triggers near the last point, only after about 90 % of the distance is covered.
+- **Ending a route** needs **MENU → END ROUTE** and a second tap. The phone's back gesture opens that menu instead of leaving mid-route.
+- All of these distances and times are named constants in `src/nav/constants.ts`.
+
+### Adding or editing a route
+
+Source GPX files live in `routes/` and are committed. The app ships only the processed files in `src/data/routes/`, never the raw GPX.
+
+1. Put the GPX in `routes/` and add an entry to `routes/routes.config.json` (id, file, name, source credit).
+2. Run `npm run routes`. For each route, the script (`scripts/build-routes.ts`):
+   - removes the routing tool's tiny dead-end spurs and duplicate points (a real out-and-back turnaround is kept)
+   - simplifies the line to about 5 m while keeping corners
+   - measures the distance and classifies the route (loop, out-and-back or point-to-point)
+   - looks up elevation, smooths it and ignores changes under 3 m, to get realistic climb and descent
+   - proposes turns from heading changes (gentle curves are ignored)
+   - fills street names from OpenStreetMap
+   - writes `<id>.json`, `<id>.geojson` and `manifest.json`
+3. Edit `src/data/routes/<id>.json` by hand: `name`, `startStreet`, and each turn's `dir`, `street` and `note`. Also `notes` and `advisories`. Re-running the script keeps these hand edits. `npm run routes -- --reset-turns` replaces the turns with fresh proposals, which are also always written to `routes/cache/<id>.proposed-turns.json` for comparison.
+
+Elevation comes from the [Open-Meteo Elevation API](https://open-meteo.com/en/docs/elevation-api) (Copernicus DEM GLO-90, about 90 m resolution, CC BY 4.0), and only at build time. Street names come from OpenStreetMap through the Overpass API. Both lookups are cached in `routes/cache/`, so `npm run routes -- --offline` rebuilds without a network. Turn directions are first guesses: always check them against the map.
+
+The sample route (`routes/onthegomap-6.4-km-route.gpx`) was drawn with [On The Go Map](https://onthegomap.com) on OpenStreetMap data. It is a 6.36 km loop after cleaning (6.43 km raw, 4 spurs removed) with about 127 m of climb.
+
+### The street map
+
+- **Vector tiles**: a self-hosted [PMTiles](https://protomaps.com/docs/pmtiles) file, `public/maps/montreal.pmtiles`. It is a 4.7 MB extract of central Montréal (about 5 × 5 km around the sample loop, zoom 0–15) from the [Protomaps](https://protomaps.com) daily OpenStreetMap build, drawn with MapLibre GL JS in the brand colours.
+- **Labels**: street-name glyphs (Noto Sans Medium, SIL OFL) are self-hosted in `public/maps/fonts/` and precached, so labels work offline. No sprites are used.
+- **Re-cutting the map**: run `npm run map`. It downloads the `pmtiles` CLI into `.cache/tools/` if needed and extracts the default box. Use `npm run map -- --bbox=W,S,E,N` for another area.
+  - The whole island (`-73.98,45.40,-73.47,45.71`) is about **55 MB**, which is too big for a one-time download on a phone. Prefer a box around the routes.
+  - After re-cutting, bump `MAP_VERSION` in `src/sixk/map/offlineMap.ts` so phones fetch the new file.
+- **Offline**: the map file is not cached piece by piece. The first time you open the route library (online, and not in data-saver mode), the whole file is saved to the phone's Cache Storage, and the map then reads from that copy. The library shows the status honestly ("Map saved for offline use on …", "Saving… 40 %", "not saved") with a **SAVE MAP FOR OFFLINE** button. The map shows "Online map (not saved for offline)" while it is streaming from the network.
+
+## Privacy and offline
+
+- No backend, accounts, cookies, analytics or tracking.
+- **Your GPS position stays on your phone.** It is held in memory for the current route only. It is never stored, logged or sent anywhere, and the map tiles come from the app's own files, not a map service.
+- At runtime the app only loads its own files. (Stage 2 will add one weather request, using fixed Montréal coordinates, never your location.) Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
+- After one visit, the timer, routes, stats and map work offline. Anything that can go stale shows when it was saved.
+- Saved on the device: timer settings, the last mode, and the offline map.
+
 ## Tech stack
 
 React 19 · TypeScript · Vite 8 · plain CSS · `vite-plugin-pwa` (Workbox) · Vitest + Testing Library. No backend.
 
+The 6K mode adds **MapLibre GL JS** and the **PMTiles** reader. They are loaded only when a 6K map is shown, so the timer never downloads them on first load. `npm run build` runs `scripts/check-bundle.ts`, which fails the build if either library appears in the first-load bundle.
+
+| Bundle (minified) | Size | gzip |
+|---|---|---|
+| First load (timer + picker) JS | 241 kB (was 237 kB) | 75.9 kB (was 74.7 kB) |
+| 6K mode chunk (lazy) | 31 kB | 11 kB |
+| MapLibre + PMTiles chunk (lazy) | 1,088 kB | 298 kB |
+| MapLibre worker (lazy) | 519 kB | |
+| Street map file (saved on demand, not precached) | 4.7 MB | |
+
+The service worker precaches the lazy chunks too (about 2.6 MB instead of 0.6 MB), so the 6K mode works offline even if it was never opened online. The map libraries sit in their own vendor chunk, so app updates that don't touch them don't download them again.
+
 ```
 src/
+  Root.tsx                Mode picker / last-used mode; lazy-loads the 6K mode
+  App.tsx                 The ACR timer (unchanged, plus "Switch mode" in Settings)
   timer/engine.ts         Pure timestamp-based interval logic (no clocks, no React)
   timer/clock.ts          Monotonic session clock with sleep correction
-  hooks/useIntervalTimer  React binding: ticks, catch-up, events
-  hooks/useWakeLock       Screen Wake Lock handling
-  lib/cues.ts             Beeps and vibration
-  lib/prefs.ts            localStorage preferences
-  components/             TimerDisplay, EditPanel, MenuSheet
+  nav/                    Pure route following: geo, route, tracker, banner, constants
+  sixk/                   6K mode: library, route page, follow view, hooks, styles
+  sixk/map/               MapLibre map, brand style, offline map file (lazy)
+  data/routes/            Processed routes (JSON + GeoJSON + manifest), hand-editable
+  hooks/                  useIntervalTimer, useWakeLock, useGeolocation
+  lib/cues.ts             Beeps and vibration (timer and route cues)
+  lib/prefs.ts            localStorage preferences and last mode
+  components/             TimerDisplay, EditPanel, MenuSheet, ModePicker
+routes/                   Source GPX, routes.config.json, cached lookups
+scripts/                  build-routes, cut-map, check-bundle, dev-cert
+public/maps/              montreal.pmtiles and label glyphs
 ```
 
 ### Timing design
@@ -48,7 +137,7 @@ The timer never counts down by subtracting 1 every tick. While a session is acti
 
 ## Local development
 
-You need Node.js 20.19+ or 22.12+ (CI uses the current LTS).
+You need Node.js 22.18+ (CI uses the current LTS). The scripts in `scripts/` are TypeScript run directly by Node, `npm run build` included.
 
 ```bash
 npm install
@@ -61,14 +150,31 @@ npm run dev        # http://localhost:5173/anyoneCanPace/
 | `npm test` | Run all unit and integration tests once |
 | `npm run test:watch` | Tests in watch mode |
 | `npm run typecheck` | TypeScript checks |
-| `npm run build` | Type-check and build the production site into `dist/` |
+| `npm run build` | Type-check, build the production site into `dist/`, and check the first-load bundle |
 | `npm run preview` | Serve `dist/` at the GitHub Pages path for testing |
+| `npm run routes` | Rebuild processed routes from `routes/*.gpx` |
+| `npm run map` | Re-cut the street map extract |
+| `npm run dev:https` | Dev server over HTTPS on your Wi-Fi (for GPS on a phone) |
+| `npm run preview:https` | Production build over HTTPS on your Wi-Fi |
 
-To try it on your phone over Wi-Fi, run `npm run dev -- --host` and open the printed Network URL. Wake lock, installing and the service worker need HTTPS, so test those on the deployed site.
+### Testing on a phone (GPS needs HTTPS)
+
+Browsers only give GPS to secure (https) pages. A phone loading `http://<laptop-ip>:5173` gets **no GPS**. Two ways round it:
+
+1. **A tunnel (most reliable; the service worker works too).** Install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) (a separate program, not an npm package), run `npm run dev` (or `npm run build && npm run preview`), then in another terminal:
+
+   ```bash
+   cloudflared tunnel --url http://localhost:5173
+   ```
+
+   Open the printed `https://….trycloudflare.com/anyoneCanPace/` on the phone (use port 4173 for preview). `ngrok http 5173` works the same way. `vite.config.ts` already allows these hosts. The tunnel URL is public while it runs, so stop it when you're done.
+2. **Self-signed HTTPS on your Wi-Fi.** `npm run dev:https` makes a certificate with `openssl` (in `.cache/dev-cert/`, nothing installed) and prints `https://<laptop-ip>:5173/anyoneCanPace/`. The phone warns about the certificate once: tap through ("Show details → visit this website" on iPhone, "Advanced → Proceed" on Android). GPS works after that. Browsers refuse service workers on a self-signed certificate, so test offline behaviour with the tunnel or on the deployed site.
+
+Service workers only register in `npm run preview` (or `preview:https`), not in dev. Wake lock and installing also need HTTPS.
 
 ## Deploying to GitHub Pages
 
-Deployment is automatic: `.github/workflows/deploy.yml` type-checks, tests, builds and deploys on every push to `main`. You can also run it by hand from the **Actions** tab.
+Deployment is automatic: `.github/workflows/deploy.yml` type-checks, tests, builds and deploys on every push to `main`. You can also run it by hand from the **Actions** tab. It does **not** run on pull requests or other branches, so run `npm test`, `npm run typecheck` and `npm run build` locally before merging.
 
 **One-time setup:** in the repository, go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
 
@@ -97,6 +203,10 @@ The app never reloads itself mid-session. When a new version has been downloaded
 - **Wake Lock** keeps the screen on in Safari 16.4+ and Chrome/Edge. It doesn't stop you locking the phone manually, and the system can still release it (for example in low-power mode). If it isn't available, the app says so. Set your phone's Auto-Lock to "Never" while pacing.
 - **Sound** starts after your first tap (browser rule). On iPhone, the ring/silent switch may mute web audio.
 - **Vibration** isn't supported by iPhone Safari, so the toggle is disabled there.
+- **GPS only works in the foreground.** Locking the phone or switching apps stops location updates; the 6K follow view says so before you start. When you come back, progress catches up from the next fix (within a forward limit), and turns you passed meanwhile are skipped, not replayed.
+- **GPS accuracy** in downtown streets is often 10–30 m. Off route needs more than ~30 m for ~5 s, and fixes worse than 60 m are ignored for progress, so expect the occasional late or early cue near tall buildings.
+- **The map needs WebGL.** On the rare phone without it, the 6K mode still shows directions and distances, just no map.
+- **Cache Storage can be cleared** by the browser when the phone is low on space (more likely on iPhone if the app isn't installed). The library then shows "not saved" again. Installing the app to the home screen helps.
 
 ## Typography and licensing
 
@@ -106,6 +216,14 @@ Three openly licensed fonts were compared: **JetBrains Mono**, **Space Mono** an
 
 - **JetBrains Mono** © 2020 The JetBrains Mono Project Authors, licensed under the [SIL Open Font License 1.1](src/assets/fonts/JetBrainsMono-OFL.txt).
 - Self-hosted WOFF2 files (Latin and Latin Extended subsets) are in `src/assets/fonts/` and precached for offline use.
+
+## Map, data and font credits
+
+- Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL). Vector tiles from the [Protomaps](https://protomaps.com) basemap build.
+- The sample route was drawn with [On The Go Map](https://onthegomap.com).
+- Elevation: [Open-Meteo](https://open-meteo.com) (CC BY 4.0), from the Copernicus DEM GLO-90, used at build time only.
+- Map label font: Noto Sans © The Noto Project Authors, SIL OFL 1.1 (`public/maps/fonts/OFL.txt`).
+- MapLibre GL JS (BSD-3-Clause) and PMTiles (BSD-3-Clause).
 
 ## App icon
 
@@ -133,6 +251,27 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **Battery:** note battery use over a 45-minute session with the screen on.
 - [ ] **Offline:** start a session in airplane mode after one earlier visit.
 - [ ] **Install:** add to home screen on iOS and Android. The icon, name, standalone display and portrait layout all look right.
+
+### 6K Route Library: field test on the real loop
+
+Take a charged phone outside to walk or jog the sample loop, after one online visit. Use the deployed site or a tunnel, not plain http.
+
+- [ ] **Offline map:** the library says "Map saved for offline use". In airplane mode the route page and follow view still show streets and labels.
+- [ ] **GPS permission:** the first START ROUTE asks for location. If you refuse, the banner says how to allow it.
+- [ ] **Approach:** from about 500 m away the banner says "Head to the start: N m" and the arrow and compass word point the right way on the north-up map. Within about 250 m it says "You're at the start".
+- [ ] **Start anyway:** start the route mid-way. Progress begins where you are, and earlier turns don't buzz.
+- [ ] **Turn cues:** every turn gives a heads-up at about 150 m and "now" at about 30 m, once each. Left is one buzz, right two, U-turn long (Android). With Sound on, the beeps match (iPhone too).
+- [ ] **Turn list accuracy:** note every turn that is missing, extra, in the wrong direction or has the wrong street, then fix them in `src/data/routes/sample-loop.json`. The first proposals (for example a "left on Rue Sainte-Catherine Ouest" 46 m after a Sainte-Catherine start, and three turns within 60 m on Rue de la Commune) need checking.
+- [ ] **Forward only:** stand still for a minute and walk on both sides of the street. The duck never goes backwards and the km done never drops.
+- [ ] **Start/finish ambiguity:** at the start, walk back and forth between the start and finish (37 m apart) before leaving. It must not say Finished.
+- [ ] **Off route:** walk one block off the route. Within about 5–10 s you see the dashed banner, the "?" on the duck, a buzz and "Going rogue?". "No" keeps guiding you back, "Yes" calms it, and returning to the route clears it.
+- [ ] **GPS gap:** lock the phone for a minute while walking past a turn, then unlock. The duck jumps ahead, with no burst of old buzzes.
+- [ ] **Finish:** "Finished!" appears at the finish, not before about 90 % of the distance.
+- [ ] **Readability:** the banner is readable at arm's length in sunlight while jogging. The thick navy route and the dashed gold "covered" line are easy to tell apart.
+- [ ] **Wake lock:** the screen stays on for the whole loop (about 40–60 minutes). Note battery use.
+- [ ] **Back gesture:** mid-route, the phone's back gesture opens the route menu instead of leaving. END ROUTE needs two taps.
+- [ ] **Accidental taps:** with the unlocked phone in a pocket for a minute, nothing ends.
+- [ ] **Screen reader (optional):** VoiceOver or TalkBack announces turns, off route and finished, not every metre.
 
 ## V2 To-Do List
 - [ ] **Lockscreen:** Somehow allow it to be controlled by the lockscreen without needing to put it on App Store / GPlay store. To allow for vibration cues & allow app to be used while locked.
