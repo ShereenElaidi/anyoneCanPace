@@ -55,11 +55,26 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+        // .mjs: the MapLibre worker; .pbf: map label glyphs. The big street-map
+        // file (.pmtiles) is not precached: the 6K mode saves it on demand.
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,webp,woff2,pbf}'],
         cleanupOutdatedCaches: true,
       },
     }),
   ],
+  build: {
+    // MapLibre is ~1 MB minified; it lives in its own lazy chunk (see scripts/check-bundle.ts).
+    chunkSizeWarningLimit: 1200,
+    rolldownOptions: {
+      output: {
+        // Keep the map libraries in a separate vendor chunk so its file name (and the
+        // service worker's cached copy) survives app updates that don't touch them.
+        advancedChunks: {
+          groups: [{ name: 'maplibre', test: /node_modules[\\/](maplibre-gl|pmtiles)[\\/]/ }],
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
