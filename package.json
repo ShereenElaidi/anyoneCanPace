@@ -10,9 +10,13 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "routes": "node scripts/build-routes.ts",
+    "map": "node scripts/cut-map.ts"
   },
   "dependencies": {
+    "maplibre-gl": "^6.16.0",
+    "pmtiles": "^4.5.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
