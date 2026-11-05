@@ -9,7 +9,8 @@ The pieces were drawn by ChatGPT from the brief in `design/duck-art-brief/`
 duck: the scale and position that best covers that garment's zone (torso,
 arms, hands, head, neck, hips and legs) was kept when it clearly helped. The
 originals stay as drawn for the vest, gloves, light gloves, mittens, tee, long sleeve,
-thermal layers, cap, headlamp, sunglasses and ice cleats. They were then
+thermal layers, cap, headlamp, sunglasses and ice cleats. The raincoat (110 %) and neck warmer (100 %) were then sized up by hand
+after a look on the phone, because the automatic fit made them too small. They were then
 scaled to 512 × 512 WebP (about 8 KB each).
 
 - **Swap a piece:** replace `<item>.webp` with a transparent image the same
