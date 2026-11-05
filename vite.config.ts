@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { execSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -26,6 +27,17 @@ function pagesBase(): string {
 }
 
 const base = pagesBase();
+
+/**
+ * Phone testing: GPS needs a secure page. `npm run dev:https` makes a
+ * self-signed certificate (scripts/dev-cert.ts) and sets HTTPS_DEV. A tunnel
+ * (Cloudflare Tunnel / ngrok) also works; its hosts are allowed below.
+ */
+const https =
+  process.env.HTTPS_DEV && existsSync('.cache/dev-cert/cert.pem')
+    ? { key: readFileSync('.cache/dev-cert/key.pem'), cert: readFileSync('.cache/dev-cert/cert.pem') }
+    : undefined;
+const allowedHosts = ['.trycloudflare.com', '.ngrok-free.app', '.ngrok.app'];
 
 export default defineConfig({
   base,
@@ -62,6 +74,8 @@ export default defineConfig({
       },
     }),
   ],
+  server: { https, allowedHosts },
+  preview: { https, allowedHosts },
   build: {
     // MapLibre is ~1 MB minified; it lives in its own lazy chunk (see scripts/check-bundle.ts).
     chunkSizeWarningLimit: 1200,
