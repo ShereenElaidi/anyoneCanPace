@@ -12,6 +12,7 @@ import {
   joinAt,
   joinOptions,
   nearStart,
+  rejoinOptions,
   observe,
   update,
   type NavEvent,
@@ -474,5 +475,126 @@ describe('joining when several parts of the route are plausible', () => {
     const opts = joinOptions(laps, r.state.lastFix!);
     expect(opts).toHaveLength(2);
     expect(joinAt(laps, r.state, opts[1].alongM).state.progressM).toBeGreaterThan(2000);
+  });
+});
+
+describe('rejoining further along after going off route', () => {
+  const route = sampleRoute();
+  const L = route.lengthM;
+
+  /** The later point of the loop that saves the most distance for the shortest cut-through. */
+  const sharpestShortcut = (minB: number, maxB: number) => {
+    let best = { a: 0, b: 0, ratio: 0, d: 0 };
+    for (let a = 300; a < L - 1000; a += 25) {
+      for (let b = Math.max(a + 800, minB); b < maxB; b += 25) {
+        const d = distanceM(pointAt(route, a), pointAt(route, b));
+        if (d < 40) continue;
+        if ((b - a) / d > best.ratio) best = { a, b, ratio: (b - a) / d, d };
+      }
+    }
+    return best;
+  };
+
+  /** Run to `a`, cut straight across to `b` at running pace, then follow the route from `b`. */
+  const runShortcut = (a: number, b: number, d: number, afterM = 600) => {
+    const before = walk(route, { fromM: 0, toM: a, speedMps: 2.8 });
+    const cut = line(pointAt(route, a), pointAt(route, b), { startAt: lastAt(before) + 1000, steps: Math.max(2, Math.round(d / 2.8)) });
+    const after = walk(route, { fromM: b, toM: Math.min(L, b + afterM), speedMps: 2.8, startAt: lastAt(cut) + 1000 });
+    return { r: replay(route, [...before, ...cut, ...after]), backOnAt: before.length + cut.length };
+  };
+
+  it('a detour faster than the window grows (simulator ×10) locks back in further along', () => {
+    const before = walk(route, { fromM: 0, toM: 500, speedMps: 28 });
+    const off = walk(route, { fromM: 500, toM: 1200, speedMps: 28, lateralM: 80, startAt: lastAt(before) + 1000 });
+    const back = walk(route, { fromM: 1200, toM: 2000, speedMps: 28, startAt: lastAt(off) + 1000 });
+    const r = replay(route, [...before, ...off, ...back]);
+    expect(r.state.offRoute).toBe(false);
+    expect(r.state.progressM).toBeGreaterThan(1950);
+    expect(kinds(r.events).filter((k) => k === 'back-on-route')).toHaveLength(1);
+    expect(isMonotonic(r.progress)).toBe(true);
+    // Turns passed while off route are skipped silently, never cued late.
+    const missed = route.turns.map((t, i) => ({ t, i })).filter(({ t }) => t.atM > 540 && t.atM < 1150);
+    const cued = new Set(turnEvents(r.events).map((e) => e.turnIndex));
+    for (const { i } of missed) expect(cued.has(i), `turn ${i}`).toBe(false);
+  });
+
+  it('a shortcut that skips a long stretch locks back in within seconds, progress forward only', () => {
+    const cut = sharpestShortcut(0, FINISH_FRACTION * L - 100);
+    expect(cut.b - cut.a).toBeGreaterThan(1500); // a real skip, beyond the forward window
+    const { r, backOnAt } = runShortcut(cut.a, cut.b, cut.d);
+    expect(r.state.offRoute).toBe(false);
+    expect(isMonotonic(r.progress)).toBe(true);
+    const lockedIn = r.progress.findIndex((p, i) => i >= backOnAt && p >= cut.b - 30);
+    expect(lockedIn - backOnAt).toBeLessThan(20); // seconds of running along the route
+  });
+
+  it('the finish stretch is never assumed while off route, but "Join at" can choose it', () => {
+    const cut = sharpestShortcut(FINISH_FRACTION * L + 50, L - 100);
+    const { r } = runShortcut(cut.a, cut.b, cut.d, 60);
+    expect(r.state.offRoute).toBe(true);
+    expect(r.state.status).toBe('following');
+    const options = rejoinOptions(route, r.state);
+    expect(options.length).toBeGreaterThan(0);
+    expect(options.every((o) => o.alongM > r.state.progressM)).toBe(true);
+    const joined = joinAt(route, r.state, options[0].alongM);
+    expect(kinds(joined.events)).toContain('back-on-route');
+    expect(joined.state.offRoute).toBe(false);
+    expect(joined.state.progressM).toBeGreaterThan(FINISH_FRACTION * L);
+  });
+
+  describe('direction of travel decides (U-shaped route)', () => {
+    const S: LatLon = { lat: 45.5, lon: -73.57 };
+    const at = (east: number, north: number) => offsetPoint(offsetPoint(S, 90, east), 0, north);
+    // East 1500 m, north 200 m, back west 1500 m, then north 1000 m: the way back runs 200 m from the way out.
+    const pts = [at(0, 0), at(1500, 0), at(1500, 200), at(0, 200), at(0, 1200)];
+    const u = prepareRoute(
+      pts.map((p) => [p.lon, p.lat]),
+      [
+        { atM: 1500, dir: 'left', street: '' },
+        { atM: 1700, dir: 'left', street: '' },
+        { atM: 3200, dir: 'right', street: '' },
+      ],
+    );
+    const fixAt = (p: LatLon, t: number) => ({ ...p, accuracyM: 8, at: t * 1000 });
+    const go = (from: [number, number], to: [number, number], t0: number) => {
+      const n = Math.max(1, Math.round(Math.hypot(to[0] - from[0], to[1] - from[1]) / 3));
+      return Array.from({ length: n }, (_, i) =>
+        fixAt(at(from[0] + ((i + 1) / n) * (to[0] - from[0]), from[1] + ((i + 1) / n) * (to[1] - from[1])), t0 + i + 1),
+      );
+    };
+    // Out 300 m, then cut north 230 m across the way back (heading north: crossing, not following).
+    const out = [fixAt(at(0, 0), 0), ...go([0, 0], [300, 0], 0)];
+    const across = go([300, 0], [300, 230], lastAt(out) / 1000);
+    const start = replay(u, [...out, ...across]);
+
+    it('crossing the route further along does not rejoin; the choice is offered', () => {
+      expect(start.state.offRoute).toBe(true);
+      expect(start.state.progressM).toBeLessThan(330);
+      // Back to the way back: "Join at" is offered for it.
+      const onIt = replay(u, go([300, 230], [300, 200], lastAt(across) / 1000), start.state);
+      expect(rejoinOptions(u, onIt.state).map((o) => Math.round(o.alongM / 100))).toEqual([29]);
+    });
+
+    it('walking the way back in the wrong direction does not rejoin', () => {
+      const toIt = go([300, 230], [300, 200], lastAt(across) / 1000);
+      const east = go([300, 200], [390, 200], lastAt(toIt) / 1000);
+      const r = replay(u, [...toIt, ...east], start.state);
+      expect(r.state.offRoute).toBe(true);
+      expect(r.state.progressM).toBeLessThan(330);
+    });
+
+    it('following the way back in its direction rejoins there, and later turns still cue', () => {
+      const toIt = go([300, 230], [300, 200], lastAt(across) / 1000);
+      const west = go([300, 200], [150, 200], lastAt(toIt) / 1000);
+      const r = replay(u, [...toIt, ...west], start.state);
+      expect(r.state.offRoute).toBe(false);
+      expect(r.state.progressM).toBeGreaterThan(1700 + 1500 - 300);
+      expect(kinds(r.events)).toContain('back-on-route');
+      // The two turns skipped by the shortcut stay silent; the next one is cued.
+      expect(turnEvents(r.events).filter((e) => e.turnIndex < 2)).toEqual([]);
+      const toCorner = go([150, 200], [0, 200], lastAt(west) / 1000);
+      const rest = replay(u, [...toCorner, ...go([0, 200], [0, 300], lastAt(toCorner) / 1000)], r.state);
+      expect(turnEvents([...r.events, ...rest.events]).some((e) => e.turnIndex === 2 && e.stage === 'now')).toBe(true);
+    });
   });
 });

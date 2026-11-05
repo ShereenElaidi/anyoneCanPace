@@ -35,7 +35,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - No new heavy dependencies (no state libraries, UI kits or analytics). **Exception:** MapLibre GL JS and the PMTiles reader, for the 6K mode only, and only lazy-loaded. `scripts/check-bundle.ts` fails the build if either reaches the first-load bundle. Build-time-only dev dependencies for scripts are fine if justified.
 
 ## Route rules
-- Progress is forward-only and matched in a window around current progress (it grows during GPS gaps). Never snap to the globally nearest point: routes overlap and a loop's start and finish are close.
+- Progress is forward-only and matched in a window around current progress (it grows during GPS gaps). Never snap to the globally nearest point: routes overlap and a loop's start and finish are close. Off route, rejoining beyond the window (`tryRejoinAhead`/`rejoinOptions`) is ahead-only, needs the direction of travel to match exactly one leg, and never assumes the finish stretch; otherwise **JOIN AT** decides.
 - One cue per GPS fix, by priority: finished > turn now > off route > heads-up (`src/sixk/navDelivery.ts`). Announcements come from each event's own turn and `distanceM`; a heads-up only fires for the next pending turn and a close next turn is folded into the "now" ("Left now, then right in 60 metres").
 - GPS gaps are measured from the last *usable* fix (`lastGoodFixAt`, accuracy ≤ 60 m); `lastFix` is raw position only. `gpsHealth()` drives the "GPS lost / too rough" alert and greys the banner.
 - Joining: near the start the beginning wins and a later leg (loop finish) is never assumed; several legs elsewhere wait for direction of travel or an explicit JOIN AT x KM (`joinOptions`/`joinAt`).

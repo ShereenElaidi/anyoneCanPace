@@ -60,6 +60,7 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
   - Triggers after about 5 s more than ~30 m from the route.
   - You get a dashed warning banner that points back toward the route, the duck turns into the confused duck with a "?", a buzz, and **"Going rogue?"**. **YES, ON PURPOSE** ("Gewww awaeyyy!") calms the banner (the duck stays confused until you're back on the route); **NO, GUIDE ME BACK** ("Am stooopidly lost. Finding my way back.") just closes the dialog and keeps the warning. Short labels first so they're quick to read mid-run; the Stooopids line sits underneath. Pressing Start while you're more than 30 m from the route also shows the confused duck (on your GPS dot, with "Head to the route") until you join it, without the buzz or the dialog.
   - Answer yes and the app stops nagging until you're back on the route.
+  - **Rejoining further along** (a shortcut, a skipped section, a long detour): back near the route ahead of where you left it, the app offers **JOIN AT x KM**, and locks back in by itself once a few fixes show you're moving along the route in its direction (about 25 m). It never rejoins behind you, never for a street that just crosses the route or when you go the wrong way along it, and never assumes the finish stretch (on a loop that leads back to the start): that one needs **JOIN AT**. Turns you skipped stay silent.
 - **Finish**: triggers near the last point, only after about 90 % of the distance is covered.
 - **Ending a route** needs **MENU → END ROUTE** and a second tap. The phone's back gesture opens that menu instead of leaving mid-route.
 - All of these distances and times are named constants in `src/nav/constants.ts`.
@@ -450,6 +451,7 @@ Take a charged phone outside to walk or jog the sample loop, after one online vi
 - [ ] **Forward only:** stand still for a minute and walk on both sides of the street. The duck never goes backwards and the km done never drops.
 - [ ] **Start/finish ambiguity:** at the start, walk back and forth between the start and finish (37 m apart) before leaving. It must not say Finished.
 - [ ] **Off route:** walk one block off the route. Within about 5–10 s you see the dashed banner, the confused duck with its "?", a buzz and "Going rogue?". "No" keeps guiding you back, "Yes" calms it, and returning to the route clears it.
+- [ ] **Shortcut:** leave the route, cut through a side street and rejoin it further along. **JOIN AT x KM** appears, and within about 10 s of running along the route the app locks back in ("Back on route.") without cueing the turns you skipped.
 - [ ] **GPS gap:** lock the phone for a minute while walking past a turn, then unlock. The duck jumps ahead, with no burst of old buzzes.
 - [ ] **Finish:** "Finished!" appears at the finish, not before about 90 % of the distance.
 - [ ] **Readability:** the banner is readable at arm's length in sunlight while jogging. The thick navy route and the dashed gold "covered" line are easy to tell apart.

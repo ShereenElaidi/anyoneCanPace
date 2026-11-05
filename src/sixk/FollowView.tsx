@@ -7,7 +7,7 @@ import { loadPrefs, savePrefs, type Prefs } from '../lib/prefs';
 import { setSessionBusy } from '../lib/swUpdate';
 import { describe as describeBanner, formatKm, statsLine, type Banner } from '../nav/banner';
 import { POOR_ACCURACY_M } from '../nav/constants';
-import { approachInfo, duckLost, gpsHealth, joinOptions } from '../nav/tracker';
+import { approachInfo, duckLost, gpsHealth, joinOptions, rejoinOptions } from '../nav/tracker';
 import { bearingAt, pointAt, splitAt } from '../nav/route';
 import type { LoadedRoute } from './data';
 import { TurnIcon } from './TurnIcon';
@@ -79,10 +79,14 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
 
   const atStart = state.lastFix ? approachInfo(prepared, state.lastFix).atStart : false;
 
-  // Started, not joined, and several places on the route are plausible: let the pacer choose.
+  // Let the pacer say where they are: started but not joined (several places plausible), or
+  // off route and near the route further along (a shortcut). The tracker also rejoins by itself
+  // once the direction of travel settles it.
   const joinChoices =
-    following && !state.anchored && state.lastFix && state.lastFix.accuracyM <= POOR_ACCURACY_M
-      ? joinOptions(prepared, state.lastFix)
+    following && state.lastFix && state.lastFix.accuracyM <= POOR_ACCURACY_M
+      ? state.anchored
+        ? rejoinOptions(prepared, state)
+        : joinOptions(prepared, state.lastFix)
       : [];
 
   const start = () => {

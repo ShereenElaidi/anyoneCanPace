@@ -10,6 +10,10 @@
  * globally nearest point, because routes can overlap themselves (a loop's
  * start and finish are a few metres apart). The window grows while no
  * on-route fix arrives, so GPS gaps and detours allow bounded forward jumps.
+ * Off route, you can also rejoin further along than the window reaches (a
+ * shortcut, a skipped section): only ahead of progress, and only once your
+ * direction of travel matches exactly one part of the route (or you choose
+ * "Join at x km").
  */
 import {
   ADVANCE_PENALTY_PER_M,
@@ -60,7 +64,10 @@ export interface NavState {
   lastFix: Fix | null;
   /** Time of the latest usable fix (accuracy ≤ POOR_ACCURACY_M). GPS gaps are measured from here. */
   lastGoodFixAt: number | null;
-  /** Recent usable fixes while not yet joined, to pick a route leg by direction of travel. Memory only. */
+  /**
+   * Recent usable fixes while not yet joined, or while off route and near the route further
+   * along, to pick a route leg by direction of travel. Memory only.
+   */
   joinTrail: Fix[];
   /** Time of the last fix that was on the route; the forward window grows from here. */
   lastOnRouteAt: number | null;
@@ -169,10 +176,12 @@ export function update(route: PreparedRoute, state: NavState, fix: Fix): NavResu
   const best = bestForward(route, next, fix);
   next.distanceFromRouteM = best ? best.distM : null;
   const limit = next.offRoute ? BACK_ON_ROUTE_M : OFF_ROUTE_M;
+  let rejoined = false;
 
   if (best && best.distM <= limit) {
     next.lastOnRouteAt = fix.at;
     next.offRouteSince = null;
+    next.joinTrail = [];
     if (best.alongM > next.progressM) next.progressM = best.alongM;
     if (next.offRoute) {
       next.offRoute = false;
@@ -187,9 +196,14 @@ export function update(route: PreparedRoute, state: NavState, fix: Fix): NavResu
       next.offRoute = true;
       events.push({ kind: 'off-route', at: fix.at });
     }
+    if (next.offRoute) {
+      next = tryRejoinAhead(route, next, fix, events);
+      rejoined = !next.offRoute;
+    }
   }
 
-  next = processCues(route, next, fix.at, events, gap);
+  // Turns skipped by rejoining further along are passed silently, like after a gap.
+  next = processCues(route, next, fix.at, events, gap || rejoined);
   next = checkFinish(route, next, fix, events);
   return { state: next, events };
 }
@@ -222,6 +236,16 @@ export function gpsHealth(state: NavState, now: number): GpsHealth {
   if (now - state.lastFix.at > GPS_GAP_MS) return 'stale';
   if (state.lastGoodFixAt === null || now - state.lastGoodFixAt > GPS_GAP_MS) return 'rough';
   return 'ok';
+}
+
+/**
+ * While off route: the places further along the route near the latest fix, for
+ * "Join at x km". Never behind current progress (progress only moves forward).
+ */
+export function rejoinOptions(route: PreparedRoute, state: NavState): RouteMatch[] {
+  const fix = state.lastFix;
+  if (state.status !== 'following' || !state.anchored || !state.offRoute || !fix || !usable(fix)) return [];
+  return joinOptions(route, fix).filter((l) => l.alongM > state.progressM + BACK_TOLERANCE_M);
 }
 
 /** The pacer said "yes, going rogue": stop nagging until they're back on the route. */
@@ -333,16 +357,55 @@ function anchorAt(route: PreparedRoute, state: NavState, fix: Fix, at: RouteMatc
 }
 
 /**
- * The pacer chose where they are ("Join at 6.1 km"), for when several legs are
- * plausible. Only options near the latest usable fix are accepted.
+ * Off route and back near the route further along than the forward window
+ * reaches: rejoin there, but only when the recent fixes (all close to the
+ * route) show a direction of travel that matches exactly one leg ahead. A
+ * street crossing the route, or heading the wrong way along it, never rejoins.
+ * The finish stretch is never assumed (on a loop it leads back to the start,
+ * where someone may just be walking back): rejoining there needs "Join at".
+ */
+function tryRejoinAhead(route: PreparedRoute, state: NavState, fix: Fix, events: NavEvent[]): NavState {
+  const close = rejoinOptions(route, { ...state, lastFix: fix }).filter(
+    (l) => l.distM <= BACK_ON_ROUTE_M && l.alongM < FINISH_FRACTION * route.lengthM,
+  );
+  if (!close.length) return state.joinTrail.length ? { ...state, joinTrail: [] } : state;
+  const trail = [...state.joinTrail.filter((f) => fix.at - f.at <= JOIN_TRAIL_MS), fix].slice(-15);
+  const pick = legByMovement(route, close, trail);
+  if (!pick) return { ...state, joinTrail: trail };
+  return rejoinAt(state, fix, pick, events);
+}
+
+function rejoinAt(state: NavState, fix: Fix, at: RouteMatch, events: NavEvent[]): NavState {
+  events.push({ kind: 'back-on-route', at: fix.at });
+  return {
+    ...state,
+    joinTrail: [],
+    progressM: Math.max(state.progressM, at.alongM),
+    lastOnRouteAt: fix.at,
+    distanceFromRouteM: at.distM,
+    offRoute: false,
+    offRouteSince: null,
+    rogue: false,
+  };
+}
+
+/**
+ * The pacer chose where they are ("Join at 6.1 km"): when several legs are
+ * plausible before joining, or further along the route while off route. Only
+ * options near the latest usable fix are accepted, and never behind progress.
  */
 export function joinAt(route: PreparedRoute, state: NavState, alongM: number): NavResult {
   const fix = state.lastFix;
-  if (state.status !== 'following' || state.anchored || !fix || !usable(fix)) return { state, events: [] };
-  const option = joinOptions(route, fix).find((l) => Math.abs(l.alongM - alongM) < 1);
+  if (state.status !== 'following' || !fix || !usable(fix)) return { state, events: [] };
+  const options = state.anchored ? rejoinOptions(route, state) : joinOptions(route, fix);
+  const option = options.find((l) => Math.abs(l.alongM - alongM) < 1);
   if (!option) return { state, events: [] };
   const events: NavEvent[] = [];
-  return { state: anchorAt(route, state, fix, option, events), events };
+  if (!state.anchored) return { state: anchorAt(route, state, fix, option, events), events };
+  let next = rejoinAt(state, fix, option, events);
+  next = processCues(route, next, fix.at, events, true);
+  next = checkFinish(route, next, fix, events);
+  return { state: next, events };
 }
 
 /**
