@@ -43,7 +43,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 ## Dashboard rules
 - The only runtime request to another site is the GEM weather request in `forecast.ts`, with fixed Montréal coordinates, never the user's location. Fetch only when the dashboard opens or comes back into view and the saved copy is >30 min old, or on REFRESH. Keep the last forecast in localStorage and always show when it's from; fall back to "Check outside".
 - The outfit is always shown as text; the duck is decorative (`aria-hidden`). Credit Open-Meteo (CC BY 4.0) and Environment Canada's GEM on the page.
-- Dressed duck: `src/dashboard/duck/` (`pieces.ts` has `LAYER_ORDER` and is pure; `DressedDuck.tsx` stacks `src/assets/duck-outfit/<item>.svg` over `duck-base.webp`). Every outfit ItemId except `singlet` needs a piece (a test enforces it). Falling rain/snow is CSS, off for reduced motion.
+- Dressed duck: `src/dashboard/duck/` (`pieces.ts` has `LAYER_ORDER` and is pure; `DressedDuck.tsx` stacks `src/assets/duck-outfit/<item>.webp` (512 px, transparent, drawn in place; art brief in `design/duck-art-brief/`) over `duck-base.webp`). Every outfit ItemId except `singlet` needs a piece (a test enforces it). Falling rain/snow is CSS, off for reduced motion.
 
 ## Advisories rules
 - `src/data/advisories.json` is hand-edited by pull request. `src/advisories/notices.ts` is pure (filtering by route and date, expiry, validation). A test validates the real file. Always show "Last checked".

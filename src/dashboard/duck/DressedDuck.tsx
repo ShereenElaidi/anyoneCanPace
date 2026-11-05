@@ -2,11 +2,15 @@ import base from '../../assets/duck-outfit/duck-base.webp';
 import type { ItemId } from '../../weather/outfit';
 import { duckLayers, type DuckWeather } from './pieces';
 
-/** Every piece's URL, keyed by item id (file name). */
+/** Every piece's URL, keyed by item id (file name). Each is fetched only when worn. */
 const PIECES = Object.fromEntries(
   Object.entries(
-    import.meta.glob<string>('../../assets/duck-outfit/*.svg', { eager: true, query: '?url', import: 'default' }),
-  ).map(([path, url]) => [path.replace(/^.*\/(.+)\.svg$/, '$1'), url]),
+    import.meta.glob<string>(['../../assets/duck-outfit/*.webp', '!../../assets/duck-outfit/duck-base.webp'], {
+      eager: true,
+      query: '?url',
+      import: 'default',
+    }),
+  ).map(([path, url]) => [path.replace(/^.*\/(.+)\.webp$/, '$1'), url]),
 ) as Partial<Record<ItemId, string>>;
 
 const DROPS = 14;

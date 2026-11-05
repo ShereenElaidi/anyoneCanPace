@@ -2,9 +2,9 @@
  * Which drawing dresses the duck for each outfit item, and in what order the
  * layers stack (back to front). Pure data; DressedDuck renders it.
  *
- * To redraw a piece, replace src/assets/duck-outfit/<id>.svg with a file of
- * the same name and the same viewBox (0 0 100 100, aligned with
- * duck-base.webp). To add one, draw it, then add its id to LAYER_ORDER.
+ * To redraw a piece, replace src/assets/duck-outfit/<id>.webp with a
+ * transparent image of the same size as duck-base.webp, drawn in place over
+ * the duck. To add one, draw it, then add its id to LAYER_ORDER.
  */
 import type { ItemId } from '../../weather/outfit';
 

@@ -4,9 +4,9 @@ import { ITEM_LABEL, whatToWear, type ItemId, type OutfitInput } from '../../wea
 import { DressedDuck } from './DressedDuck';
 import { duckLayers, duckWeather, LAYER_ORDER } from './pieces';
 
-const pieceFiles = Object.keys(import.meta.glob('../../assets/duck-outfit/*.svg')).map((p) =>
-  p.replace(/^.*\/(.+)\.svg$/, '$1'),
-);
+const pieceFiles = Object.keys(
+  import.meta.glob(['../../assets/duck-outfit/*.webp', '!../../assets/duck-outfit/duck-base.webp']),
+).map((p) => p.replace(/^.*\/(.+)\.webp$/, '$1'));
 
 const base = (feelsC: number, o: Partial<OutfitInput> = {}): OutfitInput => ({
   tempC: feelsC,
