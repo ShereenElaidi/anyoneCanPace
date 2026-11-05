@@ -50,17 +50,6 @@
   font: 800 1rem var(--font);
 }
 
-.run-time__usual {
-  grid-column: 1 / -1;
-  justify-self: start;
-  font-size: 0.75rem;
-}
-
-.run-time__usual[aria-pressed='true'] {
-  background: var(--navy);
-  color: var(--white);
-}
-
 .dash-card {
   padding: 14px;
   border: var(--line) solid var(--asphalt);

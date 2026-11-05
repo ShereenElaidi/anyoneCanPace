@@ -95,7 +95,7 @@ All routes so far were drawn with [On The Go Map](https://onthegomap.com) on Ope
 
 ## Daily Dashboard
 
-- **Weather at run time.** Pick when the run starts. The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`), or your **usual start** if you saved one. The page then shows feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
+- **Weather at run time.** Pick when the run starts. The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The page then shows feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
 - **What to wear**, always as text: a headline, a list of items and notes. The duck next to it is decoration only. It will be dressed in Stage 3.
 - **Dress for the run feel, not the weather.** Run feel is the feels-like temperature **+ 7 °C** (`RUN_FEEL_OFFSET_C`), lower than the usual racing advice of about +10 °C because pacers run/walk and stand around at the start.
 
@@ -135,7 +135,7 @@ The tiers and thresholds are starting points. Tune them in the `TIERS` and `MODI
 - **Your GPS position stays on your phone.** It is held in memory for the current route only. It is never stored, logged or sent anywhere, and the map tiles come from the app's own files, not a map service.
 - **The only request the app makes to another site** is the Daily Dashboard's weather request to `api.open-meteo.com`, for **fixed central-Montréal coordinates, never your location**. It is made only when you open the dashboard and the saved forecast is more than 30 minutes old (or you tap REFRESH). Everything else is the app's own files. Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
 - After one visit, the timer, routes, stats and map work offline. Anything that can go stale shows when it was saved.
-- Saved on the device: timer settings, the offline map, the last weather forecast and your usual run start hour.
+- Saved on the device: timer settings, the offline map and the last weather forecast.
 
 ## Tech stack
 
@@ -270,7 +270,7 @@ The live app at `/anyoneCanPace/` only changes when `main` is pushed. Unreleased
 
 - It is the same code. A repository name containing "beta" makes the build say **Beta**: the BETA tag on the picker, "AnyoneCanPace Beta" as the tab title and home-screen name, and "ACP Beta" as the short name.
 - It has its own path, so its service worker, cached files and update prompts never touch the live app. A beta nested inside the live path (`/anyoneCanPace/beta/`) would be caught by the live app's service worker, which is why it's a separate repository.
-- Both apps are on the same `github.io` site, so on one phone they share local storage: timer intervals, the forecast and the usual run hour. The live app ignores the keys it doesn't know.
+- Both apps are on the same `github.io` site, so on one phone they share local storage: timer intervals and the forecast. The live app ignores the keys it doesn't know.
 - To update the beta from a feature branch (this deploys it via its own copy of the workflow):
 
   ```bash
@@ -318,7 +318,7 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 ### Daily Dashboard: field check
 
 - [ ] **First open online:** "Updated <time>" and an outfit appear within a few seconds. The run time defaults to the next 10 a.m.
-- [ ] **Run time:** pick tonight and tomorrow morning. The outfit changes (reflective vest when it's dark). Save a usual start, close and reopen: it's the default.
+- [ ] **Run time:** it defaults to the next 10 a.m. Pick tonight and tomorrow morning: the outfit changes (reflective vest when it's dark).
 - [ ] **Offline:** in airplane mode, reopen. It shows "Offline: showing the forecast from …" and the same outfit. With storage cleared and offline, it shows "Check outside".
 - [ ] **Does the outfit match reality?** For a week of runs, note the run feel, what the app said and what you actually wore. Tune `RUN_FEEL_OFFSET_C` and the tiers.
 - [ ] **Readable** at arm's length outdoors. The list makes sense without the duck.

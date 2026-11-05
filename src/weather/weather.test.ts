@@ -3,7 +3,7 @@ import fixture from './fixtures/gem-2026-11-04.json';
 import { forecastUrl, hourAt, MONTREAL, parseGem, sunFor, weatherText, ForecastError } from './forecast';
 import { defaultRunTime, lightAt, localHour, outfitInputFor, runTimeChoices } from './runTime';
 import { estimateUvIndex, solarElevationDeg } from './sun';
-import { loadForecast, loadUsualHour, saveForecast, saveUsualHour } from './cache';
+import { loadForecast, saveForecast } from './cache';
 
 const f = parseGem(fixture, 1_793_800_000_000);
 
@@ -65,24 +65,20 @@ describe('parsing a recorded GEM forecast', () => {
 
 describe('run time', () => {
   it('defaults to the next 10 a.m.: today before 10, tomorrow after', () => {
-    expect(defaultRunTime(f, est(4, 7, 30), null)).toBe(est(4, 10));
-    expect(defaultRunTime(f, est(4, 9, 59), null)).toBe(est(4, 10));
-    expect(defaultRunTime(f, est(4, 10, 1), null)).toBe(est(5, 10));
-    expect(defaultRunTime(f, est(4, 22, 1), null)).toBe(est(5, 10));
+    expect(defaultRunTime(f, est(4, 7, 30))).toBe(est(4, 10));
+    expect(defaultRunTime(f, est(4, 9, 59))).toBe(est(4, 10));
+    expect(defaultRunTime(f, est(4, 10, 1))).toBe(est(5, 10));
+    expect(defaultRunTime(f, est(4, 22, 1))).toBe(est(5, 10));
   });
 
   it('if the forecast no longer reaches 10 a.m., the next sensible hour', () => {
-    expect(localHour(defaultRunTime(f, est(5, 11, 1), null)!)).toBe(12); // only today's afternoon is left
-    expect(localHour(defaultRunTime(f, est(5, 22, 1), null)!)).toBe(23); // late: whatever is left
+    expect(localHour(defaultRunTime(f, est(5, 11, 1))!)).toBe(12); // only today's afternoon is left
+    expect(localHour(defaultRunTime(f, est(5, 22, 1))!)).toBe(23); // late: whatever is left
   });
 
-  it('uses the pacer’s usual start hour when saved', () => {
-    expect(defaultRunTime(f, est(4, 10) + 60_000, 9)).toBe(est(5, 9)); // tomorrow 9:00
-    expect(defaultRunTime(f, est(4, 7), 9)).toBe(est(4, 9));
-  });
 
   it('a forecast with no upcoming hours gives no default', () => {
-    expect(defaultRunTime(f, est(9, 9), null)).toBeNull();
+    expect(defaultRunTime(f, est(9, 9))).toBeNull();
     expect(runTimeChoices(f, est(9, 9))).toHaveLength(0);
   });
 
@@ -123,19 +119,11 @@ describe('sun and estimated UV (GEM has no UV)', () => {
 });
 
 describe('cache', () => {
-  it('keeps the last forecast and the usual start hour', () => {
+  it('keeps the last forecast', () => {
     expect(loadForecast()).toBeNull();
     saveForecast(f);
     expect(loadForecast()?.hours).toHaveLength(48);
     localStorage.setItem('anyonecanpace:weather:v1', '{broken');
     expect(loadForecast()).toBeNull();
-
-    expect(loadUsualHour()).toBeNull();
-    saveUsualHour(9);
-    expect(loadUsualHour()).toBe(9);
-    saveUsualHour(0);
-    expect(loadUsualHour()).toBe(0);
-    saveUsualHour(null);
-    expect(loadUsualHour()).toBeNull();
   });
 });

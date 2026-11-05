@@ -3,9 +3,8 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import duck from '../assets/duck-runner.webp';
 import { hourAt, sunFor, weatherText } from '../weather/forecast';
 import { whatToWear } from '../weather/outfit';
-import { defaultRunTime, localHour, outfitInputFor, runTimeChoices } from '../weather/runTime';
-import { loadUsualHour, saveUsualHour } from '../weather/cache';
-import { clockTime, dayLabel, degrees, hourLabel, runTimeLabel } from './format';
+import { defaultRunTime, outfitInputFor, runTimeChoices } from '../weather/runTime';
+import { clockTime, dayLabel, degrees, runTimeLabel } from './format';
 import { useForecast } from './useForecast';
 import './dashboard.css';
 
@@ -20,7 +19,6 @@ interface Props {
 export default function DashboardMode({ onSwitchMode }: Props) {
   useRegisterSW();
   const { forecast, state, refresh } = useForecast();
-  const [usualHour, setUsualHour] = useState<number | null>(loadUsualHour);
   const [picked, setPicked] = useState<number | null>(null);
   // "Now" moves on while the page stays open, so the default hour stays sensible.
   const [now, setNow] = useState(() => Date.now());
@@ -30,19 +28,13 @@ export default function DashboardMode({ onSwitchMode }: Props) {
   }, []);
 
   const choices = useMemo(() => (forecast ? runTimeChoices(forecast, now) : []), [forecast, now]);
-  const fallback = forecast ? defaultRunTime(forecast, now, usualHour) : null;
+  const fallback = forecast ? defaultRunTime(forecast, now) : null;
   const runAt = picked !== null && choices.includes(picked) ? picked : fallback;
   const input = forecast && runAt !== null ? outfitInputFor(forecast, runAt) : null;
   const outfit = input ? whatToWear(input) : null;
   const hour = forecast && runAt !== null ? hourAt(forecast, runAt) : null;
   const sun = forecast && runAt !== null ? sunFor(forecast, runAt) : null;
-  const runHour = runAt !== null ? localHour(runAt) : null;
 
-  const toggleUsual = () => {
-    const next = usualHour === runHour ? null : runHour;
-    setUsualHour(next);
-    saveUsualHour(next);
-  };
 
   return (
     <div className="app dash">
@@ -76,16 +68,6 @@ export default function DashboardMode({ onSwitchMode }: Props) {
                 </option>
               ))}
             </select>
-            {runHour !== null && (
-              <button
-                type="button"
-                className="btn btn--secondary btn--small run-time__usual"
-                aria-pressed={usualHour === runHour}
-                onClick={toggleUsual}
-              >
-                {usualHour === runHour ? `✓ ${hourLabel(runHour)} IS MY USUAL START` : `MAKE ${hourLabel(runHour)} MY USUAL START`}
-              </button>
-            )}
           </div>
         )}
 

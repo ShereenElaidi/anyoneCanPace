@@ -113,7 +113,7 @@ describe('Daily Dashboard', () => {
     expect((screen.getByLabelText('Run starts') as HTMLSelectElement).selectedOptions[0].textContent).toBe('Tomorrow 10 a.m.');
   });
 
-  it('choosing another run time updates the outfit; the usual start hour is remembered', async () => {
+  it('choosing another run time updates the outfit', async () => {
     await openDashboard();
     await screen.findByText(/^Updated /);
     const select = screen.getByLabelText('Run starts') as HTMLSelectElement;
@@ -122,10 +122,8 @@ describe('Daily Dashboard', () => {
     const wear = screen.getByRole('region', { name: 'What to wear' });
     expect(wear.textContent).toContain('Reflective vest');
     expect(wear.textContent).toContain('Dark at run time');
-
-    fireEvent.click(screen.getByRole('button', { name: 'MAKE 7 p.m. MY USUAL START' }));
-    expect(localStorage.getItem('anyonecanpace:runhour:v1')).toBe('19');
-    expect(screen.getByRole('button', { name: /7 p\.m\. IS MY USUAL START/ }).getAttribute('aria-pressed')).toBe('true');
+    // No "usual start" button any more: the default is always the next 10 a.m.
+    expect(screen.queryByRole('button', { name: /USUAL START/ })).toBeNull();
   });
 
   it('refresh asks again, once at a time', async () => {
