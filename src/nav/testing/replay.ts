@@ -116,3 +116,17 @@ export function replay(route: PreparedRoute, fixes: Fix[], from?: NavState): Rep
 }
 
 export const lastAt = (fixes: Fix[]) => fixes[fixes.length - 1].at;
+
+const allData = import.meta.glob<RouteData>(['../../data/routes/*.json', '!../../data/routes/manifest.json'], {
+  eager: true,
+  import: 'default',
+});
+const allTracks = import.meta.glob<string>('../../data/routes/*.geojson', { eager: true, query: '?raw', import: 'default' });
+
+/** Every route in the library, prepared, for checks that should hold for all of them. */
+export function allRoutes(): { data: RouteData; route: PreparedRoute }[] {
+  return Object.values(allData).map((data) => {
+    const track = JSON.parse(allTracks[`../../data/routes/${data.track}`]) as TrackFeature;
+    return { data, route: prepareRoute(track.geometry.coordinates, data.turns) };
+  });
+}

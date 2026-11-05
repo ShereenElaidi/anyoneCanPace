@@ -1,0 +1,67 @@
+[
+  {
+    "atM": 255,
+    "dir": "left",
+    "street": "Rue Ontario Ouest"
+  },
+  {
+    "atM": 368,
+    "dir": "right",
+    "street": "Rue Saint-Urbain"
+  },
+  {
+    "atM": 609,
+    "dir": "right",
+    "street": "Rue Sherbrooke Ouest"
+  },
+  {
+    "atM": 1530,
+    "dir": "sharp-right",
+    "street": "Rue Saint-Hubert"
+  },
+  {
+    "atM": 1752,
+    "dir": "right",
+    "street": "Rue Ontario Est"
+  },
+  {
+    "atM": 1875,
+    "dir": "left",
+    "street": "Rue Berri"
+  },
+  {
+    "atM": 2375,
+    "dir": "slight-right",
+    "street": "Rue Berri"
+  },
+  {
+    "atM": 2586,
+    "dir": "right",
+    "street": "Boulevard René-Lévesque Est"
+  },
+  {
+    "atM": 2697,
+    "dir": "right",
+    "street": "Rue Saint-Denis"
+  },
+  {
+    "atM": 3351,
+    "dir": "left",
+    "street": "Rue Ontario Est"
+  },
+  {
+    "atM": 3830,
+    "dir": "left",
+    "street": "Rue Saint-Dominique"
+  },
+  {
+    "atM": 4329,
+    "dir": "right",
+    "street": "Boulevard René-Lévesque Est"
+  },
+  {
+    "atM": 4441,
+    "dir": "right",
+    "street": "Rue Clark"
+  }
+]

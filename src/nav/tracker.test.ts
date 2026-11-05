@@ -4,7 +4,7 @@ import { distanceM, offsetPoint } from './geo';
 import { bearingAt, pointAt, prepareRoute } from './route';
 import { approachInfo, begin, createNav, goRogue, update, type NavEvent } from './tracker';
 import { describe as describeBanner } from './banner';
-import { lastAt, line, replay, sampleRoute, walk } from './testing/replay';
+import { allRoutes, lastAt, line, replay, sampleRoute, walk } from './testing/replay';
 
 const turnEvents = (events: NavEvent[]) =>
   events.filter((e): e is Extract<NavEvent, { kind: 'turn' }> => e.kind === 'turn');
@@ -235,4 +235,31 @@ describe('overlapping legs (out-and-back on one street)', () => {
     expect(r2.state.status).toBe('finished');
     expect(turnEvents([...r.events, ...r2.events]).filter((e) => e.stage === 'now')).toHaveLength(1);
   });
+});
+
+describe('every route in the library', () => {
+  const routes = allRoutes();
+
+  it('includes the sample loop and Pi Day', () => {
+    expect(routes.map((r) => r.data.id).sort()).toEqual(expect.arrayContaining(['pi-day', 'sample-loop']));
+  });
+
+  for (const { data, route } of routes) {
+    it(`${data.id}: a jittery run cues every turn once and finishes`, () => {
+      expect(Math.abs(route.lengthM - data.stats.distanceM)).toBeLessThan(5);
+      const r = replay(route, walk(route, { fromM: 0, toM: route.lengthM, jitterM: 6, seed: 11 }));
+      expect(isMonotonic(r.progress)).toBe(true);
+      expect(kinds(r.events)).not.toContain('off-route');
+      const now = turnEvents(r.events).filter((e) => e.stage === 'now').map((e) => e.turnIndex);
+      expect(now).toEqual(route.turns.map((_, i) => i));
+      expect(r.state.status).toBe('finished');
+    });
+
+    it(`${data.id}: starting at the finish point (loops) begins near 0 km`, () => {
+      const end = route.points[route.points.length - 1];
+      if (!approachInfo(route, end).atStart) return;
+      const started = begin(route, createNav(route), { ...end, accuracyM: 8, at: 0 }, 0);
+      expect(started.state.progressM).toBeLessThan(150);
+    });
+  }
 });
