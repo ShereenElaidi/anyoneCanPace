@@ -10,6 +10,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - `npm test` (Vitest), `npm run typecheck`, `npm run build` (also runs `scripts/check-bundle.ts`). Run all three before committing.
 - `npm run preview` serves the production build. Service workers only register there, not in dev.
 - `npm run routes` rebuilds `src/data/routes/` from `routes/*.gpx` (keeps hand-edited name/turns/notes/advisories; `--offline`, `--reset-turns`). `npm run map` re-cuts `public/maps/montreal.pmtiles` (then bump `MAP_VERSION` in `src/sixk/map/offlineMap.ts`).
+- Simulated run (dev only): `npm run dev`, open `/anyoneCanPace/?sim` (`?sim=pi-day`, `&away=300`, `&speed=10`). `src/dev/simulateGps.ts` replaces `navigator.geolocation` and adds a RUN / speed / GO OFF / restart panel; `main.tsx` only loads it when `import.meta.env.DEV`, so it never ships.
 - GPS needs HTTPS: `npm run dev:https` (self-signed, `.cache/dev-cert/`) or a Cloudflare/ngrok tunnel. Scripts are `.ts` run by Node 22.18+ directly.
 
 ## Layout

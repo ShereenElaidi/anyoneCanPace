@@ -269,6 +269,8 @@ npm run dev        # http://localhost:5173/anyoneCanPace/
 
 ### Testing on a phone (GPS needs HTTPS)
 
+**Simulate a run at your desk (dev only).** `npm run dev`, then open http://localhost:5173/anyoneCanPace/?sim, pick the 6K Route Library → Sample Loop → START ROUTE. A dashed panel on the right edge fakes the GPS: **▶ RUN / ❚❚ PAUSE**, speed **×1 / ×3 / ×10** (×1 is about 6:00 /km), **GO OFF** (drift 80 m to the side to see the off-route banner, the confused duck and "Going rogue?") and **↺** to restart. Options: `?sim=pi-day` for another route, `&away=300` to begin 300 m from the start (to see "Head to the start" and the not-yet-joined duck), `&speed=10`. It only exists in `npm run dev` (`src/dev/simulateGps.ts`); production builds don't contain it.
+
 Browsers only give GPS to secure (https) pages. A phone loading `http://<laptop-ip>:5173` gets **no GPS**. Two ways round it:
 
 1. **A tunnel (most reliable; the service worker works too).** Install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) (a separate program, not an npm package), run `npm run dev` (or `npm run build && npm run preview`), then in another terminal:
