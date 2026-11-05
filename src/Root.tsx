@@ -6,6 +6,7 @@ import { loadMode, saveMode, type AppMode } from './lib/prefs';
 // The 6K mode (and its map library) loads only when it is opened, so the
 // timer's first load stays as small as before.
 const SixKMode = lazy(() => import('./sixk/SixKMode'));
+const DashboardMode = lazy(() => import('./dashboard/DashboardMode'));
 
 /**
  * Opens straight into the last-used mode, or shows the mode picker.
@@ -25,6 +26,13 @@ export default function Root() {
     return (
       <Suspense fallback={<p className="loading">Loading routes…</p>}>
         <SixKMode onSwitchMode={toPicker} />
+      </Suspense>
+    );
+  }
+  if (mode === 'dashboard') {
+    return (
+      <Suspense fallback={<p className="loading">Loading the dashboard…</p>}>
+        <DashboardMode onSwitchMode={toPicker} />
       </Suspense>
     );
   }

@@ -68,12 +68,13 @@ afterEach(() => {
 });
 
 describe('mode picker', () => {
-  it('a first-time visitor sees the picker; Daily Dashboard is coming soon', () => {
+  it('a first-time visitor sees the picker with all three modes', () => {
     render(<Root />);
     expect(screen.getByRole('heading', { name: 'AnyoneCanPace' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /ACR Run\/Walk Timer/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /6K Route Library/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Daily Dashboard/ })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: /Daily Dashboard/ })).toHaveProperty('disabled', false);
+    expect(screen.queryByText('BETA')).toBeNull(); // only the beta build is labelled
   });
 
   it('picking the timer opens the unchanged timer, and it is remembered', () => {

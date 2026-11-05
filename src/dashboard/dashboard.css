@@ -1,0 +1,159 @@
+/* Daily Dashboard styles. Loaded with the dashboard chunk only. */
+
+.dash__title {
+  color: var(--navy);
+  font-size: clamp(1.3rem, 6vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.dash__h2 {
+  margin-bottom: 8px;
+  color: var(--navy);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.dash-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.dash-status--stale p {
+  padding: 4px 8px;
+  border: 2px dashed var(--asphalt);
+  border-radius: 10px;
+}
+
+.run-time {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.run-time__label {
+  font-weight: 800;
+}
+
+.run-time__select {
+  min-height: 48px;
+  padding: 6px 10px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--navy);
+  font: 800 1rem var(--font);
+}
+
+.run-time__usual {
+  grid-column: 1 / -1;
+  justify-self: start;
+  font-size: 0.75rem;
+}
+
+.run-time__usual[aria-pressed='true'] {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.dash-card {
+  padding: 14px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 5px 0 var(--asphalt);
+}
+
+.dash-card--empty {
+  border-style: dashed;
+  box-shadow: none;
+  text-align: center;
+}
+
+.dash-card__big {
+  color: var(--navy);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.weather__feels {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.weather__feels strong {
+  color: var(--navy);
+  font-size: clamp(2.2rem, 11vw, 3rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather__facts {
+  margin: 6px 0 0;
+  padding-left: 1.1em;
+  font-weight: 600;
+}
+
+.wear__body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Stage 3 replaces the plain duck with a dressed one; keep the slot square. */
+.duck-slot {
+  flex-shrink: 0;
+  width: 112px;
+  height: 112px;
+  border-radius: 20px;
+  background: var(--pavement);
+}
+
+.duck-slot img {
+  width: 100%;
+  height: 100%;
+}
+
+.wear__headline {
+  color: var(--navy);
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.wear__runfeel {
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+
+.wear__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wear__items li {
+  padding: 6px 10px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  background: var(--pavement);
+  font-weight: 700;
+}
+
+.wear__notes {
+  margin: 12px 0 0;
+  padding-left: 1.1em;
+  font-size: 0.9rem;
+}
+
+.wear__notes li + li {
+  margin-top: 4px;
+}

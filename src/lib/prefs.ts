@@ -36,10 +36,10 @@ export function savePrefs(prefs: Prefs): void {
 
 // ---------- App mode ----------
 
-export type AppMode = 'timer' | 'sixk';
+export type AppMode = 'timer' | 'sixk' | 'dashboard';
 
 const MODE_KEY = 'anyonecanpace:mode:v1';
-const MODES: readonly AppMode[] = ['timer', 'sixk'];
+const MODES: readonly AppMode[] = ['timer', 'sixk', 'dashboard'];
 
 /**
  * The mode to open straight into, or null to show the mode picker.

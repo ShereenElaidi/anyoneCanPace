@@ -29,6 +29,14 @@ function pagesBase(): string {
 const base = pagesBase();
 
 /**
+ * Beta channel: the same code deployed from a separate "…-beta" repository
+ * (its own path, so its service worker never touches the live app). It is
+ * labelled "Beta" in the app, the home-screen name and the tab title.
+ */
+const isBeta = /beta/i.test(base);
+const appName = isBeta ? 'AnyoneCanPace Beta' : 'AnyoneCanPace';
+
+/**
  * Phone testing: GPS needs a secure page. `npm run dev:https` makes a
  * self-signed certificate (scripts/dev-cert.ts) and sets HTTPS_DEV. A tunnel
  * (Cloudflare Tunnel / ngrok) also works; its hosts are allowed below.
@@ -41,8 +49,13 @@ const allowedHosts = ['.trycloudflare.com', '.ngrok-free.app', '.ngrok.app'];
 
 export default defineConfig({
   base,
+  define: { __BETA__: JSON.stringify(isBeta) },
   plugins: [
     react(),
+    {
+      name: 'beta-title',
+      transformIndexHtml: (html) => (isBeta ? html.replaceAll('>AnyoneCanPace<', `>${appName}<`).replace('content="AnyoneCanPace"', `content="${appName}"`) : html),
+    },
     VitePWA({
       // Ask before swapping versions: an automatic reload could interrupt a
       // pacer mid-session. The app offers the update only when no session runs.
@@ -50,8 +63,8 @@ export default defineConfig({
       // Icons are already precached by globPatterns below.
       includeManifestIcons: false,
       manifest: {
-        name: 'AnyoneCanPace',
-        short_name: 'AnyoneCanPace',
+        name: appName,
+        short_name: isBeta ? 'ACP Beta' : 'AnyoneCanPace',
         description: 'Run together. Walk together. A simple RUN/WALK interval timer for volunteer pacers.',
         id: base,
         start_url: base,

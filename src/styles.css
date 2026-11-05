@@ -606,6 +606,23 @@ button {
   border-left-color: var(--gold);
 }
 
+.mode-card--dashboard {
+  border-left-color: var(--blue);
+}
+
+.beta-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--asphalt);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+}
+
 .mode-card:disabled {
   cursor: not-allowed;
   border-style: dashed;

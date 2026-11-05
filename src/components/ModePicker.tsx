@@ -16,7 +16,9 @@ export function ModePicker({ onPick }: Props) {
       <header className="picker__head">
         <img className="picker__duck" src={duck} alt="" width={72} height={72} />
         <div>
-          <h1 className="brand">AnyoneCanPace</h1>
+          <h1 className="brand">
+            AnyoneCanPace{__BETA__ && <span className="beta-tag">BETA</span>}
+          </h1>
           <p className="tagline">RUN TOGETHER. WALK TOGETHER.</p>
         </div>
       </header>
@@ -37,11 +39,9 @@ export function ModePicker({ onPick }: Props) {
             </button>
           </li>
           <li>
-            <button type="button" className="mode-card" disabled aria-describedby="dashboard-soon">
+            <button type="button" className="mode-card mode-card--dashboard" onClick={() => onPick('dashboard')}>
               <span className="mode-card__name">Daily Dashboard</span>
-              <span className="mode-card__help" id="dashboard-soon">
-                Coming soon: today’s weather and what to wear.
-              </span>
+              <span className="mode-card__help">Today’s weather at run time and what to wear.</span>
             </button>
           </li>
         </ul>
