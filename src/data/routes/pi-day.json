@@ -11,6 +11,10 @@
   },
   "track": "pi-day.geojson",
   "startStreet": "Rue Clark",
+  "place": "Quartier latin · starts on Rue Clark",
+  "tags": [
+    "shape-run"
+  ],
   "bbox": [-73.57004, 45.50847, -73.55732, 45.51901],
   "profile": [
     [0, 28.1],

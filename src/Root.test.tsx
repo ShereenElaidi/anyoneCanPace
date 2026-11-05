@@ -61,6 +61,7 @@ function gps(lat: number, lon: number, at: number, accuracy = 8) {
 beforeEach(() => {
   resetOfflineMapForTests();
   installGeolocation();
+  localStorage.clear();
 });
 
 afterEach(() => {
@@ -150,15 +151,58 @@ describe('Route Library', () => {
     expect(note.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('lists routes with distance, climb and an outline', async () => {
+  it('lists routes with place, distance, time, terrain, tags and an outline', async () => {
     await openLibrary();
+    expect(screen.getByText('Where are we running today?')).toBeTruthy();
     const card = screen.getByRole('button', { name: /Sample Loop/ });
-    expect(card.textContent).toContain('6.4 km');
-    expect(card.textContent).toMatch(/↑ \d+ m ↓ \d+ m/);
-    expect(card.textContent).toContain('Loop');
+    expect(card.textContent).toContain('Downtown → Old Port');
+    expect(card.textContent).toContain('6.4 km loop');
+    // 7:30 /km by default; screen readers hear "about", not "~".
+    expect(card.textContent).toContain('~48 min');
+    expect(card.getAttribute('aria-label') ?? card.textContent).toContain('about 48 minutes');
+    expect(card.textContent).toContain('Some gentle hills');
+    expect(card.textContent).toContain('Waterfront');
     expect(card.querySelector('svg path')?.getAttribute('d')).toMatch(/^M/);
-    // jsdom has no Cache Storage: the map status says so honestly.
-    expect(await screen.findByText(/can’t save the map/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Pi Day/ }).textContent).toContain('Shape run');
+    // jsdom has no Cache Storage: the map status says so honestly, at the top.
+    expect((await screen.findAllByText(/can’t save the map/)).length).toBeGreaterThan(0);
+  });
+
+  it('settings: the pace changes the times and is remembered; the filter lasts one visit', async () => {
+    const first = render(<Root />);
+    tap(/^Route Library/);
+    await screen.findByRole('heading', { name: 'Route Library' });
+
+    tap('Library settings');
+    tap('6 minutes per km');
+    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~38 min');
+    tap('Faster: 15 seconds less per km');
+    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~37 min');
+
+    // Only filters that match a route are offered.
+    for (const name of ['All', 'Shape runs', 'Under 5 km', 'Flat', 'Waterfront', '10 km+']) {
+      expect(screen.getByRole('button', { name })).toBeTruthy();
+    }
+    tap('Flat');
+    expect(screen.getByRole('button', { name: 'Flat' }).getAttribute('aria-pressed')).toBe('true');
+    tap('DONE');
+    expect(screen.queryByRole('button', { name: /Sample Loop/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Pi Day/ })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toMatch(/Showing flat routes/);
+    tap('Show all');
+    expect(screen.getByRole('button', { name: /Sample Loop/ })).toBeTruthy();
+
+    // Filter again, then come back another day: every route shows, at the saved pace.
+    tap('Library settings');
+    tap('Shape runs');
+    tap('DONE');
+    expect(screen.queryByRole('button', { name: /Canal Test/ })).toBeNull();
+    first.unmount();
+    render(<Root />);
+    tap(/^Route Library/);
+    await screen.findByRole('heading', { name: 'Route Library' });
+    expect(screen.getByRole('button', { name: /Canal Test/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~37 min');
   });
 
   it('route page: stats, map, elevation, turns, empty advisories, start button', async () => {

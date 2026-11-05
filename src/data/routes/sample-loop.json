@@ -11,6 +11,10 @@
   },
   "track": "sample-loop.geojson",
   "startStreet": "",
+  "place": "Downtown → Old Port",
+  "tags": [
+    "waterfront"
+  ],
   "bbox": [-73.57658, 45.49303, -73.5527, 45.51214],
   "profile": [
     [0, 29],

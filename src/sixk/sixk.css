@@ -1,4 +1,4 @@
-/* 6K Route Library styles. Loaded with the 6K chunk only. */
+/* Route Library styles. Loaded with the Route Library chunk only. */
 
 .brand--small {
   font-size: 0.75rem;
@@ -26,6 +26,210 @@
 
 .sixk__h3 {
   font-size: 1.05rem;
+}
+
+.sixk {
+  --muted: #5f5e5a;
+  --ok-green: #3b6d11;
+}
+
+/* ---------- Library header, greeting, filter line ---------- */
+
+.lib-gear svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--asphalt);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lib-greet {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lib-greet__duck {
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.lib-greet__bubble {
+  position: relative;
+  margin-left: 12px;
+  padding: 10px 14px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--navy);
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* The bubble's tail, pointing at the duck. */
+.lib-greet__bubble::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -19px;
+  border: 8px solid transparent;
+  border-right-color: var(--asphalt);
+  transform: translateY(-50%);
+}
+
+.lib-filter {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.lib-filter b {
+  color: var(--asphalt);
+}
+
+.link-btn {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.lib-empty {
+  padding: 12px 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.lib-offline {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.lib-offline b {
+  color: var(--ok-green);
+}
+
+/* ---------- Library settings sheet ---------- */
+
+.lib-settings__title {
+  color: var(--navy);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.lib-settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lib-settings__label {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.lib-settings__sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+
+.lib-settings__hint {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.lib-settings__hint b {
+  color: var(--asphalt);
+}
+
+.pace-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: 16px;
+  background: var(--paper);
+}
+
+.pace-stepper__btn {
+  width: 52px;
+  height: 52px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--asphalt);
+  font: inherit;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--asphalt);
+  touch-action: manipulation;
+}
+
+.pace-stepper__btn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.pace-stepper__value {
+  color: var(--navy);
+  font-size: 1.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.pace-stepper__value small {
+  margin-left: 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2.5px solid var(--asphalt);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--asphalt);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Selected: a tick as well as the colour. */
+.chip[aria-pressed='true'] {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: var(--white);
+}
+
+.chip[aria-pressed='true']::before {
+  content: '✓ ';
 }
 
 /* ---------- Offline map status ---------- */
@@ -83,7 +287,7 @@
 
 .route-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   width: 100%;
   min-height: 88px;
@@ -107,7 +311,11 @@
   height: 64px;
   flex-shrink: 0;
   border-radius: 12px;
-  background: var(--pavement);
+  /* A faint street grid, so the outline reads as a place. */
+  background-color: #eaf1f8;
+  background-image: linear-gradient(#d6e2ee 1px, transparent 1px), linear-gradient(90deg, #d6e2ee 1px, transparent 1px);
+  background-size: 11px 11px;
+  background-position: center;
 }
 
 .route-card__thumb path {
@@ -123,26 +331,80 @@
   flex-direction: column;
   gap: 2px;
   flex: 1;
+  min-width: 0;
 }
 
 .route-card__name {
   color: var(--navy);
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 800;
 }
 
+.route-card__place {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
 .route-card__stats {
-  font-size: 0.85rem;
-  font-weight: 600;
+  margin-top: 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.route-card__time {
+  white-space: nowrap;
+}
+
+.route-card__place-part {
+  display: inline-block;
+}
+
+.route-card__terrain {
+  font-size: 0.95rem;
+}
+
+.route-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tag {
+  padding: 3px 9px;
+  border: 2px solid;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Tag colours are extras: the text always says what the tag is. */
+.tag--gold {
+  border-color: #ba7517;
+  background: #fbe3bc;
+  color: #633806;
+}
+
+.tag--green {
+  border-color: #639922;
+  background: #eaf3de;
+  color: var(--ok-green);
+}
+
+.tag--blue {
+  border-color: var(--blue);
+  background: #e6f1fb;
+  color: #0c447c;
 }
 
 .route-card__check {
   align-self: flex-start;
-  margin-top: 4px;
-  padding: 1px 8px;
+  margin-top: 6px;
+  padding: 2px 9px;
   border: 2px solid var(--asphalt);
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
@@ -175,6 +437,7 @@
 }
 
 .route-card__go {
+  align-self: center;
   font-size: 2rem;
   font-weight: 800;
   color: var(--navy);

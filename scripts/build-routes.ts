@@ -6,7 +6,7 @@
  *   --reset-turns  replace the turns with fresh proposals (street names and
  *                  notes are carried over to proposals at the same place)
  *
- * Hand-edited fields (name, notes, advisories, startStreet, verification) in
+ * Hand-edited fields (name, place, tags, notes, advisories, startStreet, verification) in
  * an existing processed file are always kept. Hand-edited turns are kept only
  * while the track geometry is unchanged: if the GPX changed, their distances
  * no longer fit, so the build stops and asks for --reset-turns. Changing the
@@ -296,6 +296,8 @@ async function buildRoute(config: RouteConfig) {
     track: `${config.id}.geojson`,
     startStreet:
       keep && !decision.geometryChanged && existing!.startStreet !== undefined ? existing!.startStreet : analysis.startStreet,
+    ...(keep && existing!.place !== undefined ? { place: existing!.place } : {}),
+    ...(keep && existing!.tags !== undefined ? { tags: existing!.tags } : {}),
     bbox: box.map((v) => round(v, 6)) as RouteData['bbox'],
     profile: ele.profile,
     turns: decision.turns,
@@ -410,6 +412,8 @@ async function main() {
       stats: data.stats,
       outline,
       verification: data.verification.status,
+      ...(data.place !== undefined ? { place: data.place } : {}),
+      ...(data.tags !== undefined ? { tags: data.tags } : {}),
     });
   }
   writeFileSync(join(OUT_DIR, 'manifest.json'), formatJson(manifest));

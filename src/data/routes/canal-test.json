@@ -11,6 +11,11 @@
   },
   "track": "canal-test.geojson",
   "startStreet": "Piste Atwater - Des Seigneurs",
+  "place": "Lachine Canal · Saint-Henri",
+  "tags": [
+    "waterfront",
+    "canal-path"
+  ],
   "bbox": [-73.62609, 45.4513, -73.566, 45.48538],
   "profile": [
     [0, 20],

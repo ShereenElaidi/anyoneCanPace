@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { loadRoutePace, saveRoutePace } from '../lib/prefs';
 import { SW_OPTIONS } from '../lib/swUpdate';
 import { loadRoute, manifest, type LoadedRoute } from './data';
+import { clampPace, PACE, type RouteFilter } from './describe';
 import { FollowView } from './FollowView';
 import { Library } from './Library';
+import { LibrarySettings } from './LibrarySettings';
 import { RoutePage } from './RoutePage';
 import './sixk.css';
 
@@ -26,6 +29,17 @@ export default function SixKMode({ onSwitchMode }: Props) {
   const [route, setRoute] = useState<LoadedRoute | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [menuRequest, setMenuRequest] = useState(0);
+  // Library settings. The pace is saved; the filter lasts for this visit only.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pace, setPace] = useState(() => loadRoutePace(clampPace) ?? PACE.default);
+  const [filter, setFilter] = useState<RouteFilter>('all');
+  const changePace = useCallback((p: number) => {
+    setPace(p);
+    saveRoutePace(p);
+  }, []);
+  useEffect(() => {
+    if (view.name !== 'library') setSettingsOpen(false);
+  }, [view.name]);
   const viewRef = useRef(view);
   viewRef.current = view;
 
@@ -89,9 +103,17 @@ export default function SixKMode({ onSwitchMode }: Props) {
           <h1 className="sixk__title">{title}</h1>
         </div>
         {view.name === 'library' ? (
-          <button type="button" className="btn btn--secondary btn--small" onClick={onSwitchMode}>
-            MODES
-          </button>
+          <div className="header__side">
+            <button type="button" className="btn btn--secondary btn--icon lib-gear" aria-label="Library settings" onClick={() => setSettingsOpen(true)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+              </svg>
+            </button>
+            <button type="button" className="btn btn--secondary btn--small" onClick={onSwitchMode}>
+              MODES
+            </button>
+          </div>
         ) : (
           <button type="button" className="btn btn--secondary btn--small" onClick={() => go({ name: 'library' })}>
             ‹ ROUTES
@@ -105,7 +127,20 @@ export default function SixKMode({ onSwitchMode }: Props) {
             UPDATE TO NEW VERSION
           </button>
         )}
-        {view.name === 'library' && <Library onOpen={(routeId) => go({ name: 'route', id: routeId })} />}
+        {view.name === 'library' && (
+          <>
+            <Library onOpen={(routeId) => go({ name: 'route', id: routeId })} pace={pace} filter={filter} onFilter={setFilter} />
+            <LibrarySettings
+              open={settingsOpen}
+              onClose={() => setSettingsOpen(false)}
+              routes={manifest.routes}
+              pace={pace}
+              onPace={changePace}
+              filter={filter}
+              onFilter={setFilter}
+            />
+          </>
+        )}
         {view.name === 'route' &&
           (loaded ? (
             <RoutePage route={loaded} onStart={() => go({ name: 'follow', id: loaded.data.id })} />

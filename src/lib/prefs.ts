@@ -38,3 +38,29 @@ export function savePrefs(prefs: Prefs): void {
 
 /** The modes on the picker. The app always opens on the picker; no mode is remembered. */
 export type AppMode = 'timer' | 'sixk' | 'dashboard';
+
+// ---------- Route Library pace ----------
+
+const PACE_KEY = 'anyonecanpace:route-pace:v1';
+
+/**
+ * The pace (seconds per km) the Route Library uses for time estimates, or null
+ * if none is saved. Validated with the caller's clamp. The library's filter is
+ * deliberately not saved: next visit always shows every route.
+ */
+export function loadRoutePace(clamp: (s: number) => number): number | null {
+  try {
+    const n = Number(localStorage.getItem(PACE_KEY));
+    return Number.isFinite(n) && n > 0 ? clamp(n) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveRoutePace(secondsPerKm: number): void {
+  try {
+    localStorage.setItem(PACE_KEY, String(secondsPerKm));
+  } catch {
+    // Storage blocked: the pace still applies for this visit.
+  }
+}

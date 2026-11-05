@@ -71,6 +71,10 @@ export interface RouteData {
   track: string;
   /** Street at the start, for "Continue on X" before the first turn. */
   startStreet?: string;
+  /** Hand-written: where the route is, for the library ("Downtown → Old Port"). */
+  place?: string;
+  /** Hand-written tag ids from ROUTE_TAGS (src/sixk/describe.ts), e.g. "waterfront". */
+  tags?: string[];
   /** [west, south, east, north]. */
   bbox: [number, number, number, number];
   /** Smoothed elevation profile: [distanceM, elevationM] pairs. */
@@ -94,6 +98,8 @@ export interface RouteSummary {
   /** SVG path in a 0..100 box, for the list thumbnail. */
   outline: string;
   verification: VerificationStatus;
+  place?: string;
+  tags?: string[];
 }
 
 export interface RouteManifest {

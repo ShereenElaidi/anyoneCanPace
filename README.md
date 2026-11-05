@@ -33,7 +33,9 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
 
 ## Route Library
 
-- **Library**: each route shows its name, distance, climb and descent, and a small outline.
+- **Library**: the duck asks "Where are we running today?". Each route card shows the name, where it is ("Downtown → Old Port"), distance and kind with a time estimate ("6.4 km loop · ~48 min"), the climb in words ("Mostly flat", "Some gentle hills"; exact numbers are on the route page), tags such as **Shape run** or **Waterfront**, whether the directions have been checked, and a small outline on a faint street grid.
+  - **Settings** (gear next to MODES): **your pace** for the time estimates (default 7:30 /km, 4:00–12:00 in 15 s steps, with presets). It's saved on the phone. **Show routes** filters the list (Shape runs, Under 5 km, Flat, Waterfront, 10 km+; only filters that match a route are offered). The filter lasts for the visit only, and a "Showing … routes · Show all" line says when one is on.
+  - The offline map status only takes space at the top when it needs attention (not saved, saving, outdated, failed). Once the map is saved it's a quiet "✓ Works offline" line at the bottom.
 - **Route page**: map preview, stats, elevation profile, turn list, notes, advisories and **START ROUTE**.
 - **Follow view**:
   - A street map with the duck at your GPS position, always (on route, off route and going rogue), facing the route's direction. A blue accuracy halo around it shows how precise the fix is. Off route, the map keeps the duck and your place on the route both in view.
@@ -74,7 +76,7 @@ Source GPX files live in `routes/` and are committed. The app ships only the pro
    - looks up bare-earth elevation every 10 m and cleans it (see "Elevation" below)
    - proposes turns from heading changes and fills street names from OpenStreetMap (see "Turn suggestions" below)
    - writes `<id>.json`, `<id>.geojson` and `manifest.json`, plus a review report in `routes/review/<id>.md` (and `.json`)
-3. Edit `src/data/routes/<id>.json` by hand: `name`, `startStreet`, and each turn's `dir`, `street` and `note`. Also `notes`, `advisories` and `verification`. Re-running the script keeps these hand edits.
+3. Edit `src/data/routes/<id>.json` by hand: `name`, `startStreet`, and each turn's `dir`, `street` and `note`. Also `notes`, `advisories`, `verification`, and the library's `place` (where it is, e.g. `"Downtown → Old Port"`) and `tags` (ids from `ROUTE_TAGS` in `src/sixk/describe.ts`: `shape-run`, `good-first-route`, `waterfront`, `canal-path`; add new ones there). Re-running the script keeps these hand edits and copies `place` and `tags` into `manifest.json`, which the library list reads. `npm test` fails on an unknown tag or a manifest out of date.
    - **Turns are tied to the geometry.** Each turn's `atM` is a distance along one particular track, so the file stores a fingerprint of the processed track (`geometry`). If the GPX changes, the build **stops** for that route instead of keeping distances that now point at the wrong places. Rebuild with `npm run routes -- --reset-turns`: turns are regenerated from the new track, and hand-written street names and notes are carried over to new turns within 25 m of the old ones (by position on the ground, not distance). Old turns that matched nothing are listed in the console and the review report to fix by hand. Fresh proposals are always in `routes/cache/<id>.proposed-turns.json` for comparison.
    - Changing the geometry or the turns sets `verification` back to `unverified` (see below).
 
