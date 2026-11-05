@@ -230,7 +230,7 @@ describe('6K Route Library', () => {
     // The duck is where you are, not left behind on the route.
     const duckAt = () => screen.getByTestId('route-map').getAttribute('data-duck-at');
     expect(duckAt()).toBe(`${away.lat.toFixed(5)},${away.lon.toFixed(5)}`);
-    expect(screen.getByRole('button', { name: 'GUIDE ME BACK PLS, I WAS STOOOPID' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'AM STOOOPIDLY LOST. FINDING MY WAY BACK.' })).toBeTruthy();
     tap('YES, GEWWW AWAEYYY!');
     expect(document.querySelector('.banner__primary')?.textContent).toBe('Going rogue');
     // Going rogue calms the banner, but the duck stays the confused one until back on the route,
