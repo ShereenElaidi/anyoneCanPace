@@ -149,6 +149,18 @@ describe('sample loop replay', () => {
     expect(r2.events.some((e) => e.kind === 'turn-skipped' && e.turnIndex === k)).toBe(true);
   });
 
+  it('a turn jumped over between two close fixes (corner cut by jitter) still gets a late "now" cue', () => {
+    const k = route.turns.findIndex((t) => t.atM > 1000);
+    const turnAt = route.turns[k].atM;
+    const before = walk(route, { fromM: 0, toM: turnAt - 35 });
+    const r = replay(route, before);
+    // One second later, the fix lands 25 m past the turn: no gap, so cue it now rather than never.
+    const after = walk(route, { fromM: turnAt + 25, toM: turnAt + 60, startAt: lastAt(before) + 1000 });
+    const r2 = replay(route, after, r.state);
+    expect(turnEvents(r2.events).filter((e) => e.turnIndex === k).map((e) => e.stage)).toEqual(['now']);
+    expect(r2.events.some((e) => e.kind === 'turn-skipped' && e.turnIndex === k)).toBe(false);
+  });
+
   it('forward jumps are bounded: a fix far ahead right after a fix here is not accepted', () => {
     const fixes = walk(route, { fromM: 0, toM: 500 });
     const r = replay(route, fixes);

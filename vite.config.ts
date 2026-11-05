@@ -103,6 +103,10 @@ export default defineConfig({
     },
   },
   test: {
+    // The on-disk transform cache doesn't notice new files matched by
+    // import.meta.glob (e.g. a newly added route), so tests could silently skip it.
+    // The suite is fast without it.
+    fsModuleCache: false,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
   },

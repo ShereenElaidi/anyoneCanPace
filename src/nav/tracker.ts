@@ -19,8 +19,10 @@ import {
   FINISH_FRACTION,
   FINISH_RADIUS_M,
   FORWARD_BASE_M,
+  GPS_GAP_MS,
   HEADS_UP_M,
   JOIN_PENALTY_PER_M,
+  LATE_TURN_MAX_M,
   MAX_SPEED_MPS,
   OFF_ROUTE_M,
   OFF_ROUTE_MS,
@@ -134,6 +136,8 @@ export function begin(route: PreparedRoute, state: NavState, fix: Fix | null, no
 /** Feeds one GPS fix. */
 export function update(route: PreparedRoute, state: NavState, fix: Fix): NavResult {
   if (state.status !== 'following') return { state: observe(state, fix), events: [] };
+  // Measured against the last fix of any accuracy: a gap means no GPS at all.
+  const gap = state.lastFix === null || fix.at - state.lastFix.at > GPS_GAP_MS;
   let next: NavState = { ...state, lastFix: fix };
   const events: NavEvent[] = [];
   // A poor fix only moves the GPS dot.
@@ -168,7 +172,7 @@ export function update(route: PreparedRoute, state: NavState, fix: Fix): NavResu
     }
   }
 
-  next = processCues(route, next, fix.at, events);
+  next = processCues(route, next, fix.at, events, gap);
   next = checkFinish(route, next, fix, events);
   return { state: next, events };
 }
@@ -226,19 +230,29 @@ function tryAnchor(route: PreparedRoute, state: NavState, fix: Fix, events: NavE
   };
   events.push({ kind: 'joined', progressM: best.alongM, at: fix.at });
   // Turns already behind a late joiner are done, silently.
-  next = processCues(route, next, fix.at, events);
+  next = processCues(route, next, fix.at, events, true);
   return next;
 }
 
-/** Each turn cues at most once per stage; turns jumped over are skipped without a cue. */
-function processCues(route: PreparedRoute, state: NavState, at: number, events: NavEvent[]): NavState {
+/**
+ * Each turn cues at most once per stage. A turn jumped over during a GPS gap
+ * (or by more than LATE_TURN_MAX_M) is skipped without a cue; one jumped over
+ * between two close fixes still gets its "now" cue, late.
+ */
+function processCues(
+  route: PreparedRoute,
+  state: NavState,
+  at: number,
+  events: NavEvent[],
+  afterGap: boolean,
+): NavState {
   let cues: CueState[] | null = null;
   route.turns.forEach((turn, i) => {
     const current = (cues ?? state.cues)[i];
     if (current === 2) return;
     const d = turn.atM - state.progressM;
     let to: CueState = current;
-    if (d < -TURN_PASSED_GRACE_M) {
+    if (d < -TURN_PASSED_GRACE_M && (afterGap || d < -LATE_TURN_MAX_M)) {
       to = 2;
       events.push({ kind: 'turn-skipped', turnIndex: i });
     } else if (d <= TURN_NOW_M) {

@@ -35,7 +35,8 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 
 ## 6K route rules
 - Progress is forward-only and matched in a window around current progress (it grows during GPS gaps). Never snap to the globally nearest point: routes overlap and a loop's start and finish are close.
-- Turn cues fire once per stage (heads-up ~150 m, now ~30 m), and turns passed in a GPS gap are skipped silently. Cue only for fresh fixes while visible; never replay.
+- Turn cues fire once per stage (heads-up ~150 m, now ~30 m). Turns passed in a GPS gap (>10 s without a fix) are skipped silently; a turn jumped over between close fixes (≤60 m past) still gets a late "now". Cue only for fresh fixes while visible; never replay.
+- Vitest's on-disk module cache is off (`fsModuleCache: false`) because it missed new routes picked up by `import.meta.glob`.
 - Off route: >30 m for 5 s → banner, "?" on the duck, "Going rogue?" dialog. Finish only after 90 % covered and near the end. Ending a route needs the menu and two taps.
 - Privacy: GPS positions live in memory for the current route only. Never store, log or send them.
 

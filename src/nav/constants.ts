@@ -7,8 +7,16 @@
 export const HEADS_UP_M = 150;
 /** "Turn now" cue this far before a turn. */
 export const TURN_NOW_M = 30;
-/** A "now" cue can still fire this far past the turn (late GPS); further than that it's skipped silently. */
+/** Within this distance past a turn, it still counts as "now" (and the banner still shows it). */
 export const TURN_PASSED_GRACE_M = 10;
+/**
+ * A turn jumped over without a GPS gap (e.g. a jittery fix cut a sharp corner)
+ * still gets a late "now" cue if it's at most this far behind. Further, or after
+ * a GPS gap, it's skipped silently: missed cues are never replayed.
+ */
+export const LATE_TURN_MAX_M = 60;
+/** No fix for this long counts as a GPS gap (phone locked, app in the background, tunnel). */
+export const GPS_GAP_MS = 10_000;
 
 /** Within this distance of the first point counts as "at the start". */
 export const START_RADIUS_M = 250;
