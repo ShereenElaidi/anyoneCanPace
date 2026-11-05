@@ -17,7 +17,13 @@ export function ModePicker({ onPick }: Props) {
         <img className="picker__duck" src={duck} alt="" width={72} height={72} />
         <div>
           <h1 className="brand">
-            AnyoneCanPace{__BETA__ && <span className="beta-tag">BETA</span>}
+            AnyoneCanPace
+            {__BETA__ && (
+              <>
+                {' '}
+                <span className="beta-tag">BETA</span>
+              </>
+            )}
           </h1>
           <p className="tagline">RUN TOGETHER. WALK TOGETHER.</p>
         </div>
