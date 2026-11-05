@@ -4,7 +4,6 @@
  */
 import { hourAt, MONTREAL, sunFor, type Forecast } from './forecast';
 import { RUN_DURATION_MIN, type Light, type OutfitInput } from './outfit';
-import { estimateUvIndex, solarElevationDeg } from './sun';
 
 /** Default run start (local hour in Montréal). */
 export const DEFAULT_RUN_HOUR = 10;
@@ -62,9 +61,6 @@ export function lightAt(f: Forecast, at: number): Light {
 export function outfitInputFor(f: Forecast, at: number): OutfitInput | null {
   const h = hourAt(f, at);
   if (!h) return null;
-  // UV halfway through the run, from sun height and cloud (GEM has no UV).
-  const mid = at + (RUN_DURATION_MIN / 2) * 60_000;
-  const uvIndex = estimateUvIndex(solarElevationDeg(mid, MONTREAL.lat, MONTREAL.lon), h.cloudPct);
   return {
     tempC: h.tempC,
     feelsC: h.feelsC,
@@ -75,7 +71,6 @@ export function outfitInputFor(f: Forecast, at: number): OutfitInput | null {
     code: h.code,
     windKmh: h.windKmh,
     gustKmh: h.gustKmh,
-    uvIndex,
     light: lightAt(f, at),
   };
 }

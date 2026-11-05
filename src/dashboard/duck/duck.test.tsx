@@ -18,7 +18,6 @@ const base = (feelsC: number, o: Partial<OutfitInput> = {}): OutfitInput => ({
   code: 3,
   windKmh: 5,
   gustKmh: 10,
-  uvIndex: 0,
   light: 'day',
   ...o,
 });
@@ -32,14 +31,14 @@ describe('dressed duck pieces', () => {
   });
 
   it('stacks layers back to front: legs, tops, jackets, vest, hands, head', () => {
-    expect(duckLayers(['sunglasses', 'cap', 'raincoat', 'long-sleeve', 'tights', 'reflective-vest', 'gloves'])).toEqual([
+    expect(duckLayers(['headlamp', 'cap', 'raincoat', 'long-sleeve', 'tights', 'reflective-vest', 'gloves'])).toEqual([
       'tights',
       'long-sleeve',
       'raincoat',
       'reflective-vest',
       'gloves',
       'cap',
-      'sunglasses',
+      'headlamp',
     ]);
     expect(duckLayers(['singlet', 'shorts'])).toEqual(['shorts']);
   });

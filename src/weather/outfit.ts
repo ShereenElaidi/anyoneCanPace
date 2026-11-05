@@ -23,7 +23,6 @@ export type ItemId =
   | 'shorts'
   | 'tights'
   | 'cap'
-  | 'sunglasses'
   | 'light-gloves'
   | 'gloves'
   | 'mittens'
@@ -47,7 +46,6 @@ export const ITEM_LABEL: Record<ItemId, string> = {
   shorts: 'Shorts',
   tights: 'Tights',
   cap: 'Cap',
-  sunglasses: 'Sunglasses',
   'light-gloves': 'Light gloves',
   gloves: 'Gloves',
   mittens: 'Mittens',
@@ -71,7 +69,7 @@ export interface Tier {
 
 /** Starting-point tiers on run feel. Edit here to tune. */
 export const TIERS: Tier[] = [
-  { id: 'hot', minC: 25, headline: 'Hot: dress as light as you can', items: ['singlet', 'shorts', 'cap', 'sunglasses'] },
+  { id: 'hot', minC: 25, headline: 'Hot: dress as light as you can', items: ['singlet', 'shorts', 'cap'] },
   { id: 'warm', minC: 18, headline: 'Warm: tee and shorts', items: ['tee', 'shorts', 'cap'] },
   {
     id: 'mild',
@@ -104,10 +102,6 @@ export const MODIFIERS = {
   windKmh: 25,
   /** …or these gusts (km/h). */
   gustKmh: 40,
-  /** Estimated UV index for sunglasses + sunscreen. */
-  uvHigh: 6,
-  /** Estimated UV index for a sunscreen note. */
-  uvModerate: 3,
   /** At or below this air temperature, wet ground may freeze. */
   icyTempC: 1,
   /** Snow on the ground (m) counts as slippery. */
@@ -130,8 +124,6 @@ export interface OutfitInput {
   code: number;
   windKmh: number;
   gustKmh: number;
-  /** Estimated UV index at the run hour. */
-  uvIndex: number;
   /** Daylight at the run: dark at the start, or getting dark during it (dusk). */
   light: Light;
 }
@@ -150,7 +142,7 @@ export interface Outfit {
   items: OutfitItem[];
   notes: string[];
   /** Short condition flags, also used for the headline. */
-  conditions: ('rain' | 'snow' | 'slippery' | 'wind' | 'sun' | 'dark')[];
+  conditions: ('rain' | 'snow' | 'slippery' | 'wind' | 'dark')[];
 }
 
 export function tierFor(runFeelC: number): Tier {
@@ -227,15 +219,6 @@ export function whatToWear(w: OutfitInput): Outfit {
     }
   }
 
-  const uv = Math.round(w.uvIndex);
-  if (w.uvIndex >= MODIFIERS.uvHigh) {
-    conditions.push('sun');
-    add('sunglasses');
-    notes.push(`Strong sun (estimated UV ${uv}): sunscreen and sunglasses.`);
-  } else if (w.uvIndex >= MODIFIERS.uvModerate) {
-    notes.push(`Some sun (estimated UV ${uv}): sunscreen on your face and neck.`);
-  }
-
   if (w.light !== 'day') {
     conditions.push('dark');
     add('reflective-vest');
@@ -254,7 +237,6 @@ export function whatToWear(w: OutfitInput): Outfit {
     snow: 'snow',
     slippery: 'slippery',
     wind: 'windy',
-    sun: 'strong sun',
     dark: 'dark',
   };
   const tail = conditions.filter((c) => !(c === 'snow' && conditions.includes('slippery'))).map((c) => extra[c]);

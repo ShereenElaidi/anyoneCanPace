@@ -30,7 +30,7 @@ is needed: every file is simply halved to 512 × 512 WebP (3 to 11 KB each).
 | `reflective-vest`, `neck-warmer` | Over the top |
 | `shorts`, `tights` | Legs |
 | `light-gloves`, `gloves`, `mittens` | Hands |
-| `cap`, `toque`, `headband`, `headlamp`, `sunglasses` | Head |
+| `cap`, `toque`, `headband`, `headlamp` | Head |
 | `grippy-shoes` | Ice cleats under the feet |
 
 The duck is decorative and hidden from screen readers. The text outfit list

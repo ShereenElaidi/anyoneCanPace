@@ -12,7 +12,6 @@ const base = (feelsC: number, over: Partial<OutfitInput> = {}): OutfitInput => (
   code: 3,
   windKmh: 5,
   gustKmh: 10,
-  uvIndex: 0,
   light: 'day',
   ...over,
 });
@@ -27,8 +26,8 @@ describe('tiers (dress for the run feel = feels-like + offset)', () => {
   });
 
   it.each([
-    [30, 'hot', ['singlet', 'shorts', 'cap', 'sunglasses']],
-    [25, 'hot', ['singlet', 'shorts', 'cap', 'sunglasses']],
+    [30, 'hot', ['singlet', 'shorts', 'cap']],
+    [25, 'hot', ['singlet', 'shorts', 'cap']],
     [24.9, 'warm', ['tee', 'shorts', 'cap']],
     [18, 'warm', ['tee', 'shorts', 'cap']],
     [17, 'mild', ['tee', 'shorts']],
@@ -89,15 +88,6 @@ describe('modifiers', () => {
     expect(cold.notes.join(' ')).toMatch(/zip your jacket up/);
   });
 
-  it('high UV → sunglasses and sunscreen; moderate UV → sunscreen note only', () => {
-    const high = whatToWear(base(12, { uvIndex: 7.4 }));
-    expect(high.items.map((i) => i.id)).toContain('sunglasses');
-    expect(high.notes.join(' ')).toMatch(/Strong sun \(estimated UV 7\)/);
-    const moderate = whatToWear(base(12, { uvIndex: 4 }));
-    expect(moderate.items.map((i) => i.id)).not.toContain('sunglasses');
-    expect(moderate.notes.join(' ')).toMatch(/Some sun \(estimated UV 4\)/);
-  });
-
   it('snow → grippy shoes and a slippery note, no raincoat', () => {
     const o = whatToWear(base(-8, { tempC: -5, snowCm: 1.5, code: 73, precipProb: 90 }));
     expect(o.items.map((i) => i.id)).toContain('grippy-shoes');
@@ -123,7 +113,7 @@ describe('modifiers', () => {
   });
 
   it('never lists an item twice', () => {
-    const o = whatToWear(base(feel(30), { precipProb: 90, code: 81, windKmh: 40, gustKmh: 60, uvIndex: 9, light: 'dusk' }));
+    const o = whatToWear(base(feel(30), { precipProb: 90, code: 81, windKmh: 40, gustKmh: 60, light: 'dusk' }));
     const all = o.items.map((i) => i.id);
     expect(new Set(all).size).toBe(all.length);
   });

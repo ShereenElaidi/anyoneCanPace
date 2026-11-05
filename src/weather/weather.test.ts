@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import fixture from './fixtures/gem-2026-11-04.json';
 import { forecastUrl, hourAt, MONTREAL, parseGem, sunFor, weatherText, ForecastError } from './forecast';
 import { defaultRunTime, lightAt, localHour, outfitInputFor, runTimeChoices } from './runTime';
-import { estimateUvIndex, solarElevationDeg } from './sun';
 import { loadForecast, saveForecast } from './cache';
 
 const f = parseGem(fixture, 1_793_800_000_000);
@@ -18,6 +17,8 @@ describe('weather request', () => {
     expect(url.searchParams.get('longitude')).toBe(String(MONTREAL.lon));
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('hourly')).toContain('apparent_temperature');
+    // Cloud cover was only for the UV estimate, which is gone.
+    expect(url.searchParams.get('hourly')).not.toContain('cloud_cover');
   });
 });
 
@@ -95,28 +96,10 @@ describe('run time', () => {
     expect(input.feelsC).toBe(h.feelsC);
     expect(input.rainMm).toBe(h.rainMm + h.showersMm);
     expect(input.light).toBe('day');
-    expect(input.uvIndex).toBeGreaterThanOrEqual(0);
-    expect(input.uvIndex).toBeLessThan(4); // November in Montréal: never strong sun
     expect(outfitInputFor(f, est(9, 12))).toBeNull();
   });
 });
 
-describe('sun and estimated UV (GEM has no UV)', () => {
-  it('sun height in Montréal matches the almanac (±1°)', () => {
-    // Solar noon is about 12:55 local in summer (EDT) and 11:55 in November (EST).
-    expect(solarElevationDeg(Date.UTC(2026, 5, 21, 16, 55), MONTREAL.lat, MONTREAL.lon)).toBeCloseTo(67.9, 0);
-    expect(solarElevationDeg(Date.UTC(2026, 10, 4, 16, 55), MONTREAL.lat, MONTREAL.lon)).toBeCloseTo(29.1, 0);
-    expect(solarElevationDeg(Date.UTC(2026, 10, 5, 3), MONTREAL.lat, MONTREAL.lon)).toBeLessThan(0); // 10 p.m.
-  });
-
-  it('UV: about 9 at a clear June noon, low in November, cut by cloud, zero at night', () => {
-    expect(estimateUvIndex(67.9, 0)).toBeGreaterThan(8);
-    expect(estimateUvIndex(67.9, 0)).toBeLessThan(10);
-    expect(estimateUvIndex(29.1, 0)).toBeLessThan(2.5);
-    expect(estimateUvIndex(67.9, 100)).toBeLessThan(3);
-    expect(estimateUvIndex(-5, 0)).toBe(0);
-  });
-});
 
 describe('cache', () => {
   it('keeps the last forecast', () => {

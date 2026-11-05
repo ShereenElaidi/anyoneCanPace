@@ -166,7 +166,6 @@ export default function DashboardMode({ onSwitchMode }: Props) {
                   <li key={note}>{note}</li>
                 ))}
               </ul>
-              <p className="dash-details__small">Sun strength (UV) is estimated from the sun’s height and cloud cover.</p>
             </details>
           </>
         )}

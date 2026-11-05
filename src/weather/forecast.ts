@@ -18,7 +18,6 @@ const HOURLY = [
   'snowfall',
   'snow_depth',
   'weather_code',
-  'cloud_cover',
   'wind_speed_10m',
   'wind_gusts_10m',
   'is_day',
@@ -51,7 +50,6 @@ export interface HourWeather {
   snowDepthM: number;
   /** WMO weather code. */
   code: number;
-  cloudPct: number;
   windKmh: number;
   gustKmh: number;
   isDay: boolean;
@@ -92,7 +90,7 @@ export function parseGem(json: unknown, fetchedAt: number): Forecast {
 
   const times = arr(hourly, 'time');
   const col = (key: string) => arr(hourly, key);
-  const [temp, feels, prob, precip, rain, showers, snow, depth, code, cloud, wind, gust, isDay] = [
+  const [temp, feels, prob, precip, rain, showers, snow, depth, code, wind, gust, isDay] = [
     'temperature_2m',
     'apparent_temperature',
     'precipitation_probability',
@@ -102,7 +100,6 @@ export function parseGem(json: unknown, fetchedAt: number): Forecast {
     'snowfall',
     'snow_depth',
     'weather_code',
-    'cloud_cover',
     'wind_speed_10m',
     'wind_gusts_10m',
     'is_day',
@@ -124,7 +121,6 @@ export function parseGem(json: unknown, fetchedAt: number): Forecast {
       snowCm: num(snow[i]) ?? 0,
       snowDepthM: num(depth[i]) ?? 0,
       code: num(code[i]) ?? 0,
-      cloudPct: num(cloud[i]) ?? 0,
       windKmh: num(wind[i]) ?? 0,
       gustKmh: num(gust[i]) ?? num(wind[i]) ?? 0,
       isDay: num(isDay[i]) === 1,

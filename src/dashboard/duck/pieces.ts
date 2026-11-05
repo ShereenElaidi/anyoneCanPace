@@ -29,7 +29,6 @@ export const LAYER_ORDER: ItemId[] = [
   'toque',
   'cap',
   'headlamp',
-  'sunglasses',
 ];
 
 /** The drawable layers for an outfit, back to front, each once. */

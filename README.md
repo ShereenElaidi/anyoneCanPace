@@ -129,7 +129,7 @@ All routes so far were drawn with [On The Go Map](https://onthegomap.com) on Ope
 
 | Run feel | Starting point |
 |---|---|
-| 25 °C and up | Singlet, shorts, cap, sunglasses |
+| 25 °C and up | Singlet, shorts, cap |
 | 18 to 25 °C | Tee, shorts, cap |
 | 10 to 18 °C | Tee or light long sleeve, shorts |
 | 3 to 10 °C | Long sleeve, tights, light gloves |
@@ -140,7 +140,6 @@ Modifiers:
 
 - **Rain** (a 50 % chance, 0.3 mm in the hour, or a rain code): raincoat (it replaces the light jacket or shell) and a cap with a brim.
 - **Strong wind** (25 km/h, or gusts of 40 km/h): windbreaker, or "zip your jacket up" if you already have one.
-- **Strong sun** (estimated UV 6+): sunglasses and sunscreen. At UV 3–5, a sunscreen note only.
 - **Snow, freezing rain, snow on the ground, or wet at 1 °C or below**: shoes with grip and a slippery note.
 - **Dark** at the start: reflective vest and headlamp. Getting dark during the run: reflective vest.
 - **Always**: bring an extra layer for the wait at the start.
@@ -149,7 +148,7 @@ The tiers and thresholds are starting points. Tune them in the `TIERS` and `MODI
 
 **Weather source.** [Open-Meteo](https://open-meteo.com)'s Environment Canada GEM endpoint (`https://api.open-meteo.com/v1/gem`), 48 hours ahead, for fixed central-Montréal coordinates. The data is free for non-commercial use under CC BY 4.0 and credited on the page.
 
-**GEM has no UV index** (the API returns empty values), so sun strength is *estimated* from the sun's height, which is calculated from date, time and position, and GEM's cloud cover. The page says "estimated". It's a guide for sunglasses and sunscreen, not a measurement.
+**No sun or UV advice.** GEM has no UV index, and the earlier estimate (from the sun's height and cloud cover) was removed along with sunglasses, so the outfit never mentions sun protection.
 
 **Requests and offline.**
 - The forecast is fetched when the dashboard opens or comes back into view, only if the saved copy is more than 30 minutes old. **REFRESH** fetches it on demand.
@@ -225,7 +224,7 @@ src/
   nav/                    Pure route following: geo, route, tracker, banner, constants
   sixk/                   6K mode: library, route page, follow view, hooks, styles
   sixk/map/               MapLibre map, brand style, offline map file (lazy)
-  weather/                Pure: GEM request/parsing, outfit rules, run time, sun/UV estimate, cache
+  weather/                Pure: GEM request/parsing, outfit rules, run time, cache
   dashboard/              Daily Dashboard UI, useForecast, dressed duck (dashboard/duck/) (lazy)
   advisories/             Pure notice filtering/validation and the shared NoticeList
   assets/duck-outfit/     Duck base drawing + one SVG per outfit item (drafts; see its README)
@@ -317,7 +316,7 @@ The app never reloads itself mid-session. When a new version has been downloaded
 - **GPS only works in the foreground.** Locking the phone or switching apps stops location updates; the 6K follow view says so before you start. When you come back, progress catches up from the next fix (within a forward limit), and turns you passed meanwhile are skipped, not replayed.
 - **GPS accuracy** in downtown streets is often 10–30 m. Off route needs more than ~30 m for ~5 s, and fixes worse than 60 m are ignored for progress, so expect the occasional late or early cue near tall buildings.
 - **The map needs WebGL.** On the rare phone without it, the 6K mode still shows directions and distances, just no map.
-- **The weather is for central Montréal**, an hourly model forecast, not a reading outside your door. UV is estimated. Glance outside too.
+- **The weather is for central Montréal**, an hourly model forecast, not a reading outside your door. Glance outside too.
 - **Cache Storage can be cleared** by the browser when the phone is low on space (more likely on iPhone if the app isn't installed). The library then shows "not saved" again. Installing the app to the home screen helps.
 
 ## Typography and licensing

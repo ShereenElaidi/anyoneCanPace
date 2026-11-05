@@ -51,7 +51,7 @@ Paste one line at a time, for example: *"Item: toque. A Crew Navy knitted winter
 | 16 | `headband.png` | Item: headband. A thick Crew Navy fleece winter ear band around the head, covering the existing thin blue headband and its knot. |
 | 17 | `cap.png` | Item: cap. A Crew Navy running cap with the brim pointing forward over the beak, covering the top of the head. |
 | 18 | `headlamp.png` | Item: headlamp. A small Pavement headlamp with a Duck Gold lens on a thin Asphalt strap around the forehead, the lamp facing forward. |
-| 19 | `sunglasses.png` | Item: sunglasses. Sporty wraparound Asphalt sunglasses over both eyes, with a thin strap going back around the head. |
+| 19 | ~~`sunglasses.png`~~ | Removed from the app (no sun/UV advice); don't draw. Was: sunglasses. Sporty wraparound Asphalt sunglasses over both eyes, with a thin strap going back around the head. |
 | 20 | `grippy-shoes.png` | Item: grippy-shoes. Small Asphalt ice-cleat spikes under the soles of both webbed feet: only the spikes, nothing else. |
 
 (The singlet needs no image: the duck already wears one.)
