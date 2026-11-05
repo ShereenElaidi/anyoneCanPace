@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { SW_OPTIONS } from '../lib/swUpdate';
 import { loadRoute, manifest, type LoadedRoute } from './data';
 import { FollowView } from './FollowView';
 import { Library } from './Library';
@@ -31,7 +32,7 @@ export default function SixKMode({ onSwitchMode }: Props) {
   const {
     needRefresh: [updateReady],
     updateServiceWorker,
-  } = useRegisterSW();
+  } = useRegisterSW(SW_OPTIONS);
 
   const id = view.name === 'library' ? null : view.id;
   useEffect(() => {

@@ -124,10 +124,14 @@ export function MenuSheet(props: Props) {
           </button>
         )}
 
-        {props.updateReady && status !== 'active' && (
+        {/* Updating reloads the page, which would lose a running or paused session. */}
+        {props.updateReady && status === 'ready' && (
           <button type="button" className="btn btn--secondary btn--block" onClick={props.onUpdate}>
             UPDATE TO NEW VERSION
           </button>
+        )}
+        {props.updateReady && status !== 'ready' && (
+          <p className="sheet__note">A new version is ready. End the session to update.</p>
         )}
 
         {props.onSwitchMode && (

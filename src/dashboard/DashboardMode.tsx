@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { SW_OPTIONS } from '../lib/swUpdate';
 import { hourAt, sunFor, weatherText } from '../weather/forecast';
 import { whatToWear } from '../weather/outfit';
 import {
@@ -40,7 +41,7 @@ interface Props {
  * Weather numbers and tips sit behind "Weather details and tips". Loaded on demand.
  */
 export default function DashboardMode({ onSwitchMode }: Props) {
-  useRegisterSW();
+  useRegisterSW(SW_OPTIONS);
   const { forecast, state, refresh } = useForecast();
   const [picked, setPicked] = useState<number | null>(null);
   // "Now" moves on while the page stays open, so the default hour stays sensible.

@@ -3,6 +3,7 @@ import { GEO_ERROR_TEXT, useGeolocation } from '../hooks/useGeolocation';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { canVibrate, unlockAudio } from '../lib/cues';
 import { loadPrefs, savePrefs, type Prefs } from '../lib/prefs';
+import { setSessionBusy } from '../lib/swUpdate';
 import { describe as describeBanner, formatKm, statsLine, type Banner } from '../nav/banner';
 import { POOR_ACCURACY_M } from '../nav/constants';
 import { approachInfo, duckLost, gpsHealth, joinOptions } from '../nav/tracker';
@@ -28,6 +29,11 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
   const nav = useRouteNav(prepared, geo.fix, prefs);
   const { state } = nav;
   const wakeLock = useWakeLock(state.status !== 'finished');
+  // Following a route is a session too: no update reloads mid-route.
+  useEffect(() => {
+    setSessionBusy('route', state.status === 'following');
+    return () => setSessionBusy('route', false);
+  }, [state.status]);
   // A clock for "no GPS lately": fixes stop arriving exactly when it matters.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

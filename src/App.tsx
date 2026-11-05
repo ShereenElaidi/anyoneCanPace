@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { setSessionBusy, SW_OPTIONS } from './lib/swUpdate';
 import { EditPanel } from './components/EditPanel';
 import { MenuSheet } from './components/MenuSheet';
 import { TimerDisplay } from './components/TimerDisplay';
@@ -61,11 +62,16 @@ export default function App({ onSwitchMode }: AppProps = {}) {
   const timer = useIntervalTimer(durations, onEvent);
   const { status } = timer.state;
   const wakeLock = useWakeLock(status === 'active');
+  // A running or paused session must never be lost to an update reload.
+  useEffect(() => {
+    setSessionBusy('timer', status !== 'ready');
+    return () => setSessionBusy('timer', false);
+  }, [status]);
 
   const {
     needRefresh: [updateReady],
     updateServiceWorker,
-  } = useRegisterSW();
+  } = useRegisterSW(SW_OPTIONS);
 
   const setDuration = (phase: Phase, seconds: number) =>
     setPrefs((p) => ({ ...p, [phase]: clampSeconds(seconds) }));
