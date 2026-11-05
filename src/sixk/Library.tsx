@@ -105,17 +105,16 @@ function RouteCard({ route, pace, onOpen }: { route: RouteSummary; pace: number;
           </span>
           <span className="visually-hidden">{time.spoken}</span>
         </span>
-        <span className="route-card__terrain">{terrainText(route.stats)}</span>
-        {tags.length > 0 && (
-          <span className="route-card__tags">
-            {tags.map((t) => (
-              <span key={t} className={`tag tag--${ROUTE_TAGS[t].tone}`}>
-                {ROUTE_TAGS[t].label}
-              </span>
-            ))}
+      </span>
+      {/* One wrapping row across the card: the climb in words, tags, then whether the directions were checked. */}
+      <span className="route-card__chips">
+        <span className="tag tag--plain">{terrainText(route.stats)}</span>
+        {tags.map((t) => (
+          <span key={t} className={`tag tag--${ROUTE_TAGS[t].tone}`}>
+            {ROUTE_TAGS[t].label}
           </span>
-        )}
-        <span className={`route-card__check route-card__check--${route.verification}`}>
+        ))}
+        <span className={`tag route-card__check route-card__check--${route.verification}`}>
           {route.verification === 'unverified' ? '⚠ ' : '✓ '}
           {verificationText({ status: route.verification }).label} directions
         </span>

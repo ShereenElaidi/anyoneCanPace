@@ -286,12 +286,15 @@
 }
 
 .route-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'thumb text go'
+    'chips chips go';
+  align-items: start;
+  gap: 0 10px;
   width: 100%;
-  min-height: 88px;
-  padding: 10px 12px;
+  padding: 8px 10px 10px;
   border: var(--line) solid var(--asphalt);
   border-radius: var(--radius);
   background: var(--paper);
@@ -307,14 +310,16 @@
 }
 
 .route-card__thumb {
-  width: 64px;
-  height: 64px;
+  grid-area: thumb;
+  width: 56px;
+  height: 56px;
+  margin-top: 2px;
   flex-shrink: 0;
   border-radius: 12px;
   /* A faint street grid, so the outline reads as a place. */
   background-color: #eaf1f8;
   background-image: linear-gradient(#d6e2ee 1px, transparent 1px), linear-gradient(90deg, #d6e2ee 1px, transparent 1px);
-  background-size: 11px 11px;
+  background-size: 10px 10px;
   background-position: center;
 }
 
@@ -327,9 +332,10 @@
 }
 
 .route-card__text {
+  grid-area: text;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   flex: 1;
   min-width: 0;
 }
@@ -338,18 +344,19 @@
   color: var(--navy);
   font-size: 1.2rem;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .route-card__place {
   color: var(--muted);
   font-size: 0.875rem;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .route-card__stats {
-  margin-top: 2px;
   font-size: 0.95rem;
   font-weight: 700;
+  line-height: 1.35;
 }
 
 .route-card__time {
@@ -360,23 +367,27 @@
   display: inline-block;
 }
 
-.route-card__terrain {
-  font-size: 0.95rem;
-}
-
-.route-card__tags {
+.route-card__chips {
+  grid-area: chips;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 5px;
+  margin-top: 5px;
 }
 
 .tag {
-  padding: 3px 9px;
+  padding: 2px 8px;
   border: 2px solid;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.35;
+}
+
+.tag--plain {
+  border-color: #888780;
+  background: var(--paper);
+  color: var(--asphalt);
 }
 
 /* Tag colours are extras: the text always says what the tag is. */
@@ -399,12 +410,7 @@
 }
 
 .route-card__check {
-  align-self: flex-start;
-  margin-top: 6px;
-  padding: 2px 9px;
-  border: 2px solid var(--asphalt);
-  border-radius: 999px;
-  font-size: 0.8rem;
+  border-color: var(--asphalt);
   font-weight: 800;
 }
 
@@ -437,6 +443,7 @@
 }
 
 .route-card__go {
+  grid-area: go;
   align-self: center;
   font-size: 2rem;
   font-weight: 800;
