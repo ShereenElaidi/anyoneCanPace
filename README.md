@@ -8,7 +8,7 @@ The app opens on a mode picker and then remembers your choice:
 
 - **ACR Run/Walk Timer**: open the URL on your phone, tap **START PACING**, and the app alternates RUN and WALK until you stop it. Adjust intervals mid-run without interrupting the group.
 - **6K Route Library**: pick a ~6 km route and follow it on a street map, with the duck marking your place, a direction banner and turn cues.
-- **Daily Dashboard**: coming soon (today's weather and what to wear).
+- **Daily Dashboard**: the weather at your run time and what to wear for it.
 
 If you used the timer before modes existed, the app still opens straight into the timer. To change modes, use **Settings → Switch mode** in the timer (two taps while a session is running), or **MODES** in the route library.
 
@@ -86,13 +86,49 @@ The sample route (`routes/onthegomap-6.4-km-route.gpx`) was drawn with [On The G
   - After re-cutting, bump `MAP_VERSION` in `src/sixk/map/offlineMap.ts` so phones fetch the new file.
 - **Offline**: the map file is not cached piece by piece. The first time you open the route library (online, and not in data-saver mode), the whole file is saved to the phone's Cache Storage, and the map then reads from that copy. The library shows the status honestly ("Map saved for offline use on …", "Saving… 40 %", "not saved") with a **SAVE MAP FOR OFFLINE** button. The map shows "Online map (not saved for offline)" while it is streaming from the network.
 
+## Daily Dashboard
+
+- **Weather at run time.** Pick when the run starts. The default is the next whole hour between 6:00 and 21:00, or your **usual start** if you saved one. The page then shows feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
+- **What to wear**, always as text: a headline, a list of items and notes. The duck next to it is decoration only. It will be dressed in Stage 3.
+- **Dress for the run feel, not the weather.** Run feel is the feels-like temperature **+ 7 °C** (`RUN_FEEL_OFFSET_C`), lower than the usual racing advice of about +10 °C because pacers run/walk and stand around at the start.
+
+| Run feel | Starting point |
+|---|---|
+| 25 °C and up | Singlet, shorts, cap, sunglasses |
+| 18 to 25 °C | Tee, shorts, cap |
+| 10 to 18 °C | Tee or light long sleeve, shorts |
+| 3 to 10 °C | Long sleeve, tights, light gloves |
+| −4 to 3 °C | Long sleeve and light jacket, tights, gloves, headband |
+| Below −4 °C | Thermal layers, windproof shell, toque, mittens, neck warmer |
+
+Modifiers:
+
+- **Rain** (a 50 % chance, 0.3 mm in the hour, or a rain code): raincoat (it replaces the light jacket or shell) and a cap with a brim.
+- **Strong wind** (25 km/h, or gusts of 40 km/h): windbreaker, or "zip your jacket up" if you already have one.
+- **Strong sun** (estimated UV 6+): sunglasses and sunscreen. At UV 3–5, a sunscreen note only.
+- **Snow, freezing rain, snow on the ground, or wet at 1 °C or below**: shoes with grip and a slippery note.
+- **Dark** at the start: reflective vest and headlamp. Getting dark during the run: reflective vest.
+- **Always**: bring an extra layer for the wait at the start.
+
+The tiers and thresholds are starting points. Tune them in the `TIERS` and `MODIFIERS` tables in `src/weather/outfit.ts`; the tests cover each tier and modifier.
+
+**Weather source.** [Open-Meteo](https://open-meteo.com)'s Environment Canada GEM endpoint (`https://api.open-meteo.com/v1/gem`), 48 hours ahead, for fixed central-Montréal coordinates. The data is free for non-commercial use under CC BY 4.0 and credited on the page.
+
+**GEM has no UV index** (the API returns empty values), so sun strength is *estimated* from the sun's height, which is calculated from date, time and position, and GEM's cloud cover. The page says "estimated". It's a guide for sunglasses and sunscreen, not a measurement.
+
+**Requests and offline.**
+- The forecast is fetched when the dashboard opens or comes back into view, only if the saved copy is more than 30 minutes old. **REFRESH** fetches it on demand.
+- The last forecast is kept on the phone, with "Updated 7:42 a.m." shown.
+- Offline, or if the request fails, the page uses the saved forecast and says when it's from. It adds "may be out of date" after 6 hours.
+- If there is no forecast, or it no longer covers the coming hours, the page says **Check outside**.
+
 ## Privacy and offline
 
 - No backend, accounts, cookies, analytics or tracking.
 - **Your GPS position stays on your phone.** It is held in memory for the current route only. It is never stored, logged or sent anywhere, and the map tiles come from the app's own files, not a map service.
-- At runtime the app only loads its own files. (Stage 2 will add one weather request, using fixed Montréal coordinates, never your location.) Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
+- **The only request the app makes to another site** is the Daily Dashboard's weather request to `api.open-meteo.com`, for **fixed central-Montréal coordinates, never your location**. It is made only when you open the dashboard and the saved forecast is more than 30 minutes old (or you tap REFRESH). Everything else is the app's own files. Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
 - After one visit, the timer, routes, stats and map work offline. Anything that can go stale shows when it was saved.
-- Saved on the device: timer settings, the last mode, and the offline map.
+- Saved on the device: timer settings, the last mode, the offline map, the last weather forecast and your usual run start hour.
 
 ## Tech stack
 
@@ -104,6 +140,7 @@ The 6K mode adds **MapLibre GL JS** and the **PMTiles** reader. They are loaded 
 |---|---|---|
 | First load (timer + picker) JS | 241 kB (was 237 kB) | 75.9 kB (was 74.7 kB) |
 | 6K mode chunk (lazy) | 31 kB | 11 kB |
+| Daily Dashboard chunk (lazy) | 15 kB + 2 kB CSS | 6 kB |
 | MapLibre + PMTiles chunk (lazy) | 1,088 kB | 298 kB |
 | MapLibre worker (lazy) | 519 kB | |
 | Street map file (saved on demand, not precached) | 4.7 MB | |
@@ -119,6 +156,8 @@ src/
   nav/                    Pure route following: geo, route, tracker, banner, constants
   sixk/                   6K mode: library, route page, follow view, hooks, styles
   sixk/map/               MapLibre map, brand style, offline map file (lazy)
+  weather/                Pure: GEM request/parsing, outfit rules, run time, sun/UV estimate, cache
+  dashboard/              Daily Dashboard UI and useForecast (lazy)
   data/routes/            Processed routes (JSON + GeoJSON + manifest), hand-editable
   hooks/                  useIntervalTimer, useWakeLock, useGeolocation
   lib/cues.ts             Beeps and vibration (timer and route cues)
@@ -206,6 +245,7 @@ The app never reloads itself mid-session. When a new version has been downloaded
 - **GPS only works in the foreground.** Locking the phone or switching apps stops location updates; the 6K follow view says so before you start. When you come back, progress catches up from the next fix (within a forward limit), and turns you passed meanwhile are skipped, not replayed.
 - **GPS accuracy** in downtown streets is often 10–30 m. Off route needs more than ~30 m for ~5 s, and fixes worse than 60 m are ignored for progress, so expect the occasional late or early cue near tall buildings.
 - **The map needs WebGL.** On the rare phone without it, the 6K mode still shows directions and distances, just no map.
+- **The weather is for central Montréal**, an hourly model forecast, not a reading outside your door. UV is estimated. Glance outside too.
 - **Cache Storage can be cleared** by the browser when the phone is low on space (more likely on iPhone if the app isn't installed). The library then shows "not saved" again. Installing the app to the home screen helps.
 
 ## Typography and licensing
@@ -217,6 +257,21 @@ Three openly licensed fonts were compared: **JetBrains Mono**, **Space Mono** an
 - **JetBrains Mono** © 2020 The JetBrains Mono Project Authors, licensed under the [SIL Open Font License 1.1](src/assets/fonts/JetBrainsMono-OFL.txt).
 - Self-hosted WOFF2 files (Latin and Latin Extended subsets) are in `src/assets/fonts/` and precached for offline use.
 
+## Beta channel (testing on a phone before release)
+
+The live app at `/anyoneCanPace/` only changes when `main` is pushed. Unreleased work can be tried on a phone from a separate **beta** repository, [ShereenElaidi/anyoneCanPace-beta](https://github.com/ShereenElaidi/anyoneCanPace-beta), served at **https://shereenelaidi.github.io/anyoneCanPace-beta/**.
+
+- It is the same code. A repository name containing "beta" makes the build say **Beta**: the BETA tag on the picker, "AnyoneCanPace Beta" as the tab title and home-screen name, and "ACP Beta" as the short name.
+- It has its own path, so its service worker, cached files and update prompts never touch the live app. A beta nested inside the live path (`/anyoneCanPace/beta/`) would be caught by the live app's service worker, which is why it's a separate repository.
+- Both apps are on the same `github.io` site, so on one phone they share local storage: timer intervals, the last mode, the forecast and the usual run hour. The live app ignores the keys it doesn't know.
+- To update the beta from a feature branch (this deploys it via its own copy of the workflow):
+
+  ```bash
+  git push beta feature/dressed-duck-advisories:main
+  ```
+
+  Use whichever branch is current. Never push the beta remote's history back to `origin`.
+
 ## Map, data and font credits
 
 - Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL). Vector tiles from the [Protomaps](https://protomaps.com) basemap build.
@@ -224,6 +279,7 @@ Three openly licensed fonts were compared: **JetBrains Mono**, **Space Mono** an
 - Elevation: [Open-Meteo](https://open-meteo.com) (CC BY 4.0), from the Copernicus DEM GLO-90, used at build time only.
 - Map label font: Noto Sans © The Noto Project Authors, SIL OFL 1.1 (`public/maps/fonts/OFL.txt`).
 - MapLibre GL JS (BSD-3-Clause) and PMTiles (BSD-3-Clause).
+- Weather: [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0), from Environment and Climate Change Canada's GEM model.
 
 ## App icon
 
@@ -251,6 +307,15 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **Battery:** note battery use over a 45-minute session with the screen on.
 - [ ] **Offline:** start a session in airplane mode after one earlier visit.
 - [ ] **Install:** add to home screen on iOS and Android. The icon, name, standalone display and portrait layout all look right.
+
+### Daily Dashboard: field check
+
+- [ ] **First open online:** "Updated <time>" and an outfit appear within a few seconds. The run time defaults to the next sensible hour.
+- [ ] **Run time:** pick tonight and tomorrow morning. The outfit changes (reflective vest when it's dark). Save a usual start, close and reopen: it's the default.
+- [ ] **Offline:** in airplane mode, reopen. It shows "Offline: showing the forecast from …" and the same outfit. With storage cleared and offline, it shows "Check outside".
+- [ ] **Does the outfit match reality?** For a week of runs, note the run feel, what the app said and what you actually wore. Tune `RUN_FEEL_OFFSET_C` and the tiers.
+- [ ] **Readable** at arm's length outdoors. The list makes sense without the duck.
+- [ ] **No location prompt** ever appears on the dashboard.
 
 ### 6K Route Library: field test on the real loop
 

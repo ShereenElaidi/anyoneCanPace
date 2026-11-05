@@ -1,7 +1,7 @@
 # AnyoneCanPace
 
 Mobile-first PWA for volunteer pacers (AnyoneCanRun by Les Stooopids). React 19 + TypeScript + Vite 8 + plain CSS + vite-plugin-pwa. No backend, accounts, analytics or tracking.
-Modes behind a picker (`src/Root.tsx`, last mode remembered): **ACR Run/Walk Timer** (`App.tsx`), **6K Route Library** (`src/sixk/`, lazy-loaded), Daily Dashboard (coming soon).
+Modes behind a picker (`src/Root.tsx`, last mode remembered): **ACR Run/Walk Timer** (`App.tsx`), **6K Route Library** (`src/sixk/`, lazy-loaded), **Daily Dashboard** (`src/dashboard/`, lazy-loaded).
 Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitations and the **V2 To-Do List** are in README.md.
 
 ## Commands
@@ -20,6 +20,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - `src/components/`: TimerDisplay, EditPanel, MenuSheet, ModePicker. `src/App.tsx` composes the timer page. Styles in `src/styles.css`.
 - `src/nav/`: pure route following (`geo`, `route`, `tracker`, `banner`). All tunables in `nav/constants.ts`. No clocks, DOM or `navigator`: fixes carry their own timestamps.
 - `src/sixk/`: 6K mode UI (SixKMode, Library, RoutePage, FollowView, useRouteNav, `sixk.css`). `src/sixk/map/`: RouteMap (MapLibre + PMTiles), `mapStyle.ts`, `offlineMap.ts` (whole map file in Cache Storage). `src/hooks/useGeolocation.ts`.
+- `src/weather/`: pure weather logic. `forecast.ts` (GEM URL + parsing), `outfit.ts` (**TIERS / MODIFIERS tables**, `RUN_FEEL_OFFSET_C`), `runTime.ts` (default hour, daylight, outfit input), `sun.ts` (solar elevation, UV estimate: GEM has no UV), `cache.ts`. `src/dashboard/`: DashboardMode, useForecast, `dashboard.css`. The `.duck-slot` is where Stage 3's dressed duck goes.
 - `scripts/`: `build-routes.ts` (+ pure `lib/process-route.ts`), `cut-map.ts`, `check-bundle.ts`, `dev-cert.ts`. `routes/`: source GPX, `routes.config.json`, `cache/` (elevation, streets, proposed turns).
 - Tests: `src/**/*.test.ts(x)`, `scripts/**/*.test.ts`. `App.test.tsx` drives the real timer UI with fake timers (keep it untouched). `Root.test.tsx` covers the picker and 6K UI with mocked geolocation and a stubbed RouteMap. `src/nav/testing/replay.ts` replays synthetic GPS tracks.
 
@@ -36,7 +37,11 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - Progress is forward-only and matched in a window around current progress (it grows during GPS gaps). Never snap to the globally nearest point: routes overlap and a loop's start and finish are close.
 - Turn cues fire once per stage (heads-up ~150 m, now ~30 m), and turns passed in a GPS gap are skipped silently. Cue only for fresh fixes while visible; never replay.
 - Off route: >30 m for 5 s → banner, "?" on the duck, "Going rogue?" dialog. Finish only after 90 % covered and near the end. Ending a route needs the menu and two taps.
-- Privacy: GPS positions live in memory for the current route only. Never store, log or send them. The only runtime requests are the app's own files (Stage 2 will add one weather request with fixed Montréal coordinates).
+- Privacy: GPS positions live in memory for the current route only. Never store, log or send them.
+
+## Dashboard rules
+- The only runtime request to another site is the GEM weather request in `forecast.ts`, with fixed Montréal coordinates, never the user's location. Fetch only when the dashboard opens or comes back into view and the saved copy is >30 min old, or on REFRESH. Keep the last forecast in localStorage and always show when it's from; fall back to "Check outside".
+- The outfit is always shown as text; the duck is decorative (`aria-hidden`). Credit Open-Meteo (CC BY 4.0) and Environment Canada's GEM on the page.
 - Credit "© OpenStreetMap contributors" and the route's source (e.g. On The Go Map) in the UI. Raw GPX stays in `routes/`; only processed files ship.
 - The duck is the 6K position marker (no progress ring there). Banner text always states the direction; icons and colours are extras.
 
@@ -46,6 +51,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - Feature work happens on branches. Never merge into `main` or open PRs unless asked.
 - Pushing workflow-file changes needs gh's `workflow` scope (`gh auth refresh -s workflow`).
 - **Ask before pushing.** Committing locally is fine.
+- Beta channel: remote `beta` = github.com/ShereenElaidi/anyoneCanPace-beta (Pages at `/anyoneCanPace-beta/`). Same code; a base path containing "beta" sets `__BETA__` (BETA tag, "AnyoneCanPace Beta" name/title). Pushing a branch to `beta`'s `main` deploys it there without touching the live app. Still ask before each push.
 
 ## Brand
 Crew Navy `#1B3F72` (RUN), Track Blue `#378ADD` (WALK), Duck Gold `#EF9F27` (progress, primary button), Pavement `#F5F0E8` (background), Asphalt `#2C2C2A` (text, outlines). White on Track Blue only passes contrast for large text, so keep text there ≥ 19 px bold.
