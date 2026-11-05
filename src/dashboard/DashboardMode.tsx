@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import duck from '../assets/duck-runner.webp';
 import { hourAt, sunFor, weatherText } from '../weather/forecast';
 import { whatToWear } from '../weather/outfit';
 import { defaultRunTime, outfitInputFor, runTimeChoices } from '../weather/runTime';
 import { clockTime, dayLabel, degrees, runTimeLabel } from './format';
+import { DressedDuck } from './duck/DressedDuck';
+import { duckWeather } from './duck/pieces';
 import { useForecast } from './useForecast';
 import './dashboard.css';
 
@@ -119,9 +120,9 @@ export default function DashboardMode({ onSwitchMode }: Props) {
                 What to wear
               </h2>
               <div className="wear__body">
-                {/* Stage 3 dresses this duck from outfit.items. It is decorative: the list below carries the meaning. */}
-                <div className="duck-slot" aria-hidden="true" data-outfit={outfit.items.map((i) => i.id).join(' ')}>
-                  <img src={duck} alt="" draggable={false} />
+                {/* Decorative: the text list below carries the meaning. */}
+                <div className="duck-slot">
+                  <DressedDuck items={outfit.items.map((i) => i.id)} weather={duckWeather(outfit.conditions)} />
                 </div>
                 <div className="wear__text">
                   <p className="wear__headline">{outfit.headline}</p>

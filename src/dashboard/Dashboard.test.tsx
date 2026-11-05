@@ -59,8 +59,12 @@ describe('Daily Dashboard', () => {
     expect(wear.querySelector('.wear__headline')?.textContent).toMatch(/\.$/);
     expect(wear.querySelectorAll('.wear__items li').length).toBeGreaterThan(1);
     expect(wear.textContent).toContain('Bring an extra layer for the wait at the start.');
-    // The duck is decorative; the list carries the meaning.
-    expect(wear.querySelector('.duck-slot')?.getAttribute('aria-hidden')).toBe('true');
+    // The dressed duck is decorative; the list carries the meaning.
+    const duck = wear.querySelector('.dressed-duck') as HTMLElement;
+    expect(duck.getAttribute('aria-hidden')).toBe('true');
+    const items = [...wear.querySelectorAll('.wear__items li')].map((li) => li.textContent);
+    expect(duck.querySelectorAll('img[data-piece]').length).toBeGreaterThan(0);
+    expect(items.length).toBeGreaterThanOrEqual(duck.querySelectorAll('img[data-piece]').length);
     expect(screen.getByText(/Weather data by/).textContent).toMatch(/Open-Meteo.*Environment and Climate Change Canada/);
     // Saved for offline use.
     expect(localStorage.getItem('anyonecanpace:weather:v1')).toContain('"hours"');
