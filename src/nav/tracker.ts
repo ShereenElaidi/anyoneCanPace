@@ -218,9 +218,9 @@ export type GpsHealth = 'ok' | 'stale' | 'rough';
  */
 export function gpsHealth(state: NavState, now: number): GpsHealth {
   if (state.status !== 'following' || !state.lastFix) return 'ok';
-  if (state.lastGoodFixAt === null || now - state.lastGoodFixAt > GPS_GAP_MS) {
-    return usable(state.lastFix) ? 'stale' : 'rough';
-  }
+  // Nothing at all lately beats "rough": the phone isn't hearing GPS.
+  if (now - state.lastFix.at > GPS_GAP_MS) return 'stale';
+  if (state.lastGoodFixAt === null || now - state.lastGoodFixAt > GPS_GAP_MS) return 'rough';
   return 'ok';
 }
 

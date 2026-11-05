@@ -28,7 +28,7 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 ## Rules that must not break
 - Timing: while active, store only `endsAt` and derive remaining = `endsAt - now`. Never count ticks down. New intervals start at the previous boundary, not at "now".
 - Duration edits apply to the **next** occurrence of that phase. Never reset, pause or restart the running interval.
-- No auto-reload mid-session. The SW uses `registerType: 'prompt'` and updates are offered in Settings only when no session is active.
+- No auto-reload mid-session. The SW uses `registerType: 'prompt'`; Settings offers the update only when the timer is `ready` (not running or paused). Every `useRegisterSW` passes `SW_OPTIONS` (`src/lib/swUpdate.ts`), which reloads on activation only when no timer session or route is live.
 - Don't replay missed cues after suspension. Only cue transitions under 2 s old while the page is visible.
 - Reset/End stays in the Settings sheet behind a two-tap confirm, away from the main controls.
 - Accessibility: touch targets ≥ 44 px, phase text never conveyed by colour alone, announce phase/pause changes (not every second), respect reduced motion.
@@ -36,6 +36,10 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 
 ## Route rules
 - Progress is forward-only and matched in a window around current progress (it grows during GPS gaps). Never snap to the globally nearest point: routes overlap and a loop's start and finish are close.
+- One cue per GPS fix, by priority: finished > turn now > off route > heads-up (`src/sixk/navDelivery.ts`). Announcements come from each event's own turn and `distanceM`; a heads-up only fires for the next pending turn and a close next turn is folded into the "now" ("Left now, then right in 60 metres").
+- GPS gaps are measured from the last *usable* fix (`lastGoodFixAt`, accuracy ≤ 60 m); `lastFix` is raw position only. `gpsHealth()` drives the "GPS lost / too rough" alert and greys the banner.
+- Joining: near the start the beginning wins and a later leg (loop finish) is never assumed; several legs elsewhere wait for direction of travel or an explicit JOIN AT x KM (`joinOptions`/`joinAt`).
+- Routes carry `verification` (unverified / desk-reviewed / field-verified; reviewed needs reviewer + date) and a `geometry` fingerprint. Never mark a route reviewed without a real check. A geometry change stops `npm run routes` until `--reset-turns`.
 - Turn cues fire once per stage (heads-up ~150 m, now ~30 m). Turns passed in a GPS gap (>10 s without a fix) are skipped silently; a turn jumped over between close fixes (≤60 m past) still gets a late "now". Cue only for fresh fixes while visible; never replay.
 - Vitest's on-disk module cache is off (`fsModuleCache: false`) because it missed new routes picked up by `import.meta.glob`.
 - Off route: >30 m for 5 s → banner, the confused duck (`duck-runner-lost.webp`, source `design/duck-confused.webp`) with a "?", "Going rogue?" dialog. Going rogue calms the banner but keeps the confused duck until back on route. Started but not yet joined and >30 m away also shows the confused duck (`duckLost` in `tracker.ts`), with no dialog or buzz. Finish only after 90 % covered and near the end. Ending a route needs the menu and two taps.

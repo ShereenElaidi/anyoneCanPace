@@ -7,7 +7,10 @@
  *   ?sim=pi-day                                               another route
  *   ?sim&away=300                                             begin 300 m north of the start
  *   ?sim&speed=5                                              start at 5× (also changeable in the panel)
+ *   ?sim&at=6200                                              start 6.2 km along the route (late joiner)
  *
+ * The GPS button cycles good fixes → rough fixes (±150 m) → no fixes, to see
+ * the "GPS too rough" and "GPS lost" warnings.
  * A small panel (bottom left) has Run/Pause, speed, "Go off route" and Restart.
  * One fix per second of real time, like a phone. Positions stay in memory.
  */
@@ -42,11 +45,13 @@ export function installSimulatedGps(params: URLSearchParams): void {
   const routeId = params.get('sim') || 'sample-loop';
   const awayM = Math.max(0, Number(params.get('away')) || 0);
   const requested = Number(params.get('speed'));
+  const startAtM = Math.max(0, Number(params.get('at')) || 0);
+  let gpsMode: 'good' | 'rough' | 'off' = 'good';
   let speed: number = SPEEDS.includes(requested as (typeof SPEEDS)[number]) ? requested : 1;
 
   let route: PreparedRoute | null = null;
   let start: LatLon | null = null;
-  let travelledM = 0;
+  let travelledM = startAtM;
   let lateralM = 0;
   let detour = false;
   let running = false;
@@ -57,13 +62,13 @@ export function installSimulatedGps(params: URLSearchParams): void {
     if (!route) return null;
     const p = simPosition(route, start, awayM, travelledM, lateralM);
     return {
-      coords: { latitude: p.lat, longitude: p.lon, accuracy: 8, altitude: null, altitudeAccuracy: null, heading: null, speed: null },
+      coords: { latitude: p.lat, longitude: p.lon, accuracy: gpsMode === 'rough' ? 150 : 8, altitude: null, altitudeAccuracy: null, heading: null, speed: null },
       timestamp: Date.now(),
     } as GeolocationPosition;
   };
 
   const emit = () => {
-    const pos = current();
+    const pos = gpsMode === 'off' ? null : current();
     if (pos) for (const cb of watchers.values()) cb(pos);
     render();
   };
@@ -130,8 +135,12 @@ export function installSimulatedGps(params: URLSearchParams): void {
     detour = !detour;
     render();
   });
+  const gpsBtn = button('', () => {
+    gpsMode = gpsMode === 'good' ? 'rough' : gpsMode === 'rough' ? 'off' : 'good';
+    render();
+  });
   button('↺', () => {
-    travelledM = 0;
+    travelledM = startAtM;
     lateralM = 0;
     detour = false;
     running = false;
@@ -149,6 +158,7 @@ export function installSimulatedGps(params: URLSearchParams): void {
     runBtn.textContent = running ? '❚❚ PAUSE' : '▶ RUN';
     speedBtn.textContent = `×${speed}`;
     detourBtn.textContent = detour ? 'BACK ON' : 'GO OFF';
+    gpsBtn.textContent = `GPS ${gpsMode.toUpperCase()}`;
     detourBtn.title = detour ? 'Drift back onto the route' : `Drift ${SIM_DETOUR_M} m to the right of the route`;
   }
 

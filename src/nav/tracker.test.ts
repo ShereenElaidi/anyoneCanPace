@@ -367,6 +367,8 @@ describe('usable GPS: poor-fix stretches and gaps', () => {
     expect(gpsHealth(r.state, t + GPS_GAP_MS + 1000)).toBe('stale');
     const rough = replay(route, [poor(310, t + 5000), poor(320, t + GPS_GAP_MS + 2000)], r.state).state;
     expect(gpsHealth(rough, t + GPS_GAP_MS + 2000)).toBe('rough');
+    // Rough fixes, then nothing at all for over 10 s: lost, not rough.
+    expect(gpsHealth(rough, t + 2 * GPS_GAP_MS + 3000)).toBe('stale');
     expect(gpsHealth(replay(route, [poor(310, t + 1000)], r.state).state, t + 1000)).toBe('ok');
     expect(gpsHealth(createNav(route), t)).toBe('ok'); // not following yet
   });
