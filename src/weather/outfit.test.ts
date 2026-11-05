@@ -64,7 +64,7 @@ describe('modifiers', () => {
   it('rain → raincoat and a brimmed cap', () => {
     const o = whatToWear(base(8, { precipProb: 70, code: 61, rainMm: 1.2 }));
     expect(o.items.map((i) => i.id)).toEqual(expect.arrayContaining(['raincoat', 'cap']));
-    expect(o.items.find((i) => i.id === 'cap')?.label).toMatch(/brim/);
+    expect(o.items.find((i) => i.id === 'cap')).toMatchObject({ label: 'Cap', why: expect.stringMatching(/brim/) });
     expect(o.notes[0]).toBe('Rain likely (70 % chance).');
     expect(o.headline).toMatch(/Rain likely\.$/);
   });

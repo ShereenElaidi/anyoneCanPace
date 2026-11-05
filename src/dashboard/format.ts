@@ -17,8 +17,11 @@ export function dayLabel(at: number, now: number): string {
 /** "7:42 a.m." */
 export const clockTime = (at: number) => time.format(at);
 
+/** "9 a.m." */
+export const hourLabel = (at: number) => hourOnly.format(at);
+
 /** "Today 9 a.m." */
-export const runTimeLabel = (at: number, now: number) => `${dayLabel(at, now)} ${hourOnly.format(at)}`;
+export const runTimeLabel = (at: number, now: number) => `${dayLabel(at, now)} ${hourLabel(at)}`;
 
-
-export const degrees = (c: number) => `${Math.round(c)} °C`;
+/** "15 °C", with a no-break space so the unit never wraps away from the number. */
+export const degrees = (c: number) => `${Math.round(c)}\u00a0°C`;

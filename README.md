@@ -121,8 +121,9 @@ All routes so far were drawn with [On The Go Map](https://onthegomap.com) on Ope
 
 ## Daily Dashboard
 
-- **Weather at run time.** Pick when the run starts. The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The page then shows feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
-- **What to wear**, always as text: a headline, a list of items and notes.
+- **Layout: the answer first.** The dressed duck, with a "feels like" sticker, the outfit headline and the item chips fill the first screen. Weather numbers and tips are folded under **Weather details and tips**. A fresh "Updated …" line and REFRESH sit at the bottom; an offline, failed or old forecast moves that line to the top. With no advisories there's one "No route advisories. Last checked …" line; active ones show as a card at the top.
+- **Weather at run time.** Pick when the run starts from a strip of hour chips (6 a.m. to 9 p.m., up to 3 days ahead; radio buttons, so arrow keys and screen readers work). The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The details show feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
+- **What to wear**, always as text: a headline, item chips (names only) and tips. Why an item is worn ("Cap: the brim keeps rain out of your eyes") is the item's `why` in `outfit.ts` and goes in the tips.
 - **The duck dresses for it.** The mascot wears one drawn layer per outfit item (a gold tee, navy long sleeve, gold raincoat and cap, toque and mittens, a safety-yellow vest and headlamp in the dark…), with rain or snow falling behind it (off when the phone asks for reduced motion). It's decoration only, hidden from screen readers; the text list carries the meaning. The pieces were drawn with ChatGPT from the brief in `design/duck-art-brief/` and fitted onto the duck. To swap one, see `src/assets/duck-outfit/README.md`.
 - **Dress for the run feel, not the weather.** Run feel is the feels-like temperature **+ 7 °C** (`RUN_FEEL_OFFSET_C`), lower than the usual racing advice of about +10 °C because pacers run/walk and stand around at the start.
 

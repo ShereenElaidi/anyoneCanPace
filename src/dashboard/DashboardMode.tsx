@@ -1,15 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { hourAt, sunFor, weatherText } from '../weather/forecast';
 import { whatToWear } from '../weather/outfit';
-import { defaultRunTime, outfitInputFor, runTimeChoices } from '../weather/runTime';
-import { clockTime, dayLabel, degrees, runTimeLabel } from './format';
+import {
+  defaultRunTime,
+  EARLIEST_RUN_HOUR,
+  LATEST_RUN_HOUR,
+  localDate,
+  localHour,
+  outfitInputFor,
+  runTimeChoices,
+} from '../weather/runTime';
+import { clockTime, dayLabel, degrees, hourLabel, runTimeLabel } from './format';
 import advisoriesFile from '../data/advisories.json';
 import manifestFile from '../data/routes/manifest.json';
-import { NoticeList } from '../advisories/NoticeList';
+import { lastCheckedText, NoticeList } from '../advisories/NoticeList';
 import { activeNotices, type NoticeFile } from '../advisories/notices';
 import type { RouteManifest } from '../nav/types';
-import { localDate } from '../weather/runTime';
 import { DressedDuck } from './duck/DressedDuck';
 import { duckWeather } from './duck/pieces';
 import { useForecast } from './useForecast';
@@ -21,11 +28,17 @@ const routeNames = Object.fromEntries((manifestFile as unknown as RouteManifest)
 /** A saved forecast older than this gets an "may be out of date" warning. */
 const OLD_FORECAST_MS = 6 * 3_600_000;
 
+/** How many days of run times the hour strip offers. */
+const PICKER_DAYS = 3;
+
 interface Props {
   onSwitchMode: () => void;
 }
 
-/** Daily Dashboard: today's weather at run time and what to wear. Loaded on demand. */
+/**
+ * Daily Dashboard: what to wear for the run, with the dressed duck up front.
+ * Weather numbers and tips sit behind "Weather details and tips". Loaded on demand.
+ */
 export default function DashboardMode({ onSwitchMode }: Props) {
   useRegisterSW();
   const { forecast, state, refresh } = useForecast();
@@ -45,6 +58,12 @@ export default function DashboardMode({ onSwitchMode }: Props) {
   const hour = forecast && runAt !== null ? hourAt(forecast, runAt) : null;
   const sun = forecast && runAt !== null ? sunFor(forecast, runAt) : null;
 
+  const notices = activeNotices(advisories.notices, null, localDate(now));
+  const updatedAt = forecast?.fetchedAt ?? null;
+  // Problems with the forecast go to the top; a fresh "Updated" line sits quietly at the bottom.
+  const statusNeedsAttention =
+    !updatedAt || state === 'offline' || state === 'failed' || now - updatedAt > OLD_FORECAST_MS;
+  const status = <StatusLine updatedAt={updatedAt} state={state} now={now} onRefresh={() => void refresh()} />;
 
   return (
     <div className="app dash">
@@ -59,26 +78,19 @@ export default function DashboardMode({ onSwitchMode }: Props) {
       </header>
 
       <main className="main">
-        <StatusLine updatedAt={forecast?.fetchedAt ?? null} state={state} now={now} onRefresh={() => void refresh()} />
+        {statusNeedsAttention && status}
+
+        {notices.length > 0 && (
+          <section className="dash-advisories" aria-labelledby="notices-title">
+            <h2 id="notices-title" className="dash__h2">
+              Route advisories
+            </h2>
+            <NoticeList notices={notices} lastChecked={advisories.lastChecked} routeNames={routeNames} empty="" />
+          </section>
+        )}
 
         {choices.length > 0 && runAt !== null && (
-          <div className="run-time">
-            <label htmlFor="run-time" className="run-time__label">
-              Run starts
-            </label>
-            <select
-              id="run-time"
-              className="run-time__select"
-              value={runAt}
-              onChange={(e) => setPicked(Number(e.target.value))}
-            >
-              {choices.map((at) => (
-                <option key={at} value={at}>
-                  {runTimeLabel(at, now)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <RunTimePicker choices={choices} runAt={runAt} now={now} onPick={setPicked} />
         )}
 
         {!forecast && state !== 'loading' && (
@@ -98,16 +110,35 @@ export default function DashboardMode({ onSwitchMode }: Props) {
 
         {outfit && hour && runAt !== null && (
           <>
-            <section className="dash-card weather" aria-labelledby="weather-title">
-              <h2 id="weather-title" className="dash__h2">
-                Weather for {runTimeLabel(runAt, now).replace(/^(Today|Tomorrow)/, (d) => d.toLowerCase())}
+            <section className="dash-hero" aria-labelledby="wear-title">
+              <h2 id="wear-title" className="visually-hidden">
+                What to wear
               </h2>
-              <p className="weather__feels">
-                Feels like <strong>{degrees(hour.feelsC)}</strong>
+              <div className="duck-slot">
+                {/* Decorative: the text below carries the meaning. */}
+                <DressedDuck items={outfit.items.map((i) => i.id)} weather={duckWeather(outfit.conditions)} />
+                <p className="duck-feels">
+                  <span>Feels like</span> <strong>{degrees(hour.feelsC)}</strong>
+                </p>
+              </div>
+              <p className="wear__headline">{outfit.headline}</p>
+              <p className="wear__runfeel">
+                Dress for {degrees(outfit.runFeelC)}: you warm up by about{' '}
+                {degrees(outfit.runFeelC - hour.feelsC)} once you’re moving.
               </p>
+              <ul className="wear__items">
+                {outfit.items.map((item) => (
+                  <li key={item.id}>{item.label}</li>
+                ))}
+              </ul>
+            </section>
+
+            <details className="dash-details">
+              <summary>Weather details and tips</summary>
+              <h3 className="dash-details__h3">Weather for {lowerDay(runTimeLabel(runAt, now))}</h3>
               <ul className="weather__facts">
                 <li>
-                  {weatherText(hour.code)}, air {degrees(hour.tempC)}
+                  {weatherText(hour.code)}, air {degrees(hour.tempC)}, feels like {degrees(hour.feelsC)}
                 </li>
                 <li>
                   {hour.precipProb !== null ? `${Math.round(hour.precipProb)} % chance of rain or snow` : 'Chance of rain unknown'}
@@ -122,61 +153,110 @@ export default function DashboardMode({ onSwitchMode }: Props) {
                   </li>
                 )}
               </ul>
-            </section>
-
-            <section className="dash-card wear" aria-labelledby="wear-title">
-              <h2 id="wear-title" className="dash__h2">
-                What to wear
-              </h2>
-              <div className="wear__body">
-                {/* Decorative: the text list below carries the meaning. */}
-                <div className="duck-slot">
-                  <DressedDuck items={outfit.items.map((i) => i.id)} weather={duckWeather(outfit.conditions)} />
-                </div>
-                <div className="wear__text">
-                  <p className="wear__headline">{outfit.headline}</p>
-                  <p className="wear__runfeel">
-                    Run feel {degrees(outfit.runFeelC)} (feels like + {Math.round(outfit.runFeelC - hour.feelsC)} °C, because
-                    you warm up)
-                  </p>
-                </div>
-              </div>
-              <ul className="wear__items">
-                {outfit.items.map((item) => (
-                  <li key={item.id}>{item.label}</li>
-                ))}
-              </ul>
+              <h3 className="dash-details__h3">Tips</h3>
               <ul className="wear__notes">
+                {outfit.items
+                  .filter((item) => item.why)
+                  .map((item) => (
+                    <li key={item.id}>
+                      {item.label}: {item.why}.
+                    </li>
+                  ))}
                 {outfit.notes.map((note) => (
                   <li key={note}>{note}</li>
                 ))}
               </ul>
-            </section>
+              <p className="dash-details__small">Sun strength (UV) is estimated from the sun’s height and cloud cover.</p>
+            </details>
           </>
         )}
 
-        <section className="dash-card" aria-labelledby="notices-title">
-          <h2 id="notices-title" className="dash__h2">
-            Route advisories
-          </h2>
-          <NoticeList
-            notices={activeNotices(advisories.notices, null, localDate(now))}
-            lastChecked={advisories.lastChecked}
-            routeNames={routeNames}
-            empty="No advisories right now."
-          />
-        </section>
+        {notices.length === 0 && (
+          <p className="dash-clear">
+            <span aria-hidden="true">✓ </span>No route advisories. <span className="dash-clear__checked">{lastCheckedText(advisories.lastChecked)}</span>
+          </p>
+        )}
+
+        {!statusNeedsAttention && status}
 
         <p className="credits">
-          Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0), from Environment and Climate
-          Change Canada’s GEM model, for central Montréal. Sun strength (UV) is estimated from the sun’s height and cloud
-          cover.
+          Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0) from Environment and Climate
+          Change Canada’s GEM model, for central Montréal.
         </p>
       </main>
 
       <footer className="footer">
         <p>ANYONE CAN RUN. ANYONE CAN PACE.</p>
       </footer>
+    </div>
+  );
+}
+
+/**
+ * Run start as a strip of hour chips (6 a.m. to 9 p.m., a few days ahead),
+ * scrolled so the chosen hour is in view. Native radios, so arrow keys and
+ * screen readers work; each one's name includes the day ("Tomorrow 7 a.m.").
+ */
+function RunTimePicker(props: { choices: number[]; runAt: number; now: number; onPick: (at: number) => void }) {
+  const { choices, runAt, now, onPick } = props;
+  const days = useMemo(() => {
+    const out: { date: string; label: string; hours: number[] }[] = [];
+    for (const at of choices) {
+      const h = localHour(at);
+      if ((h < EARLIEST_RUN_HOUR || h > LATEST_RUN_HOUR) && at !== runAt) continue;
+      const date = localDate(at);
+      let day = out.at(-1);
+      if (day?.date !== date) {
+        if (out.length === PICKER_DAYS) break;
+        day = { date, label: dayLabel(at, now), hours: [] };
+        out.push(day);
+      }
+      day.hours.push(at);
+    }
+    return out;
+  }, [choices, runAt, now]);
+
+  const strip = useRef<HTMLDivElement>(null);
+  const scrolled = useRef(false);
+  useLayoutEffect(() => {
+    const el = strip.current;
+    const chip = el?.querySelector('input:checked')?.parentElement;
+    if (!el || !chip) return;
+    const left = chip.offsetLeft - (el.clientWidth - chip.offsetWidth) / 2;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (typeof el.scrollTo === 'function') el.scrollTo({ left, behavior: scrolled.current && !reduce ? 'smooth' : 'instant' });
+    scrolled.current = true;
+  }, [runAt]);
+
+  return (
+    <div className="run-time">
+      <p className="run-time__head" aria-hidden="true">
+        <span>Run starts</span>
+        <span className="run-time__picked">{runTimeLabel(runAt, now)}</span>
+      </p>
+      <div className="run-time__strip" role="radiogroup" aria-label="Run starts" ref={strip}>
+        {days.map((day) => (
+          <Fragment key={day.date}>
+            <span className="run-time__day" aria-hidden="true">
+              {day.label}
+            </span>
+            {day.hours.map((at) => (
+              <label key={at} className="hour-chip">
+                <input
+                  type="radio"
+                  name="run-time"
+                  className="visually-hidden"
+                  aria-label={`${day.label} ${hourLabel(at)}`}
+                  value={at}
+                  checked={at === runAt}
+                  onChange={() => onPick(at)}
+                />
+                <span>{hourLabel(at)}</span>
+              </label>
+            ))}
+          </Fragment>
+        ))}
+      </div>
     </div>
   );
 }
@@ -213,6 +293,9 @@ function StatusLine(props: {
     </div>
   );
 }
+
+/** "Today 10 a.m." → "today 10 a.m." (weekdays keep their capital). */
+const lowerDay = (label: string) => label.replace(/^(Today|Tomorrow)/, (d) => d.toLowerCase());
 
 /** "7:42 a.m.", "yesterday 7:42 a.m." or "Monday 7:42 a.m." */
 function when(at: number, now: number): string {

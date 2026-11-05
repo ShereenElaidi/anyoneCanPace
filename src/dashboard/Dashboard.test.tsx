@@ -18,6 +18,12 @@ function setOnline(online: boolean) {
   Object.defineProperty(navigator, 'onLine', { value: online, configurable: true });
 }
 
+/** The chosen hour chip's accessible name, e.g. "Today 10 a.m.". */
+function checkedRunTime() {
+  const radio = screen.getAllByRole('radio').find((r) => (r as HTMLInputElement).checked) as HTMLInputElement;
+  return radio.getAttribute('aria-label');
+}
+
 async function openDashboard() {
   render(<Root />);
   fireEvent.click(screen.getByRole('button', { name: /Daily Dashboard/ }));
@@ -52,22 +58,33 @@ describe('Daily Dashboard', () => {
     expect(url).toContain('api.open-meteo.com/v1/gem');
     expect(url).toContain('latitude=45.5017');
 
-    // Default run time: the next 10 a.m.
-    expect((screen.getByLabelText('Run starts') as HTMLSelectElement).selectedOptions[0].textContent).toBe('Today 10 a.m.');
+    // Default run time: the next 10 a.m., picked in the hour strip.
+    expect(screen.getByRole('radiogroup', { name: 'Run starts' })).toBeTruthy();
+    expect(checkedRunTime()).toBe('Today 10 a.m.');
     expect(screen.getByText(/^Feels like/)).toBeTruthy();
     const wear = screen.getByRole('region', { name: 'What to wear' });
     expect(wear.querySelector('.wear__headline')?.textContent).toMatch(/\.$/);
     expect(wear.querySelectorAll('.wear__items li').length).toBeGreaterThan(1);
-    expect(wear.textContent).toContain('Bring an extra layer for the wait at the start.');
+    // Chips are item names only; reasons and tips are folded into the details.
+    const items = [...wear.querySelectorAll('.wear__items li')].map((li) => li.textContent ?? '');
+    expect(items.every((t) => !t.includes('('))).toBe(true);
+    const details = document.querySelector('details.dash-details') as HTMLDetailsElement;
+    expect(details.open).toBe(false);
+    expect(details.querySelector('summary')?.textContent).toBe('Weather details and tips');
+    expect(details.textContent).toContain('Bring an extra layer for the wait at the start.');
+    expect(details.textContent).toMatch(/Wind \d+ km\/h, gusts \d+ km\/h/);
     // The dressed duck is decorative; the list carries the meaning.
     const duck = wear.querySelector('.dressed-duck') as HTMLElement;
     expect(duck.getAttribute('aria-hidden')).toBe('true');
-    const items = [...wear.querySelectorAll('.wear__items li')].map((li) => li.textContent);
     expect(duck.querySelectorAll('img[data-piece]').length).toBeGreaterThan(0);
     expect(items.length).toBeGreaterThanOrEqual(duck.querySelectorAll('img[data-piece]').length);
-    const advisories = screen.getByRole('region', { name: 'Route advisories' });
-    expect(advisories.textContent).toMatch(/No advisories right now\.Last checked/);
+    // No advisories: one line, not a card, still saying when they were checked.
+    expect(screen.queryByRole('region', { name: 'Route advisories' })).toBeNull();
+    expect(screen.getByText(/^No route advisories\./).textContent).toMatch(/Last checked/);
     expect(screen.getByText(/Weather data by/).textContent).toMatch(/Open-Meteo.*Environment and Climate Change Canada/);
+    // A fresh forecast's status sits below the outfit.
+    const order = (a: Element, b: Element) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(order(wear, screen.getByText(/^Updated /))).toBeTruthy();
     // Saved for offline use.
     expect(localStorage.getItem('anyonecanpace:weather:v1')).toContain('"hours"');
   });
@@ -101,6 +118,22 @@ describe('Daily Dashboard', () => {
     await openDashboard();
     expect(await screen.findByText(/Couldn’t update: showing the forecast from yesterday 6:00 p\.m\./)).toBeTruthy();
     expect(screen.getByText(/It may be out of date/)).toBeTruthy();
+    // A problem with the forecast is shown above the outfit, not tucked below it.
+    const status = screen.getByText(/Couldn’t update/);
+    const wear = screen.getByRole('region', { name: 'What to wear' });
+    expect(status.compareDocumentPosition(wear) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('the hour strip offers 6 a.m. to 9 p.m. for a few days, each named with its day', async () => {
+    await openDashboard();
+    await screen.findByText(/^Updated /);
+    const names = screen.getAllByRole('radio').map((r) => r.getAttribute('aria-label'));
+    expect(names[0]).toBe('Today 9 a.m.'); // the hour under way (it's 9:12)
+    expect(names).toContain('Tomorrow 6 a.m.');
+    expect(names).toContain('Tomorrow 9 p.m.');
+    expect(names).not.toContain('Tomorrow 5 a.m.');
+    expect(names).not.toContain('Tomorrow 10 p.m.');
+    expect(new Set(names.map((n) => n?.replace(/ \d.*$/, ''))).size).toBeLessThanOrEqual(3);
   });
 
   it('a saved forecast that no longer covers the coming hours says to check outside', async () => {
@@ -116,18 +149,17 @@ describe('Daily Dashboard', () => {
     vi.setSystemTime(est(4, 13));
     await openDashboard();
     await screen.findByText(/^Updated /);
-    expect((screen.getByLabelText('Run starts') as HTMLSelectElement).selectedOptions[0].textContent).toBe('Tomorrow 10 a.m.');
+    expect(checkedRunTime()).toBe('Tomorrow 10 a.m.');
   });
 
   it('choosing another run time updates the outfit', async () => {
     await openDashboard();
     await screen.findByText(/^Updated /);
-    const select = screen.getByLabelText('Run starts') as HTMLSelectElement;
-    const evening = [...select.options].find((o) => o.textContent === 'Today 7 p.m.')!;
-    fireEvent.change(select, { target: { value: evening.value } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Today 7 p.m.' }));
+    expect(checkedRunTime()).toBe('Today 7 p.m.');
     const wear = screen.getByRole('region', { name: 'What to wear' });
     expect(wear.textContent).toContain('Reflective vest');
-    expect(wear.textContent).toContain('Dark at run time');
+    expect(document.querySelector('.dash-details')?.textContent).toContain('Dark at run time');
     // No "usual start" button any more: the default is always the next 10 a.m.
     expect(screen.queryByRole('button', { name: /USUAL START/ })).toBeNull();
   });

@@ -16,6 +16,9 @@ export function noticeDates(n: Notice): string {
   return '';
 }
 
+/** "Last checked Nov 4, 2026." */
+export const lastCheckedText = (iso: string) => `Last checked ${longFmt.format(asDate(iso))}.`;
+
 export function kmRange(n: Notice): string {
   if (n.fromKm === undefined) return '';
   return n.toKm === undefined ? `at km ${n.fromKm}` : `km ${n.fromKm}–${n.toKm}`;
@@ -70,7 +73,7 @@ export function NoticeList({ notices, lastChecked, routeNames, empty }: Props) {
           })}
         </ul>
       )}
-      <p className="notices__checked">Last checked {longFmt.format(asDate(lastChecked))}.</p>
+      <p className="notices__checked">{lastCheckedText(lastChecked)}</p>
     </div>
   );
 }

@@ -139,6 +139,8 @@ export interface OutfitInput {
 export interface OutfitItem {
   id: ItemId;
   label: string;
+  /** Why it's worn, when that isn't obvious ("the brim keeps rain out of your eyes"). Kept out of the label so chips stay short. */
+  why?: string;
 }
 
 export interface Outfit {
@@ -167,10 +169,10 @@ export function whatToWear(w: OutfitInput): Outfit {
   const add = (id: ItemId, label = ITEM_LABEL[id]) => {
     if (!has(id)) items.push({ id, label });
   };
-  const replace = (from: ItemId, id: ItemId, label: string) => {
+  const replace = (from: ItemId, to: OutfitItem) => {
     const i = items.findIndex((x) => x.id === from);
     if (i === -1) return false;
-    items[i] = { id, label };
+    items[i] = to;
     return true;
   };
 
@@ -190,15 +192,14 @@ export function whatToWear(w: OutfitInput): Outfit {
     conditions.push('rain');
     // A waterproof shell also blocks wind, so it takes the jacket's place.
     if (
-      !replace('light-jacket', 'raincoat', 'Raincoat (instead of the light jacket)') &&
-      !replace('windproof-shell', 'raincoat', 'Waterproof shell')
+      !replace('light-jacket', { id: 'raincoat', label: ITEM_LABEL.raincoat, why: 'instead of the light jacket' }) &&
+      !replace('windproof-shell', { id: 'raincoat', label: 'Waterproof shell' })
     ) {
       add('raincoat');
     }
     if (!has('toque')) {
-      const cap = items.find((i) => i.id === 'cap');
-      if (cap) cap.label = 'Cap (the brim keeps rain out of your eyes)';
-      else add('cap', 'Cap (the brim keeps rain out of your eyes)');
+      add('cap');
+      items.find((i) => i.id === 'cap')!.why = 'the brim keeps rain out of your eyes';
     }
     notes.push(
       w.precipProb !== null ? `Rain likely (${Math.round(w.precipProb)} % chance).` : 'Rain likely.',
