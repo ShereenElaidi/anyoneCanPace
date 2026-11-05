@@ -4,19 +4,18 @@ The Daily Dashboard draws the mascot dressed for the weather:
 `duck-base.webp` (the mascot from `design/duck-mascot.webp`, 512 × 512) with
 one transparent layer per outfit item stacked on top.
 
-The pieces were drawn by ChatGPT from the brief in `design/duck-art-brief/`
-(1024 × 1024 PNGs with transparent backgrounds). Each was then fitted onto the
-duck: the scale and position that best covers that garment's zone (torso,
-arms, hands, head, neck, hips and legs) was kept when it clearly helped. The
-originals stay as drawn for the vest, gloves, light gloves, mittens, tee, long sleeve,
-thermal layers, cap, headlamp, sunglasses and ice cleats. The raincoat (110 %) and neck warmer (100 %) were then sized up by hand
-after a look on the phone, because the automatic fit made them too small. They were then
-scaled to 512 × 512 WebP (about 8 KB each).
+The pieces were drawn from the brief in `design/duck-art-brief/` as
+1024 × 1024 transparent PNGs, then redrawn against a traced map of the duck
+(landmarks and one mask per body region of `01-duck-reference.png`, which is
+`duck-base.webp` at twice the size). Each garment is drawn in place on that
+canvas and clipped to the duck's outline, so no per-piece scaling or nudging
+is needed: every file is simply halved to 512 × 512 WebP (3 to 11 KB each).
 
 - **Swap a piece:** replace `<item>.webp` with a transparent image the same
   size as `duck-base.webp` (512 × 512), with the garment drawn exactly where it
-  sits on the duck and nothing else. A 1024 × 1024 PNG from the brief is fine
-  too: send it over and it gets fitted and converted the same way.
+  sits on the duck and nothing else. A 1024 × 1024 PNG drawn in place on
+  `design/duck-art-brief/01-duck-reference.png` is fine too: halve it to
+  512 × 512 and save it as WebP.
 - **Check it:** `npm run dev`, open the Daily Dashboard and pick run times
   until the outfit uses your piece.
 - **Stacking order** (what covers what) is `LAYER_ORDER` in
