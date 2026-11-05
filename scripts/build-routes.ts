@@ -3,10 +3,14 @@
  * app ships (src/data/routes/). Run with:  npm run routes
  *
  *   --offline      use only cached elevation and street data (fail if missing)
- *   --reset-turns  replace hand-edited turns with fresh proposals
+ *   --reset-turns  replace the turns with fresh proposals (street names and
+ *                  notes are carried over to proposals at the same place)
  *
- * Hand-edited fields (name, turns, notes, advisories, startStreet) in an
- * existing processed file are kept unless --reset-turns is given.
+ * Hand-edited fields (name, notes, advisories, startStreet, verification) in
+ * an existing processed file are always kept. Hand-edited turns are kept only
+ * while the track geometry is unchanged: if the GPX changed, their distances
+ * no longer fit, so the build stops and asks for --reset-turns. Changing the
+ * geometry or the turns resets verification to "unverified".
  * Elevation and street lookups are cached in routes/cache/ so builds are
  * repeatable offline.
  *
@@ -17,7 +21,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { RouteData, RouteManifest, RouteSource, TrackFeature, Turn } from '../src/nav/types.ts';
+import type { RouteData, RouteManifest, RouteSource, RouteVerification, TrackFeature, Turn } from '../src/nav/types.ts';
 import {
   COPERNICUS_GLO90,
   GPX_ELEVATION,
@@ -39,6 +43,7 @@ import {
   simplify,
 } from './lib/process-route.ts';
 import { analyseTurns, turnReviewMarkdown, type Street, type TurnAnalysis } from './lib/turns.ts';
+import { decideTurns, type TurnDecision } from './lib/turn-review.ts';
 
 interface RouteConfig {
   id: string;
@@ -239,12 +244,47 @@ async function buildRoute(config: RouteConfig) {
 
   const jsonPath = join(OUT_DIR, `${config.id}.json`);
   const existing = readJson<RouteData>(jsonPath);
-  const keep = existing && !RESET_TURNS;
-  if (keep) console.log('  kept hand-edited name, turns, notes and advisories');
+  const oldTrack = readJson<TrackFeature>(join(OUT_DIR, `${config.id}.geojson`));
+  const coords = track.map((p) => [round(p.lon, 6), round(p.lat, 6)] as [number, number]);
+  const decision = decideTurns({
+    existingTurns: existing?.turns ?? null,
+    existingFingerprint: existing?.geometry,
+    oldCoords: oldTrack?.geometry.coordinates ?? null,
+    newCoords: coords,
+    proposed,
+    reset: RESET_TURNS,
+  });
+  if (decision.outcome === 'stale') {
+    throw new Error(
+      `${config.id}: the track geometry changed since its turns were written, so their distances (atM) no longer ` +
+        `match the route. Rebuild with --reset-turns to regenerate them (street names and notes are carried over to ` +
+        `turns within 25 m), then review routes/review/${config.id}.md.`,
+    );
+  }
+  const keep = !!existing;
+  if (decision.outcome === 'kept') console.log('  geometry unchanged: kept hand-edited turns');
+  if (decision.outcome === 'regenerated') {
+    console.log(`  turns regenerated; ${decision.carried} street/note edit(s) carried over by position`);
+    for (const t of decision.dropped) console.warn(`  ! old turn at ${(t.atM / 1000).toFixed(2)} km (${t.street || t.dir}) matched no new turn: check it`);
+  }
+  if (decision.geometryChanged && existing?.advisories.some((a) => a.fromKm !== undefined)) {
+    console.warn('  ! the geometry changed: check the km ranges of this route’s advisories');
+  }
+  // Any change to what the pacer is told means a person has to check it again.
+  const changed = decision.geometryChanged || decision.outcome === 'regenerated';
+  const verification: RouteVerification =
+    existing?.verification && !changed
+      ? existing.verification
+      : {
+          status: 'unverified',
+          ...(existing?.verification && existing.verification.status !== 'unverified'
+            ? { notes: `Was ${existing.verification.status}; geometry or turns changed since, so it needs checking again.` }
+            : {}),
+        };
 
   const data: RouteData = {
     id: config.id,
-    name: keep ? existing.name : config.name,
+    name: keep ? existing!.name : config.name,
     kind,
     stats: {
       distanceM: Math.round(total),
@@ -254,24 +294,27 @@ async function buildRoute(config: RouteConfig) {
       maxEleM: ele.maxEleM,
     },
     track: `${config.id}.geojson`,
-    startStreet: keep && existing.startStreet !== undefined ? existing.startStreet : analysis.startStreet,
+    startStreet:
+      keep && !decision.geometryChanged && existing!.startStreet !== undefined ? existing!.startStreet : analysis.startStreet,
     bbox: box.map((v) => round(v, 6)) as RouteData['bbox'],
     profile: ele.profile,
-    turns: keep ? existing.turns : proposed,
-    notes: keep ? existing.notes : [],
-    advisories: keep ? existing.advisories : [],
+    turns: decision.turns,
+    notes: keep ? existing!.notes : [],
+    advisories: keep ? existing!.advisories : [],
     source: config.source,
+    verification,
+    geometry: decision.fingerprint,
   };
 
   const feature: TrackFeature = {
     type: 'Feature',
     properties: { id: config.id, distancesM: cum.map((d) => round(d, 1)) },
-    geometry: { type: 'LineString', coordinates: track.map((p) => [round(p.lon, 6), round(p.lat, 6)]) },
+    geometry: { type: 'LineString', coordinates: coords },
   };
 
   writeFileSync(jsonPath, formatJson(data));
   writeFileSync(join(OUT_DIR, `${config.id}.geojson`), JSON.stringify(feature) + '\n');
-  writeReview(config, data, analysis, eleSource, eleResult, keep ? existing.turns : null);
+  writeReview(config, data, analysis, eleSource, eleResult, decision);
   return { data, outline: outlinePath(track) };
 }
 
@@ -283,7 +326,7 @@ function writeReview(
   analysis: TurnAnalysis,
   eleSource: ElevationSource,
   ele: ElevationResult,
-  handEdited: Turn[] | null,
+  decision: TurnDecision,
 ) {
   const s = ele.summary!;
   const surface = copernicusComparison(config.id)?.summary;
@@ -293,9 +336,17 @@ function writeReview(
     'Generated by `npm run routes`. Everything below is an automated suggestion, not a verified instruction:',
     'check each line marked "yes" against the map, or on the ground, before trusting it.',
     '',
-    handEdited
-      ? `The app uses the turns in \`src/data/routes/${config.id}.json\` (kept from before; ${handEdited.length} turns). Compare them with these suggestions, or rebuild with \`--reset-turns\` to take the suggestions.`
-      : `The app uses these suggestions as they are (\`src/data/routes/${config.id}.json\`). Edit that file by hand to correct them.`,
+    `**Verification: ${data.verification.status}**${data.verification.reviewer ? ` (${data.verification.reviewer}, ${data.verification.date})` : ''}. ` +
+      'See "Reviewing and releasing a route" in the README before changing it.',
+    '',
+    decision.outcome === 'kept'
+      ? `Geometry unchanged, so the app keeps the turns in \`src/data/routes/${config.id}.json\` (${decision.turns.length} turns). Compare them with these suggestions, or rebuild with \`--reset-turns\` to take the suggestions.`
+      : decision.outcome === 'regenerated'
+        ? `Turns regenerated from these suggestions (\`--reset-turns\`); ${decision.carried} street/note edit(s) carried over from turns at the same place.` +
+          (decision.dropped.length
+            ? ` Old turns that matched nothing (check by hand): ${decision.dropped.map((t) => `${(t.atM / 1000).toFixed(2)} km ${t.street || t.dir}${t.note ? ` ("${t.note}")` : ''}`).join('; ')}.`
+            : '')
+        : `The app uses these suggestions as they are (\`src/data/routes/${config.id}.json\`). Edit that file by hand to correct them.`,
     '',
     '## Turns',
     '',
@@ -352,7 +403,14 @@ async function main() {
   const manifest: RouteManifest = { routes: [] };
   for (const config of configs) {
     const { data, outline } = await buildRoute(config);
-    manifest.routes.push({ id: data.id, name: data.name, kind: data.kind, stats: data.stats, outline });
+    manifest.routes.push({
+      id: data.id,
+      name: data.name,
+      kind: data.kind,
+      stats: data.stats,
+      outline,
+      verification: data.verification.status,
+    });
   }
   writeFileSync(join(OUT_DIR, 'manifest.json'), formatJson(manifest));
   console.log(`\nWrote ${manifest.routes.length} route(s) to src/data/routes/`);

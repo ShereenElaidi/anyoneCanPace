@@ -176,5 +176,9 @@
     "name": "On The Go Map",
     "url": "https://onthegomap.com",
     "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
-  }
+  },
+  "verification": {
+    "status": "unverified"
+  },
+  "geometry": "de05280421845a3a"
 }

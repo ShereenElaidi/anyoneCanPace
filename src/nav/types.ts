@@ -1,8 +1,20 @@
 /**
  * Shapes of the processed route files in `src/data/routes/`.
- * Written by `scripts/build-routes.ts`; `name`, `turns`, `notes` and
- * `advisories` are then edited by hand and kept when the script re-runs.
+ * Written by `scripts/build-routes.ts`; `name`, `turns`, `notes`,
+ * `advisories` and `verification` are then edited by hand and kept when the
+ * script re-runs (turns only while the geometry is unchanged).
  */
+
+/** See src/nav/verification.ts for what each status means and how it is validated. */
+export type VerificationStatus = 'unverified' | 'desk-reviewed' | 'field-verified';
+
+export interface RouteVerification {
+  status: VerificationStatus;
+  reviewer?: string;
+  /** YYYY-MM-DD */
+  date?: string;
+  notes?: string;
+}
 
 export type TurnDir =
   | 'left'
@@ -67,6 +79,10 @@ export interface RouteData {
   notes: string[];
   advisories: Advisory[];
   source?: RouteSource;
+  /** Whether a person has checked the turns. Reset to unverified when geometry or turns change. */
+  verification: RouteVerification;
+  /** Fingerprint of the processed track; turn distances are only valid for this geometry. */
+  geometry: string;
 }
 
 /** One entry in `manifest.json`, enough to draw the library list. */
@@ -77,6 +93,7 @@ export interface RouteSummary {
   stats: RouteStats;
   /** SVG path in a 0..100 box, for the list thumbnail. */
   outline: string;
+  verification: VerificationStatus;
 }
 
 export interface RouteManifest {

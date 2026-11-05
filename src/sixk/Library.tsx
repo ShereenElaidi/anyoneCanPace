@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { formatKm } from '../nav/banner';
 import type { RouteKind, RouteSummary } from '../nav/types';
+import { verificationText } from '../nav/verification';
 import { manifest } from './data';
 import { mapStatusText, saveMap, shouldAutoSave, useOfflineMap } from './map/offlineMap';
 
@@ -49,6 +50,10 @@ function RouteCard({ route, onOpen }: { route: RouteSummary; onOpen: () => void 
         <span className="route-card__name">{route.name}</span>
         <span className="route-card__stats">
           {formatKm(distanceM)} · ↑ {gainM} m ↓ {lossM} m · {KIND_LABEL[route.kind]}
+        </span>
+        <span className={`route-card__check route-card__check--${route.verification}`}>
+          {route.verification === 'unverified' ? '⚠ ' : '✓ '}
+          {verificationText({ status: route.verification }).label} directions
         </span>
         <span className="visually-hidden">
           {`. Climb ${gainM} metres, descent ${lossM} metres.`}

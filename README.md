@@ -71,7 +71,9 @@ Source GPX files live in `routes/` and are committed. The app ships only the pro
    - looks up bare-earth elevation every 10 m and cleans it (see "Elevation" below)
    - proposes turns from heading changes and fills street names from OpenStreetMap (see "Turn suggestions" below)
    - writes `<id>.json`, `<id>.geojson` and `manifest.json`, plus a review report in `routes/review/<id>.md` (and `.json`)
-3. Edit `src/data/routes/<id>.json` by hand: `name`, `startStreet`, and each turn's `dir`, `street` and `note`. Also `notes` and `advisories`. Re-running the script keeps these hand edits. `npm run routes -- --reset-turns` replaces the turns with fresh proposals, which are also always written to `routes/cache/<id>.proposed-turns.json` for comparison.
+3. Edit `src/data/routes/<id>.json` by hand: `name`, `startStreet`, and each turn's `dir`, `street` and `note`. Also `notes`, `advisories` and `verification`. Re-running the script keeps these hand edits.
+   - **Turns are tied to the geometry.** Each turn's `atM` is a distance along one particular track, so the file stores a fingerprint of the processed track (`geometry`). If the GPX changes, the build **stops** for that route instead of keeping distances that now point at the wrong places. Rebuild with `npm run routes -- --reset-turns`: turns are regenerated from the new track, and hand-written street names and notes are carried over to new turns within 25 m of the old ones (by position on the ground, not distance). Old turns that matched nothing are listed in the console and the review report to fix by hand. Fresh proposals are always in `routes/cache/<id>.proposed-turns.json` for comparison.
+   - Changing the geometry or the turns sets `verification` back to `unverified` (see below).
 
 Elevation comes from Natural Resources Canada's [Canadian Digital Elevation Model](https://open.canada.ca/data/en/dataset/7f245e4d-76c2-4caa-951a-45d1d2051333) (CDEM) through the GeoGratis elevation API, and only at build time. Street names come from OpenStreetMap through the Overpass API. Both lookups are cached in `routes/cache/`, so `npm run routes -- --offline` rebuilds without a network. Turn directions are first guesses: always check them against the map and the review report.
 
@@ -106,9 +108,30 @@ All routes so far were drawn with [On The Go Map](https://onthegomap.com) on Ope
 
 | Route | Source GPX | After cleaning | Climb |
 |---|---|---|---|
-| Sample Loop | `onthegomap-6.4-km-route.gpx` | 6.36 km loop, 4 spurs removed | +127 m |
-| Pi Day | `onthegomap-4.7-km-route.gpx` | 4.61 km loop, 4 spurs removed | +39 m |
-| Canal Test | `onthegomap-12.5-km-route.gpx` | 12.36 km loop along the Lachine Canal, 2 spurs removed | +29 m |
+| Sample Loop | `onthegomap-6.4-km-route.gpx` | 6.36 km loop, 4 spurs removed | +44 m |
+| Pi Day | `onthegomap-4.7-km-route.gpx` | 4.61 km loop, 4 spurs removed | +25 m |
+| Canal Test | `onthegomap-12.5-km-route.gpx` | 12.36 km loop along the Lachine Canal, 2 spurs removed | +11 m |
+
+(Climb is the bare-earth CDEM figure the app shows, from `src/data/routes/<id>.json`; the review report also lists the raw and surface-model numbers. All three routes are **unverified**.)
+
+### Reviewing and releasing a route
+
+Every route carries a `verification` record in `src/data/routes/<id>.json`, shown in the route list and on the route page before START ROUTE:
+
+| Status | Means | Needs |
+|---|---|---|
+| `unverified` | Turns are the automatic suggestions (or edits nobody has signed off). The app says so and asks pacers to watch the street signs. | Nothing |
+| `desk-reviewed` | Someone checked every turn, street name and note against a map or street imagery. Not walked. | `reviewer`, `date` |
+| `field-verified` | Someone walked or ran the whole route following the app, and fixed what was wrong. | `reviewer`, `date` |
+
+A test (`src/nav/verification.test.ts`) rejects a reviewed status without a reviewer and date, dates in the future, and unknown fields. It also fails if a route claims a review that the test's list doesn't expect, so marking a route reviewed is a deliberate, visible change in a pull request. Never set a status for checks that didn't happen.
+
+Process for a new or changed route:
+1. **Build:** add or update the GPX, run `npm run routes` (with `--reset-turns` if the geometry changed). The route is `unverified`.
+2. **Desk review:** open `routes/review/<id>.md`. For every turn marked "yes" (and the start street), compare with a map and street imagery; fix `dir`, `street`, `note` and `startStreet` in the route file. Check the climb looks plausible. Check advisories' km ranges if the geometry changed. Try it at a desk with the simulator (`/?sim=<id>` on `npm run dev`). Then set `"verification": { "status": "desk-reviewed", "reviewer": "<name>", "date": "YYYY-MM-DD" }` and add the id to the reviewed list in `verification.test.ts`.
+3. **Field check:** on the beta, follow the route on a phone on foot (see the field-testing checklist). Note every wrong, late or missing cue, fix the file, and repeat until a clean pass. Then set `field-verified` with who and when.
+4. **Release:** open a pull request with the route file changes; CI runs tests, type checks and a production build. Push to the beta first, then merge to `main` for the live app.
+5. **Any later change** to the GPX or the turns resets the status to `unverified`; go through steps 2–3 again.
 
 ### The street map
 

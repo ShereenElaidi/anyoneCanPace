@@ -136,6 +136,44 @@
   font-weight: 600;
 }
 
+.route-card__check {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 1px 8px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.route-card__check--unverified {
+  border-style: dashed;
+  background: var(--gold);
+}
+
+.verify-note {
+  padding: 10px 12px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: 14px;
+  background: var(--paper);
+  font-size: 0.88rem;
+}
+
+.verify-note--unverified {
+  border-style: dashed;
+  background: #fdf0d9;
+}
+
+.verify-note__label {
+  margin-bottom: 2px;
+  font-weight: 800;
+}
+
+.verify-note__extra {
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+
 .route-card__go {
   font-size: 2rem;
   font-weight: 800;

@@ -8,6 +8,7 @@ import { localDate } from '../weather/runTime';
 import type { LoadedRoute } from './data';
 import { KIND_LABEL } from './Library';
 import { TurnIcon } from './TurnIcon';
+import { verificationText } from '../nav/verification';
 
 const loadRouteMap = () => import('./map/RouteMap');
 
@@ -56,6 +57,8 @@ export function RoutePage({ route, onStart }: Props) {
           )}
         />
       </div>
+
+      <VerificationNote data={data} />
 
       <button type="button" className="btn btn--primary btn--block" onClick={onStart}>
         START ROUTE
@@ -121,5 +124,25 @@ export function RoutePage({ route, onStart }: Props) {
         Protomaps.
       </p>
     </article>
+  );
+}
+
+/** Before navigating: has anyone checked these directions? Shown as text, not just colour. */
+function VerificationNote({ data }: { data: LoadedRoute['data'] }) {
+  const v = data.verification ?? { status: 'unverified' as const };
+  const { label, detail } = verificationText(v);
+  return (
+    <section
+      className={`verify-note verify-note--${v.status}`}
+      aria-label={`Directions: ${label}`}
+      role={v.status === 'unverified' ? 'note' : undefined}
+    >
+      <p className="verify-note__label">
+        {v.status === 'unverified' ? '⚠ ' : '✓ '}
+        {label} directions
+      </p>
+      <p>{detail}</p>
+      {v.notes && <p className="verify-note__extra">{v.notes}</p>}
+    </section>
   );
 }

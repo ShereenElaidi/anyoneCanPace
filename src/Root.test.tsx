@@ -139,6 +139,17 @@ describe('6K Route Library', () => {
     return screen.findByRole('heading', { name: '6K Route Library' });
   };
 
+  it('shows that directions are unverified, in the list and before starting', async () => {
+    await openLibrary();
+    expect(screen.getAllByText(/⚠ Unverified directions/).length).toBeGreaterThanOrEqual(3);
+    tap(/Sample Loop/);
+    const note = await screen.findByRole('note', { name: 'Directions: Unverified' });
+    expect(note.textContent).toMatch(/suggested automatically and haven’t been checked by a person or on the ground/);
+    // It comes before the start button.
+    const start = screen.getByRole('button', { name: 'START ROUTE' });
+    expect(note.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('lists routes with distance, climb and an outline', async () => {
     await openLibrary();
     const card = screen.getByRole('button', { name: /Sample Loop/ });
