@@ -1,7 +1,7 @@
 # AnyoneCanPace
 
 Mobile-first PWA for volunteer pacers (AnyoneCanRun by Les Stooopids). React 19 + TypeScript + Vite 8 + plain CSS + vite-plugin-pwa. No backend, accounts, analytics or tracking.
-Modes behind a picker (`src/Root.tsx`, last mode remembered): **ACR Run/Walk Timer** (`App.tsx`), **6K Route Library** (`src/sixk/`, lazy-loaded), **Daily Dashboard** (`src/dashboard/`, lazy-loaded).
+The app always opens on the mode picker (`src/Root.tsx`, no mode is remembered), in this order: **Daily Dashboard** (`src/dashboard/`, lazy-loaded), **ACR Run/Walk Timer** (`App.tsx`), **6K Route Library** (`src/sixk/`, lazy-loaded).
 Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitations and the **V2 To-Do List** are in README.md.
 
 ## Commands

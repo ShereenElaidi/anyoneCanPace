@@ -36,30 +36,5 @@ export function savePrefs(prefs: Prefs): void {
 
 // ---------- App mode ----------
 
+/** The modes on the picker. The app always opens on the picker; no mode is remembered. */
 export type AppMode = 'timer' | 'sixk' | 'dashboard';
-
-const MODE_KEY = 'anyonecanpace:mode:v1';
-const MODES: readonly AppMode[] = ['timer', 'sixk', 'dashboard'];
-
-/**
- * The mode to open straight into, or null to show the mode picker.
- * People who used the timer before modes existed have saved timer settings,
- * so they keep opening straight into the timer.
- */
-export function loadMode(): AppMode | null {
-  try {
-    const saved = localStorage.getItem(MODE_KEY);
-    if (saved && (MODES as readonly string[]).includes(saved)) return saved as AppMode;
-    return localStorage.getItem(KEY) ? 'timer' : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveMode(mode: AppMode): void {
-  try {
-    localStorage.setItem(MODE_KEY, mode);
-  } catch {
-    // Storage unavailable: the picker shows next time, which is fine.
-  }
-}

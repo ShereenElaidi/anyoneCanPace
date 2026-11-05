@@ -6,7 +6,7 @@ interface Props {
   onPick: (mode: AppMode) => void;
 }
 
-/** Home screen: choose what to open. The last choice is remembered. */
+/** Home screen: the app always opens here. */
 export function ModePicker({ onPick }: Props) {
   // Registers the service worker (offline support) when the app opens here.
   useRegisterSW();
@@ -33,6 +33,12 @@ export function ModePicker({ onPick }: Props) {
         <h2 className="picker__title">What are we doing today?</h2>
         <ul className="picker__list">
           <li>
+            <button type="button" className="mode-card mode-card--dashboard" onClick={() => onPick('dashboard')}>
+              <span className="mode-card__name">Daily Dashboard</span>
+              <span className="mode-card__help">Today’s weather at run time and what to wear.</span>
+            </button>
+          </li>
+          <li>
             <button type="button" className="mode-card mode-card--timer" onClick={() => onPick('timer')}>
               <span className="mode-card__name">ACR Run/Walk Timer</span>
               <span className="mode-card__help">RUN and WALK intervals for pacing the group.</span>
@@ -42,12 +48,6 @@ export function ModePicker({ onPick }: Props) {
             <button type="button" className="mode-card mode-card--sixk" onClick={() => onPick('sixk')}>
               <span className="mode-card__name">6K Route Library</span>
               <span className="mode-card__help">Pick a route and follow it on a street map.</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" className="mode-card mode-card--dashboard" onClick={() => onPick('dashboard')}>
-              <span className="mode-card__name">Daily Dashboard</span>
-              <span className="mode-card__help">Today’s weather at run time and what to wear.</span>
             </button>
           </li>
         </ul>

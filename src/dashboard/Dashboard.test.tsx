@@ -19,8 +19,8 @@ function setOnline(online: boolean) {
 }
 
 async function openDashboard() {
-  localStorage.setItem('anyonecanpace:mode:v1', 'dashboard');
   render(<Root />);
+  fireEvent.click(screen.getByRole('button', { name: /Daily Dashboard/ }));
   return screen.findByRole('heading', { name: 'Daily Dashboard' });
 }
 
@@ -39,10 +39,9 @@ afterEach(() => {
 });
 
 describe('Daily Dashboard', () => {
-  it('is in the mode picker', () => {
+  it('is the first choice in the mode picker', () => {
     render(<Root />);
-    fireEvent.click(screen.getByRole('button', { name: /Daily Dashboard/ }));
-    expect(localStorage.getItem('anyonecanpace:mode:v1')).toBe('dashboard');
+    expect(document.querySelector('.mode-card__name')?.textContent).toBe('Daily Dashboard');
   });
 
   it('fetches once for Montréal, then shows the weather and outfit as text', async () => {

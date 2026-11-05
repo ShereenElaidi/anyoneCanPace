@@ -68,8 +68,11 @@ afterEach(() => {
 });
 
 describe('mode picker', () => {
-  it('a first-time visitor sees the picker with all three modes', () => {
+  it('opens on "What are we doing today?" with Daily Dashboard first', () => {
     render(<Root />);
+    expect(screen.getByRole('heading', { name: 'What are we doing today?' })).toBeTruthy();
+    const order = [...document.querySelectorAll('.mode-card__name')].map((n) => n.textContent);
+    expect(order).toEqual(['Daily Dashboard', 'ACR Run/Walk Timer', '6K Route Library']);
     // The beta build (a "…-beta" repository) adds a BETA tag; the live build doesn't.
     expect(screen.getByRole('heading', { name: __BETA__ ? 'AnyoneCanPace BETA' : 'AnyoneCanPace' })).toBeTruthy();
     expect(screen.queryByText('BETA') !== null).toBe(__BETA__);
@@ -78,7 +81,7 @@ describe('mode picker', () => {
     expect(screen.getByRole('button', { name: /Daily Dashboard/ })).toHaveProperty('disabled', false);
   });
 
-  it('picking the timer opens the unchanged timer, and it is remembered', () => {
+  it('picking the timer opens the unchanged timer; reopening the app shows the picker again', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
     const { unmount } = render(<Root />);
     tap(/ACR Run\/Walk Timer/);
@@ -89,19 +92,22 @@ describe('mode picker', () => {
     unmount();
 
     render(<Root />);
-    expect(screen.getByRole('button', { name: 'START PACING' })).toBeTruthy();
+    expect(screen.queryByRole('timer')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'What are we doing today?' })).toBeTruthy();
   });
 
-  it('people who already used the timer open straight into it', () => {
+  it('people who already used the timer also start on the picker, and keep their intervals', () => {
     localStorage.setItem('anyonecanpace:prefs:v1', JSON.stringify({ run: 120, walk: 45, sound: true, vibration: true }));
     render(<Root />);
+    expect(screen.queryByRole('timer')).toBeNull();
+    tap(/ACR Run\/Walk Timer/);
     expect(screen.getByRole('timer').textContent).toBe('02:00');
   });
 
   it('switching mode from the timer: one tap when ready, two taps mid-session', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
-    localStorage.setItem('anyonecanpace:mode:v1', 'timer');
     render(<Root />);
+    tap(/ACR Run\/Walk Timer/);
     tap('START PACING');
     act(() => vi.advanceTimersByTime(5_000));
     tap('Settings');
@@ -114,8 +120,8 @@ describe('mode picker', () => {
 
   it('the switch arm expires, so a stray later tap does nothing', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
-    localStorage.setItem('anyonecanpace:mode:v1', 'timer');
     render(<Root />);
+    tap(/ACR Run\/Walk Timer/);
     tap('START PACING');
     tap('Settings');
     tap('SWITCH MODE');
@@ -141,7 +147,6 @@ describe('6K Route Library', () => {
     expect(card.querySelector('svg path')?.getAttribute('d')).toMatch(/^M/);
     // jsdom has no Cache Storage: the map status says so honestly.
     expect(await screen.findByText(/can’t save the map/)).toBeTruthy();
-    expect(localStorage.getItem('anyonecanpace:mode:v1')).toBe('sixk');
   });
 
   it('route page: stats, map, elevation, turns, empty advisories, start button', async () => {

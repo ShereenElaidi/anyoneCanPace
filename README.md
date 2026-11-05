@@ -4,13 +4,13 @@
 
 Tools for volunteer pacers leading beginner-friendly group runs. Part of the **AnyoneCanRun (ACR)** initiative by **Les Stooopids**.
 
-The app opens on a mode picker and then remembers your choice:
+The app always opens on **"What are we doing today?"**, a mode picker:
 
+- **Daily Dashboard**: the weather at your run time and what to wear for it.
 - **ACR Run/Walk Timer**: open the URL on your phone, tap **START PACING**, and the app alternates RUN and WALK until you stop it. Adjust intervals mid-run without interrupting the group.
 - **6K Route Library**: pick a ~6 km route and follow it on a street map, with the duck marking your place, a direction banner and turn cues.
-- **Daily Dashboard**: the weather at your run time and what to wear for it.
 
-If you used the timer before modes existed, the app still opens straight into the timer. To change modes, use **Settings → Switch mode** in the timer (two taps while a session is running), or **MODES** in the route library.
+The app doesn't remember the last mode, so it always starts here. Your timer intervals and other settings are still remembered. To change modes, use **Settings → Switch mode** in the timer (two taps while a session is running), or **MODES** in the route library and dashboard.
 
 **Live site (once deployed):** https://shereenelaidi.github.io/anyoneCanPace/
 
@@ -135,7 +135,7 @@ The tiers and thresholds are starting points. Tune them in the `TIERS` and `MODI
 - **Your GPS position stays on your phone.** It is held in memory for the current route only. It is never stored, logged or sent anywhere, and the map tiles come from the app's own files, not a map service.
 - **The only request the app makes to another site** is the Daily Dashboard's weather request to `api.open-meteo.com`, for **fixed central-Montréal coordinates, never your location**. It is made only when you open the dashboard and the saved forecast is more than 30 minutes old (or you tap REFRESH). Everything else is the app's own files. Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
 - After one visit, the timer, routes, stats and map work offline. Anything that can go stale shows when it was saved.
-- Saved on the device: timer settings, the last mode, the offline map, the last weather forecast and your usual run start hour.
+- Saved on the device: timer settings, the offline map, the last weather forecast and your usual run start hour.
 
 ## Tech stack
 
@@ -156,7 +156,7 @@ The service worker precaches the lazy chunks too (about 2.6 MB instead of 0.6 MB
 
 ```
 src/
-  Root.tsx                Mode picker / last-used mode; lazy-loads the 6K mode
+  Root.tsx                Mode picker (always the first screen); lazy-loads the 6K mode and dashboard
   App.tsx                 The ACR timer (unchanged, plus "Switch mode" in Settings)
   timer/engine.ts         Pure timestamp-based interval logic (no clocks, no React)
   timer/clock.ts          Monotonic session clock with sleep correction
@@ -168,7 +168,7 @@ src/
   data/routes/            Processed routes (JSON + GeoJSON + manifest), hand-editable
   hooks/                  useIntervalTimer, useWakeLock, useGeolocation
   lib/cues.ts             Beeps and vibration (timer and route cues)
-  lib/prefs.ts            localStorage preferences and last mode
+  lib/prefs.ts            localStorage preferences
   components/             TimerDisplay, EditPanel, MenuSheet, ModePicker
 routes/                   Source GPX, routes.config.json, cached lookups
 scripts/                  build-routes, cut-map, check-bundle, dev-cert
@@ -270,7 +270,7 @@ The live app at `/anyoneCanPace/` only changes when `main` is pushed. Unreleased
 
 - It is the same code. A repository name containing "beta" makes the build say **Beta**: the BETA tag on the picker, "AnyoneCanPace Beta" as the tab title and home-screen name, and "ACP Beta" as the short name.
 - It has its own path, so its service worker, cached files and update prompts never touch the live app. A beta nested inside the live path (`/anyoneCanPace/beta/`) would be caught by the live app's service worker, which is why it's a separate repository.
-- Both apps are on the same `github.io` site, so on one phone they share local storage: timer intervals, the last mode, the forecast and the usual run hour. The live app ignores the keys it doesn't know.
+- Both apps are on the same `github.io` site, so on one phone they share local storage: timer intervals, the forecast and the usual run hour. The live app ignores the keys it doesn't know.
 - To update the beta from a feature branch (this deploys it via its own copy of the workflow):
 
   ```bash
