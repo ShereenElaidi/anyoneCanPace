@@ -5,7 +5,8 @@
 import { HEADS_UP_M, TURN_NOW_M, TURN_PASSED_GRACE_M } from './constants';
 import { bearingDeg, compassWord } from './geo';
 import { nearestBetween, pointAt, type PreparedRoute } from './route';
-import { approachInfo, type NavState } from './tracker';
+import { POOR_ACCURACY_M } from './constants';
+import { approachInfo, joinOptions, nearStart, type NavState } from './tracker';
 import type { Turn, TurnDir } from './types';
 
 export type BannerIcon = TurnDir | 'bearing' | 'finish' | 'gps';
@@ -105,6 +106,25 @@ export function describe(route: PreparedRoute, state: NavState, startStreet?: st
   if (!state.anchored) {
     if (!fix) {
       return { icon: 'gps', primary: 'Finding your location…', secondary: 'Progress starts once GPS finds you.', tone: 'normal' };
+    }
+    // On the route but not sure which part: say so instead of guessing.
+    const legs = fix.accuracyM <= POOR_ACCURACY_M ? joinOptions(route, fix) : [];
+    if (legs.length) {
+      if (nearStart(route, fix)) {
+        const finishing = legs.every((l) => l.alongM >= 0.9 * route.lengthM);
+        return {
+          icon: 'gps',
+          primary: finishing ? 'Near the finish stretch' : 'Near a later part of the route',
+          secondary: 'Head to the start to begin, or tap Join below if you’re already partway round.',
+          tone: 'normal',
+        };
+      }
+      return {
+        icon: 'gps',
+        primary: 'Which part of the route?',
+        secondary: 'Several parts of the route pass here. Keep moving along it, or tap where you are below.',
+        tone: 'normal',
+      };
     }
     const target = nearestBetween(route, fix, 0, route.lengthM);
     const p = target ? pointAt(route, target.alongM) : route.points[0];

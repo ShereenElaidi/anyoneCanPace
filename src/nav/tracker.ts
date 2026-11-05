@@ -21,7 +21,11 @@ import {
   FORWARD_BASE_M,
   GPS_GAP_MS,
   HEADS_UP_M,
+  JOIN_BEARING_TOLERANCE_DEG,
+  JOIN_LEG_GAP_M,
+  JOIN_MOVE_M,
   JOIN_PENALTY_PER_M,
+  JOIN_TRAIL_MS,
   LATE_TURN_MAX_M,
   MAX_SPEED_MPS,
   OFF_ROUTE_M,
@@ -32,7 +36,7 @@ import {
   TURN_PASSED_GRACE_M,
 } from './constants';
 import { bearingDeg, distanceM, type LatLon } from './geo';
-import { candidatesBetween, type PreparedRoute, type RouteMatch } from './route';
+import { bearingAt, candidatesBetween, type PreparedRoute, type RouteMatch } from './route';
 
 export interface Fix extends LatLon {
   /** Reported accuracy radius, metres. */
@@ -52,7 +56,12 @@ export interface NavState {
   progressM: number;
   /** True once a fix has been matched to the route since starting. */
   anchored: boolean;
+  /** Latest raw fix of any accuracy: for showing where you are, not for progress. */
   lastFix: Fix | null;
+  /** Time of the latest usable fix (accuracy ≤ POOR_ACCURACY_M). GPS gaps are measured from here. */
+  lastGoodFixAt: number | null;
+  /** Recent usable fixes while not yet joined, to pick a route leg by direction of travel. Memory only. */
+  joinTrail: Fix[];
   /** Time of the last fix that was on the route; the forward window grows from here. */
   lastOnRouteAt: number | null;
   /** Distance from the latest good fix to the route (within the search window). */
@@ -69,7 +78,8 @@ export type TurnStage = 'heads-up' | 'now';
 export type NavEvent =
   | { kind: 'started'; anchored: boolean; progressM: number }
   | { kind: 'joined'; progressM: number; at: number }
-  | { kind: 'turn'; stage: TurnStage; turnIndex: number; at: number }
+  /** distanceM: how far ahead the turn was when cued (negative = just past it). */
+  | { kind: 'turn'; stage: TurnStage; turnIndex: number; at: number; distanceM: number }
   | { kind: 'turn-skipped'; turnIndex: number }
   | { kind: 'off-route'; at: number }
   | { kind: 'back-on-route'; at: number }
@@ -86,6 +96,8 @@ export function createNav(route: PreparedRoute): NavState {
     progressM: 0,
     anchored: false,
     lastFix: null,
+    lastGoodFixAt: null,
+    joinTrail: [],
     lastOnRouteAt: null,
     distanceFromRouteM: null,
     offRouteSince: null,
@@ -110,23 +122,26 @@ export function approachInfo(route: PreparedRoute, fix: LatLon): ApproachInfo {
 
 /** Records a fix before the route has started (for the "head to the start" banner). */
 export function observe(state: NavState, fix: Fix): NavState {
-  return { ...state, lastFix: fix };
+  return { ...state, lastFix: fix, lastGoodFixAt: usable(fix) ? fix.at : state.lastGoodFixAt };
 }
+
+const usable = (fix: Fix) => fix.accuracyM <= POOR_ACCURACY_M;
 
 /**
  * Starts following. Works with or without a fix ("Start anyway" before GPS
  * locks): progress is anchored on the first good fix that is on the route.
  */
 export function begin(route: PreparedRoute, state: NavState, fix: Fix | null, now: number): NavResult {
+  const latest = fix ?? state.lastFix;
   let next: NavState = {
     ...createNav(route),
     status: 'following',
-    lastFix: fix ?? state.lastFix,
+    lastFix: latest,
+    lastGoodFixAt: latest && usable(latest) ? latest.at : null,
     lastOnRouteAt: now,
   };
   const events: NavEvent[] = [];
-  const latest = fix ?? state.lastFix;
-  if (latest && latest.accuracyM <= POOR_ACCURACY_M) {
+  if (latest && usable(latest)) {
     next = tryAnchor(route, next, latest, events);
   }
   events.unshift({ kind: 'started', anchored: next.anchored, progressM: next.progressM });
@@ -136,12 +151,14 @@ export function begin(route: PreparedRoute, state: NavState, fix: Fix | null, no
 /** Feeds one GPS fix. */
 export function update(route: PreparedRoute, state: NavState, fix: Fix): NavResult {
   if (state.status !== 'following') return { state: observe(state, fix), events: [] };
-  // Measured against the last fix of any accuracy: a gap means no GPS at all.
-  const gap = state.lastFix === null || fix.at - state.lastFix.at > GPS_GAP_MS;
+  // A gap means no *usable* GPS for a while: a stretch of poor fixes counts too, so turns
+  // passed during it are skipped silently instead of cued late.
+  const gap = state.lastGoodFixAt === null || fix.at - state.lastGoodFixAt > GPS_GAP_MS;
   let next: NavState = { ...state, lastFix: fix };
   const events: NavEvent[] = [];
-  // A poor fix only moves the GPS dot.
-  if (fix.accuracyM > POOR_ACCURACY_M) return { state: next, events };
+  // A poor fix only moves the raw position, never progress, cues or off-route state.
+  if (!usable(fix)) return { state: next, events };
+  next.lastGoodFixAt = fix.at;
 
   if (!next.anchored) {
     next = tryAnchor(route, next, fix, events);
@@ -192,6 +209,21 @@ export function duckLost(state: NavState): boolean {
   );
 }
 
+export type GpsHealth = 'ok' | 'stale' | 'rough';
+
+/**
+ * Whether the directions can be trusted right now. `stale`: no usable fix for
+ * over GPS_GAP_MS (phone was locked, tunnel, lost signal). `rough`: fixes are
+ * arriving but are too inaccurate to move progress. Only while following.
+ */
+export function gpsHealth(state: NavState, now: number): GpsHealth {
+  if (state.status !== 'following' || !state.lastFix) return 'ok';
+  if (state.lastGoodFixAt === null || now - state.lastGoodFixAt > GPS_GAP_MS) {
+    return usable(state.lastFix) ? 'stale' : 'rough';
+  }
+  return 'ok';
+}
+
 /** The pacer said "yes, going rogue": stop nagging until they're back on the route. */
 export function goRogue(state: NavState): NavState {
   return state.offRoute ? { ...state, rogue: true } : state;
@@ -216,37 +248,101 @@ function bestForward(route: PreparedRoute, state: NavState, fix: Fix): RouteMatc
 }
 
 /**
- * Joins the route. Near the start, only the early part of the route is
- * considered (a loop's finish is right next to its start). Elsewhere (a late
- * joiner) the whole route is, with earlier legs winning near-ties.
+ * Places the route passes within OFF_ROUTE_M of a fix: one option per leg
+ * (separate pass of the route), in route order. A loop's start and finish,
+ * or the two directions of an out-and-back, are separate legs.
+ */
+export function joinOptions(route: PreparedRoute, fix: LatLon): RouteMatch[] {
+  const legs: RouteMatch[] = [];
+  let legEnd = -Infinity;
+  for (const c of candidatesBetween(route, fix, 0, route.lengthM)) {
+    if (c.distM > OFF_ROUTE_M) continue;
+    const last = legs.at(-1);
+    if (last && c.alongM - legEnd <= JOIN_LEG_GAP_M) {
+      if (c.distM < last.distM) legs[legs.length - 1] = c;
+    } else {
+      legs.push(c);
+    }
+    legEnd = c.alongM;
+  }
+  return legs;
+}
+
+/** True when a fix is near the start, where the beginning of the route always wins. */
+export const nearStart = (route: PreparedRoute, fix: LatLon) => distanceM(fix, route.points[0]) <= START_RADIUS_M;
+
+/**
+ * Joins the route, or waits when it can't tell where you are.
+ *
+ * - Near the start: the beginning of the route (first EARLY_WINDOW_M) wins. A
+ *   later leg nearby (a loop's finish stretch) is never assumed; joining there
+ *   needs an explicit choice (`joinAt`).
+ * - Elsewhere, one leg nearby: join it (a late joiner).
+ * - Elsewhere, several legs (overlaps, out-and-back): wait until reliable fixes
+ *   show a direction of travel that matches exactly one leg, or an explicit choice.
  */
 function tryAnchor(route: PreparedRoute, state: NavState, fix: Fix, events: NavEvent[]): NavState {
-  const nearStart = distanceM(fix, route.points[0]) <= START_RADIUS_M;
-  const to = nearStart ? Math.min(EARLY_WINDOW_M, route.lengthM) : route.lengthM;
-  let best: RouteMatch | null = null;
-  let bestScore = Infinity;
-  let nearest = Infinity;
-  for (const c of candidatesBetween(route, fix, 0, to)) {
-    nearest = Math.min(nearest, c.distM);
-    if (c.distM > OFF_ROUTE_M) continue;
-    const score = c.distM + JOIN_PENALTY_PER_M * c.alongM;
-    if (score < bestScore) {
-      bestScore = score;
-      best = c;
-    }
+  const trail = [...state.joinTrail.filter((f) => fix.at - f.at <= JOIN_TRAIL_MS), fix].slice(-15);
+  const legs = joinOptions(route, fix);
+  if (!legs.length) {
+    const nearest = candidatesBetween(route, fix, 0, route.lengthM).reduce((m, c) => Math.min(m, c.distM), Infinity);
+    return { ...state, joinTrail: trail, distanceFromRouteM: Number.isFinite(nearest) ? nearest : null };
   }
-  if (!best) return { ...state, distanceFromRouteM: Number.isFinite(nearest) ? nearest : null };
+  let pick: RouteMatch | null = null;
+  if (nearStart(route, fix)) {
+    const early = legs.filter((l) => l.alongM <= Math.min(EARLY_WINDOW_M, route.lengthM));
+    pick = early.reduce<RouteMatch | null>(
+      (best, l) => (!best || l.distM + JOIN_PENALTY_PER_M * l.alongM < best.distM + JOIN_PENALTY_PER_M * best.alongM ? l : best),
+      null,
+    );
+  } else if (legs.length === 1) {
+    pick = legs[0];
+  } else {
+    pick = legByMovement(route, legs, trail);
+  }
+  if (!pick) return { ...state, joinTrail: trail, distanceFromRouteM: Math.min(...legs.map((l) => l.distM)) };
+  return anchorAt(route, state, fix, pick, events);
+}
+
+/** The one leg whose direction matches how you've been moving, if exactly one does. */
+function legByMovement(route: PreparedRoute, legs: RouteMatch[], trail: Fix[]): RouteMatch | null {
+  const from = trail[0];
+  const to = trail[trail.length - 1];
+  if (!from || from === to || distanceM(from, to) < JOIN_MOVE_M) return null;
+  const heading = bearingDeg(from, to);
+  const matching = legs.filter((l) => {
+    const diff = Math.abs(((bearingAt(route, Math.min(l.alongM, route.lengthM - 1)) - heading + 540) % 360) - 180);
+    return diff <= JOIN_BEARING_TOLERANCE_DEG;
+  });
+  return matching.length === 1 ? matching[0] : null;
+}
+
+function anchorAt(route: PreparedRoute, state: NavState, fix: Fix, at: RouteMatch, events: NavEvent[]): NavState {
   let next: NavState = {
     ...state,
     anchored: true,
-    progressM: best.alongM,
+    joinTrail: [],
+    progressM: at.alongM,
     lastOnRouteAt: fix.at,
-    distanceFromRouteM: best.distM,
+    distanceFromRouteM: at.distM,
   };
-  events.push({ kind: 'joined', progressM: best.alongM, at: fix.at });
+  events.push({ kind: 'joined', progressM: at.alongM, at: fix.at });
   // Turns already behind a late joiner are done, silently.
   next = processCues(route, next, fix.at, events, true);
   return next;
+}
+
+/**
+ * The pacer chose where they are ("Join at 6.1 km"), for when several legs are
+ * plausible. Only options near the latest usable fix are accepted.
+ */
+export function joinAt(route: PreparedRoute, state: NavState, alongM: number): NavResult {
+  const fix = state.lastFix;
+  if (state.status !== 'following' || state.anchored || !fix || !usable(fix)) return { state, events: [] };
+  const option = joinOptions(route, fix).find((l) => Math.abs(l.alongM - alongM) < 1);
+  if (!option) return { state, events: [] };
+  const events: NavEvent[] = [];
+  return { state: anchorAt(route, state, fix, option, events), events };
 }
 
 /**
@@ -262,6 +358,9 @@ function processCues(
   afterGap: boolean,
 ): NavState {
   let cues: CueState[] | null = null;
+  // A heads-up is only for the next manoeuvre: while an earlier turn is still to come, a
+  // close later turn waits (it is announced with that turn's "now": "Left now, then right").
+  let earlierPending = false;
   route.turns.forEach((turn, i) => {
     const current = (cues ?? state.cues)[i];
     if (current === 2) return;
@@ -272,11 +371,12 @@ function processCues(
       events.push({ kind: 'turn-skipped', turnIndex: i });
     } else if (d <= TURN_NOW_M) {
       to = 2;
-      events.push({ kind: 'turn', stage: 'now', turnIndex: i, at });
-    } else if (d <= HEADS_UP_M && current === 0) {
+      events.push({ kind: 'turn', stage: 'now', turnIndex: i, at, distanceM: d });
+    } else if (d <= HEADS_UP_M && current === 0 && !earlierPending) {
       to = 1;
-      events.push({ kind: 'turn', stage: 'heads-up', turnIndex: i, at });
+      events.push({ kind: 'turn', stage: 'heads-up', turnIndex: i, at, distanceM: d });
     }
+    if (to !== 2) earlierPending = true;
     if (to !== current) {
       cues ??= [...state.cues];
       cues[i] = to;

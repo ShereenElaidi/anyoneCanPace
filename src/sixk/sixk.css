@@ -354,6 +354,45 @@
   color: var(--asphalt);
 }
 
+/* GPS lost or too rough: the directions are frozen, so don't let them look current. */
+.banner--stale {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+
+.gps-warning {
+  padding: 10px 12px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: 14px;
+  background: var(--gold);
+  color: var(--asphalt);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.gps-warning strong {
+  font-weight: 800;
+}
+
+.join-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.join-choices .btn {
+  flex: 1 1 140px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.join-choices__sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
 .banner--warning {
   background: var(--paper);
   color: var(--asphalt);

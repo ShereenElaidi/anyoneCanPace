@@ -3,8 +3,9 @@ import { GEO_ERROR_TEXT, useGeolocation } from '../hooks/useGeolocation';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { canVibrate, unlockAudio } from '../lib/cues';
 import { loadPrefs, savePrefs, type Prefs } from '../lib/prefs';
-import { describe as describeBanner, statsLine, type Banner } from '../nav/banner';
-import { approachInfo, duckLost } from '../nav/tracker';
+import { describe as describeBanner, formatKm, statsLine, type Banner } from '../nav/banner';
+import { POOR_ACCURACY_M } from '../nav/constants';
+import { approachInfo, duckLost, gpsHealth, joinOptions } from '../nav/tracker';
 import { bearingAt, pointAt, splitAt } from '../nav/route';
 import type { LoadedRoute } from './data';
 import { TurnIcon } from './TurnIcon';
@@ -24,9 +25,16 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [menuOpen, setMenuOpen] = useState(false);
   const geo = useGeolocation(true);
-  const nav = useRouteNav(prepared, geo.fix, prefs, data.startStreet);
+  const nav = useRouteNav(prepared, geo.fix, prefs);
   const { state } = nav;
   const wakeLock = useWakeLock(state.status !== 'finished');
+  // A clock for "no GPS lately": fixes stop arriving exactly when it matters.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 2000);
+    return () => window.clearInterval(id);
+  }, []);
+  const health = gpsHealth(state, Math.max(now, state.lastFix?.at ?? 0));
 
   useEffect(() => savePrefs(prefs), [prefs]);
   useEffect(() => {
@@ -64,6 +72,12 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
 
   const atStart = state.lastFix ? approachInfo(prepared, state.lastFix).atStart : false;
 
+  // Started, not joined, and several places on the route are plausible: let the pacer choose.
+  const joinChoices =
+    following && !state.anchored && state.lastFix && state.lastFix.accuracyM <= POOR_ACCURACY_M
+      ? joinOptions(prepared, state.lastFix)
+      : [];
+
   const start = () => {
     unlockAudio(); // this tap is the gesture browsers need before beeps can play
     nav.start();
@@ -72,7 +86,10 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
   const fix = state.lastFix;
   return (
     <div className="follow">
-      <section className={`banner banner--${banner.tone}`} aria-label="Directions">
+      <section
+        className={`banner banner--${banner.tone}${health !== 'ok' ? ' banner--stale' : ''}`}
+        aria-label={health !== 'ok' ? 'Directions (may be out of date)' : 'Directions'}
+      >
         <TurnIcon icon={banner.icon} rotateDeg={banner.rotateDeg} className="banner__icon" />
         <div className="banner__text">
           <p className="banner__primary">{banner.primary}</p>
@@ -81,7 +98,27 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
         {state.offRoute && !state.rogue && <span className="banner__badge">OFF ROUTE</span>}
       </section>
 
+      {health !== 'ok' && (
+        <p className="gps-warning" role="alert">
+          <strong>{health === 'stale' ? 'GPS lost.' : 'GPS too rough.'}</strong>{' '}
+          {health === 'stale'
+            ? 'No location for over 10 seconds, so these directions may be out of date. Keep the screen on and the phone where it can see the sky.'
+            : `Location is only accurate to about ${Math.round(state.lastFix?.accuracyM ?? 0)} m, so progress and turn cues are paused until it improves.`}
+        </p>
+      )}
+
       {started && <p className="follow__stats">{statsLine(prepared, state)}</p>}
+
+      {joinChoices.length > 0 && (
+        <div className="join-choices" role="group" aria-label="Join the route here">
+          {joinChoices.map((c) => (
+            <button key={c.alongM} type="button" className="btn btn--secondary btn--small" onClick={() => nav.join(c.alongM)}>
+              JOIN AT {formatKm(c.alongM).toUpperCase()}
+              <span className="join-choices__sub">{formatKm(prepared.lengthM - c.alongM)} to go</span>
+            </button>
+          ))}
+        </div>
+      )}
       {geo.error && !gpsProblem && <p className="notice notice--warn">{GEO_ERROR_TEXT[geo.error]}</p>}
 
       <div className="follow__map">

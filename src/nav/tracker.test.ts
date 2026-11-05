@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { FINISH_FRACTION, OFF_ROUTE_MS, START_RADIUS_M } from './constants';
-import { distanceM, offsetPoint } from './geo';
+import { FINISH_FRACTION, GPS_GAP_MS, OFF_ROUTE_MS, START_RADIUS_M } from './constants';
+import { distanceM, offsetPoint, type LatLon } from './geo';
 import { bearingAt, pointAt, prepareRoute } from './route';
-import { approachInfo, begin, createNav, duckLost, goRogue, observe, update, type NavEvent } from './tracker';
+import {
+  approachInfo,
+  begin,
+  createNav,
+  duckLost,
+  goRogue,
+  gpsHealth,
+  joinAt,
+  joinOptions,
+  nearStart,
+  observe,
+  update,
+  type NavEvent,
+} from './tracker';
 import { describe as describeBanner } from './banner';
 import { allRoutes, lastAt, line, replay, sampleRoute, walk } from './testing/replay';
 
@@ -306,4 +319,158 @@ describe('every route in the library', () => {
       expect(started.state.progressM).toBeLessThan(150);
     });
   }
+});
+
+describe('usable GPS: poor-fix stretches and gaps', () => {
+  const route = sampleRoute();
+  const k = route.turns.findIndex((t) => t.atM > 1000);
+  const turnAt = route.turns[k].atM;
+  const poor = (d: number, at: number) => ({ ...pointAt(route, d), accuracyM: 120, at });
+
+  it('a long stretch of poor fixes counts as a gap: a turn passed during it is skipped, not cued late', () => {
+    const before = walk(route, { fromM: 0, toM: turnAt - 35 });
+    const r = replay(route, before);
+    const t0 = lastAt(before);
+    // 12 s of rough fixes while moving past the turn, then a good one 25 m past it.
+    const rough = Array.from({ length: 12 }, (_, i) => poor(turnAt - 30 + i * 4, t0 + (i + 1) * 1000));
+    const r2 = replay(route, [...rough, { ...pointAt(route, turnAt + 25), accuracyM: 8, at: t0 + 13_000 }], r.state);
+    expect(turnEvents(r2.events).some((e) => e.turnIndex === k)).toBe(false);
+    expect(r2.events.some((e) => e.kind === 'turn-skipped' && e.turnIndex === k)).toBe(true);
+    // Rough fixes moved only the raw position, never progress.
+    expect(replay(route, rough, r.state).state.progressM).toBe(r.state.progressM);
+    expect(replay(route, rough, r.state).state.lastFix).toEqual(rough.at(-1));
+  });
+
+  it('short jitter (one poor fix between good ones) is not a gap: the jumped turn still gets a late "now"', () => {
+    const before = walk(route, { fromM: 0, toM: turnAt - 35 });
+    const r = replay(route, before);
+    const t0 = lastAt(before);
+    const r2 = replay(route, [poor(turnAt, t0 + 1000), { ...pointAt(route, turnAt + 25), accuracyM: 8, at: t0 + 2000 }], r.state);
+    expect(turnEvents(r2.events).filter((e) => e.turnIndex === k).map((e) => e.stage)).toEqual(['now']);
+  });
+
+  it('after the GPS recovers, later turns are cued normally', () => {
+    const before = walk(route, { fromM: 0, toM: turnAt - 35 });
+    const r = replay(route, before);
+    const after = walk(route, { fromM: turnAt + 25, toM: route.lengthM, startAt: lastAt(before) + 30_000 });
+    const r2 = replay(route, after, r.state);
+    const later = route.turns.map((t, i) => ({ t, i })).filter(({ t }) => t.atM > turnAt + 200);
+    const cued = turnEvents(r2.events);
+    for (const { i } of later) expect(cued.filter((e) => e.turnIndex === i).map((e) => e.stage)).toEqual(['heads-up', 'now']);
+  });
+
+  it('GPS health: stale with no fix for over 10 s, rough when only poor fixes arrive, ok otherwise', () => {
+    const fixes = walk(route, { fromM: 0, toM: 300 });
+    const r = replay(route, fixes);
+    const t = lastAt(fixes);
+    expect(gpsHealth(r.state, t + 2000)).toBe('ok');
+    expect(gpsHealth(r.state, t + GPS_GAP_MS + 1000)).toBe('stale');
+    const rough = replay(route, [poor(310, t + 5000), poor(320, t + GPS_GAP_MS + 2000)], r.state).state;
+    expect(gpsHealth(rough, t + GPS_GAP_MS + 2000)).toBe('rough');
+    expect(gpsHealth(replay(route, [poor(310, t + 1000)], r.state).state, t + 1000)).toBe('ok');
+    expect(gpsHealth(createNav(route), t)).toBe('ok'); // not following yet
+  });
+
+  it('turn events carry their own distance', () => {
+    const r = replay(route, walk(route, { fromM: 0, toM: turnAt }));
+    const heads = turnEvents(r.events).find((e) => e.turnIndex === k && e.stage === 'heads-up')!;
+    expect(heads.distanceM).toBeLessThanOrEqual(150);
+    expect(heads.distanceM).toBeGreaterThan(140);
+  });
+});
+
+describe('joining when several parts of the route are plausible', () => {
+  const S: LatLon = { lat: 45.5, lon: -73.57 };
+  const build = (legs: [number, number][]) => {
+    const pts: LatLon[] = [S];
+    for (const [b, m] of legs) pts.push(offsetPoint(pts[pts.length - 1], b, m));
+    return prepareRoute(pts.map((p) => [p.lon, p.lat]));
+  };
+  const fixAt = (p: LatLon, at: number) => ({ ...p, accuracyM: 8, at });
+  const steps = (from: LatLon, bearing: number, n: number, startAt: number) =>
+    Array.from({ length: n }, (_, i) => fixAt(offsetPoint(from, bearing, (i + 1) * 3), startAt + (i + 1) * 1000));
+
+  // Square loop: east, north, west, then south back to 37 m short of the start.
+  const loop = build([
+    [90, 600],
+    [0, 600],
+    [270, 600],
+    [180, 563],
+  ]);
+
+  it('initial start at the start joins the beginning (unchanged)', () => {
+    const r = begin(loop, createNav(loop), fixAt(S, 0), 0);
+    expect(r.state.anchored).toBe(true);
+    expect(r.state.progressM).toBeLessThan(5);
+  });
+
+  it('late join on the final leg near the start is never assumed; it can be chosen explicitly', () => {
+    const onFinal = offsetPoint(S, 0, 150); // on the last leg, 150 m from the start, 150 m from the first leg
+    expect(nearStart(loop, onFinal)).toBe(true);
+    const started = begin(loop, createNav(loop), fixAt(onFinal, 0), 0);
+    expect(started.state.anchored).toBe(false);
+    expect(describeBanner(loop, started.state).primary).toBe('Near the finish stretch');
+    // Walking the last leg towards the finish does not silently join it either.
+    const walking = replay(loop, steps(onFinal, 180, 20, 0), started.state);
+    expect(walking.state.anchored).toBe(false);
+
+    const options = joinOptions(loop, walking.state.lastFix!);
+    expect(options).toHaveLength(1);
+    expect(options[0].alongM).toBeGreaterThan(loop.lengthM - 200);
+    const joined = joinAt(loop, walking.state, options[0].alongM);
+    expect(joined.state.anchored).toBe(true);
+    expect(kinds(joined.events)).toContain('joined');
+    // An along that isn't one of the options is refused.
+    expect(joinAt(loop, walking.state, 1000).state.anchored).toBe(false);
+  });
+
+  it('milling around the start/finish then setting off joins the beginning, not the finish', () => {
+    const started = begin(loop, createNav(loop), fixAt(offsetPoint(S, 0, 20), 0), 0);
+    expect(started.state.anchored).toBe(true);
+    expect(started.state.progressM).toBeLessThan(40);
+    expect(started.state.status).toBe('following');
+  });
+
+  // Out and back on the same street: east 1000 m, then back west.
+  const outBack = build([
+    [90, 1000],
+    [270, 1000],
+  ]);
+  const mid = offsetPoint(S, 90, 400);
+
+  it('out-and-back: standing on the shared street waits instead of guessing', () => {
+    const r = begin(outBack, createNav(outBack), fixAt(mid, 0), 0);
+    expect(r.state.anchored).toBe(false);
+    expect(joinOptions(outBack, mid).map((o) => Math.round(o.alongM / 100) * 100)).toEqual([400, 1600]);
+    expect(describeBanner(outBack, r.state).primary).toBe('Which part of the route?');
+    // Standing still (jitter only) doesn't decide it.
+    const still = replay(outBack, [fixAt(offsetPoint(mid, 0, 3), 1000), fixAt(offsetPoint(mid, 180, 3), 2000)], r.state);
+    expect(still.state.anchored).toBe(false);
+  });
+
+  it('out-and-back: moving west joins the way back, moving east joins the way out', () => {
+    const r = begin(outBack, createNav(outBack), fixAt(mid, 0), 0);
+    const west = replay(outBack, steps(mid, 270, 12, 0), r.state);
+    expect(west.state.anchored).toBe(true);
+    expect(west.state.progressM).toBeGreaterThan(1550);
+    const east = replay(outBack, steps(mid, 90, 12, 0), r.state);
+    expect(east.state.anchored).toBe(true);
+    expect(east.state.progressM).toBeLessThan(500);
+  });
+
+  it('overlapping legs in the same direction (two laps) stay undecided until chosen', () => {
+    const laps = build([
+      [90, 600],
+      [0, 400],
+      [270, 600],
+      [180, 400],
+      [90, 600],
+    ]);
+    const p = offsetPoint(S, 90, 300);
+    const r = replay(laps, steps(p, 90, 15, 0), begin(laps, createNav(laps), fixAt(p, 0), 0).state);
+    expect(r.state.anchored).toBe(false);
+    const opts = joinOptions(laps, r.state.lastFix!);
+    expect(opts).toHaveLength(2);
+    expect(joinAt(laps, r.state, opts[1].alongM).state.progressM).toBeGreaterThan(2000);
+  });
 });

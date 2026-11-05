@@ -46,6 +46,15 @@ export const ADVANCE_PENALTY_PER_M = 0.02;
 /** Same idea when (re)joining anywhere on the route: earlier legs win near-ties. */
 export const JOIN_PENALTY_PER_M = 0.01;
 
+/** Route legs (separate passes of the route) closer than this along the route count as one place to join. */
+export const JOIN_LEG_GAP_M = 100;
+/** To pick a leg by direction of travel, you must have moved at least this far across reliable fixes… */
+export const JOIN_MOVE_M = 25;
+/** …within this long… */
+export const JOIN_TRAIL_MS = 60_000;
+/** …in a direction within this angle of exactly one candidate leg. */
+export const JOIN_BEARING_TOLERANCE_DEG = 50;
+
 /** Fixes less accurate than this only move the GPS dot, not progress or off-route state. */
 export const POOR_ACCURACY_M = 60;
 
