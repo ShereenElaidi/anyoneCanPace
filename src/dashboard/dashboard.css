@@ -613,3 +613,9 @@
   text-align: center;
   text-decoration: none;
 }
+
+/* On the sky backdrop the duck stands in the same sunset: the frame shows
+   the sky picture (faded to Pavement at the bottom, where his feet are). */
+.app--paper .duck-slot {
+  background: var(--pavement) url('../assets/home/sky.webp') top center / cover no-repeat;
+}
