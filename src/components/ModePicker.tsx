@@ -17,22 +17,21 @@ export function ModePicker({ onPick }: Props) {
     <div className="app picker">
       <header className="picker__hero">
         <div className="picker__sky">
-          {/* Read as "AnyoneCanPace" (plus "BETA"); drawn as ANYONE CAN / PACE with a sticker. */}
-          <h1 className="picker__title" aria-label={__BETA__ ? 'AnyoneCanPace BETA' : 'AnyoneCanPace'}>
+          {/* Read as "AnyoneCanPace 2.0" (plus "BETA"); drawn as ANYONE CAN / PACE 2.0 with a sticker. */}
+          <h1 className="picker__title" aria-label={__BETA__ ? 'AnyoneCanPace 2.0 BETA' : 'AnyoneCanPace 2.0'}>
             <span className="picker__t1" aria-hidden="true">
               Anyone Can
             </span>
             <span className="picker__t2" aria-hidden="true">
-              Pace
+              Pace<span className="picker__version">2.0</span>
               {__BETA__ && <span className="beta-tag picker__beta">BETA</span>}
             </span>
           </h1>
           <p className="picker__ribbon">Your Stooopid Co-Pacer</p>
         </div>
         <div className="picker__scene" aria-hidden="true">
-          <img className="picker__scene-bg" src={scene} alt="" width={720} height={720} />
-          <span className="picker__shadow" />
-          <img className="picker__scene-duck" src={sceneDuck} alt="" width={720} height={720} />
+          <img className="picker__scene-bg" src={scene} alt="" width={1080} height={720} />
+          <img className="picker__scene-duck" src={sceneDuck} alt="" width={1080} height={720} />
         </div>
       </header>
 
@@ -43,19 +42,19 @@ export function ModePicker({ onPick }: Props) {
           <li>
             <button type="button" className="mode-card mode-card--dashboard" onClick={() => onPick('dashboard')}>
               <span className="mode-card__name">Stooopid Sunday Dashboard</span>
-              <span className="mode-card__help">What to wear Sunday, where we meet, and the story.</span>
+              <span className="mode-card__help">What to wear, where we meet.</span>
             </button>
           </li>
           <li>
             <button type="button" className="mode-card mode-card--timer" onClick={() => onPick('timer')}>
               <span className="mode-card__name">ACR Run/Walk Timer</span>
-              <span className="mode-card__help">RUN and WALK intervals for pacing the group.</span>
+              <span className="mode-card__help">RUN/WALK intervals for pacing.</span>
             </button>
           </li>
           <li>
             <button type="button" className="mode-card mode-card--sixk" onClick={() => onPick('sixk')}>
               <span className="mode-card__name">Route Library</span>
-              <span className="mode-card__help">Pick a route and follow it on a street map.</span>
+              <span className="mode-card__help">Follow a route on a street map.</span>
             </button>
           </li>
         </ul>

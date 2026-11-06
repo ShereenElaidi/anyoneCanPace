@@ -76,7 +76,7 @@ describe('mode picker', () => {
     const order = [...document.querySelectorAll('.mode-card__name')].map((n) => n.textContent);
     expect(order).toEqual(['Stooopid Sunday Dashboard', 'ACR Run/Walk Timer', 'Route Library']);
     // The beta build (a "…-beta" repository) adds a BETA tag; the live build doesn't.
-    expect(screen.getByRole('heading', { name: __BETA__ ? 'AnyoneCanPace BETA' : 'AnyoneCanPace' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: __BETA__ ? 'AnyoneCanPace 2.0 BETA' : 'AnyoneCanPace 2.0' })).toBeTruthy();
     expect(screen.queryByText('BETA') !== null).toBe(__BETA__);
     expect(screen.getByRole('button', { name: /ACR Run\/Walk Timer/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Route Library/ })).toBeTruthy();
