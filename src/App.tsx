@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { setSessionBusy } from './lib/swUpdate';
-import { useAppUpdate } from './lib/appUpdate';
 import { UpdateBanner } from './components/UpdateBanner';
 import { EditPanel } from './components/EditPanel';
 import { MenuSheet } from './components/MenuSheet';
@@ -68,8 +67,6 @@ export default function App({ onSwitchMode }: AppProps = {}) {
     setSessionBusy('timer', status !== 'ready');
     return () => setSessionBusy('timer', false);
   }, [status]);
-
-  const { ready: updateReady, update } = useAppUpdate();
 
   const setDuration = (phase: Phase, seconds: number) =>
     setPrefs((p) => ({ ...p, [phase]: clampSeconds(seconds) }));
@@ -174,14 +171,12 @@ export default function App({ onSwitchMode }: AppProps = {}) {
         vibration={prefs.vibration}
         vibrationSupported={vibrationSupported}
         wakeLock={wakeLock}
-        updateReady={updateReady}
         onToggleSound={() => {
           unlockAudio();
           setPrefs((p) => ({ ...p, sound: !p.sound }));
         }}
         onToggleVibration={() => setPrefs((p) => ({ ...p, vibration: !p.vibration }))}
         onReset={timer.reset}
-        onUpdate={update}
         onSwitchMode={onSwitchMode}
       />
     </div>
