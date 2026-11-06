@@ -20,6 +20,21 @@ export const ROUTE_TAGS: Record<string, { label: string; tone: TagTone }> = {
   'canal-path': { label: 'Canal path', tone: 'gold' },
 };
 
+// ---------- Description ----------
+
+/** Longest route description, so it stays a quick read on a phone. */
+export const DESCRIPTION_MAX = 280;
+
+/** Problems with a route's description ([] if it's fine or absent). */
+export function validateDescription(description: unknown): string[] {
+  if (description === undefined) return [];
+  if (typeof description !== 'string') return ['description must be text'];
+  if (description.trim() === '') return ['description is blank (leave it out instead)'];
+  if (description !== description.trim()) return ['description has spaces at the start or end'];
+  if (description.length > DESCRIPTION_MAX) return [`description is ${description.length} characters (at most ${DESCRIPTION_MAX})`];
+  return [];
+}
+
 /** Problems with a route's tags ([] if they're fine). */
 export function validateTags(tags: unknown): string[] {
   if (tags === undefined) return [];

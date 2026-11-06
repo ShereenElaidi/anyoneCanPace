@@ -73,6 +73,8 @@ export interface RouteData {
   startStreet?: string;
   /** Hand-written: where the route is, for the library ("Downtown → Old Port"). */
   place?: string;
+  /** Hand-written: a short paragraph on what the route is like, for the route page only (not the manifest). */
+  description?: string;
   /** Hand-written tag ids from ROUTE_TAGS (src/sixk/describe.ts), e.g. "waterfront". */
   tags?: string[];
   /** [west, south, east, north]. */

@@ -9,6 +9,8 @@ import {
   matchesFilter,
   spokenPace,
   terrainText,
+  DESCRIPTION_MAX,
+  validateDescription,
   validateTags,
 } from './describe';
 
@@ -80,6 +82,21 @@ describe('filters', () => {
   });
 });
 
+describe('description', () => {
+  it('accepts a short paragraph or nothing', () => {
+    expect(validateDescription(undefined)).toEqual([]);
+    expect(validateDescription('Flat along the canal, shaded most of the way.')).toEqual([]);
+    expect(validateDescription('x'.repeat(DESCRIPTION_MAX))).toEqual([]);
+  });
+
+  it('rejects blank, padded, too long or non-text descriptions', () => {
+    expect(validateDescription('   ')[0]).toMatch(/blank/);
+    expect(validateDescription(' Flat. ')[0]).toMatch(/spaces/);
+    expect(validateDescription('x'.repeat(DESCRIPTION_MAX + 1))[0]).toMatch(/at most 280/);
+    expect(validateDescription(42)).toEqual(['description must be text']);
+  });
+});
+
 describe('tags', () => {
   it('rejects unknown or repeated tags', () => {
     expect(validateTags(undefined)).toEqual([]);
@@ -98,6 +115,7 @@ describe('tags', () => {
     expect(Object.keys(files).length).toBe(manifest.routes.length);
     for (const [file, data] of Object.entries(files)) {
       expect(validateTags(data.tags), file).toEqual([]);
+      expect(validateDescription(data.description), file).toEqual([]);
       const entry = manifest.routes.find((r) => r.id === data.id);
       expect(entry?.tags, `${file}: run npm run routes`).toEqual(data.tags);
       expect(entry?.place, `${file}: run npm run routes`).toEqual(data.place);

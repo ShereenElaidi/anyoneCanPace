@@ -23,6 +23,8 @@ export function RoutePage({ route, onStart }: Props) {
   const notices = activeNotices(collectNotices(file.notices, routeNotices(data)), data.id, localDate(Date.now()));
   return (
     <article className="route-page" aria-label={data.name}>
+      {data.description && <p className="route-page__description">{data.description}</p>}
+
       <dl className="route-stats">
         <div>
           <dt>Distance</dt>
