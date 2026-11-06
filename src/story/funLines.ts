@@ -13,7 +13,7 @@ import type { Condition } from '../weather/outfit';
 export const FUN_LINES = {
   heat: ['Hot one! Easy pace, lots of water.', 'Sunscreen on, quack on.'],
   snow: ['Fresh snow, fresh tracks.', 'Snow day! Waddle with care.'],
-  rain: ['A little rain never hurt a duck.', 'Puddles optional. Fun mandatory.'],
+  rain: ['A little rain never hurt a flock.', 'Puddles optional. Stooopidity mandatory.'],
   wind: ['Windy! Tuck in behind your pacer.', 'Hold onto your hat!'],
   warm: ['Perfect running weather. See you there!', 'Shorts weather. Let’s go!'],
   mild: ['Perfect running weather. See you there!', 'Fresh air, good company.'],
