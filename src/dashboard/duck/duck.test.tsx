@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { whatToWear, type ItemId, type OutfitInput } from '../../weather/outfit';
 import { DressedDuck } from './DressedDuck';
+import { duckImages } from './art';
 import { duckLayers, LAYER_ORDER } from './pieces';
 
 const pieceFiles = Object.keys(
@@ -39,13 +40,13 @@ describe('dressed duck pieces', () => {
   });
 
   it('stacks layers back to front: legs, tops, jackets, vest, hands, head', () => {
-    expect(duckLayers(['headlamp', 'cap', 'raincoat', 'long-sleeve', 'tights', 'reflective-vest', 'gloves'])).toEqual([
+    expect(duckLayers(['headlamp', 'toque', 'raincoat', 'long-sleeve', 'tights', 'reflective-vest', 'mittens'])).toEqual([
       'tights',
       'long-sleeve',
       'raincoat',
       'reflective-vest',
-      'gloves',
-      'cap',
+      'mittens',
+      'toque',
       'headlamp',
     ]);
     expect(duckLayers(['singlet', 'shorts'])).toEqual(['shorts']);
@@ -69,6 +70,14 @@ describe('<DressedDuck>', () => {
     expect(pieces).toEqual(expect.arrayContaining(['toque', 'mittens', 'reflective-vest', 'headlamp']));
     expect([...duck.querySelectorAll('img')].every((img) => img.getAttribute('alt') === '')).toBe(true);
     expect(duck.querySelector('.duck-weather')).toBeNull();
+  });
+
+  it('draws exactly the shared composer\'s list (the story uses the same one)', () => {
+    const outfit = whatToWear(base(0, { code: 63, rainMm: 2, windKmh: 30 }));
+    const { container } = render(<DressedDuck items={outfit.drawn} weather={outfit.effect} />);
+    const srcs = [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'));
+    expect(srcs).toEqual(duckImages(outfit.drawn).map((i) => i.url));
+    expect(duckImages(outfit.drawn)[0].id).toBe('base');
   });
 
   it('shows falling rain or snow when the outfit calls for it', () => {

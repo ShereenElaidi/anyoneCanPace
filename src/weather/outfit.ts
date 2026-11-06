@@ -17,11 +17,7 @@ import { humidex as humidexOf, windChill as windChillOf } from './indices';
 /** How long a run lasts, for "does it get dark during the run". */
 export const RUN_DURATION_MIN = 60;
 
-/**
- * Drawn duck pieces (one file each in src/assets/duck-outfit/). `singlet` is
- * on the base duck. `gloves`, `cap` and `grippy-shoes` still have art but no
- * rule uses them any more.
- */
+/** Drawn duck pieces: one file each in src/assets/duck-outfit/, stacked by LAYER_ORDER in src/dashboard/duck/pieces.ts. `singlet` is on the base duck. */
 export type ItemId =
   | 'singlet'
   | 'tee'
@@ -31,16 +27,13 @@ export type ItemId =
   | 'windproof-shell'
   | 'shorts'
   | 'tights'
-  | 'cap'
   | 'light-gloves'
-  | 'gloves'
   | 'mittens'
   | 'headband'
   | 'toque'
   | 'neck-warmer'
   | 'raincoat'
   | 'windbreaker'
-  | 'grippy-shoes'
   | 'reflective-vest'
   | 'headlamp';
 

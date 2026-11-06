@@ -22,12 +22,9 @@ export const LAYER_ORDER: ItemId[] = [
   'reflective-vest',
   'neck-warmer',
   'light-gloves',
-  'gloves',
   'mittens',
-  'grippy-shoes',
   'headband',
   'toque',
-  'cap',
   'headlamp',
 ];
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ACCESSORIES, CUTOFFS, whatToWear, WIND, type GarmentId, type OutfitInput } from './outfit';
 import { humidex, windChill } from './indices';
+import { SCENARIOS } from './scenarios';
 
 /** Dry, calm, overcast daytime weather at an air temperature. Feels-like is deliberately odd to prove it's ignored. */
 const wx = (tempC: number, over: Partial<OutfitInput> = {}): OutfitInput => ({
@@ -308,49 +309,27 @@ describe('the duck draws a subset of the written outfit', () => {
 });
 
 describe('approved scenarios (design/weather-v1-spec.md §9)', () => {
-  it.each<[string, OutfitInput, GarmentId[], RegExp?]>([
-    ['1. 15, dry, calm', wx(15), ['tee', 'shorts']],
-    ['2. 10, dry, 30 km/h', wx(10, windy), ['long-sleeve', 'windbreaker', 'shorts']],
-    ['3. 5, steady rain', wx(5, steadyRain), ['long-sleeve', 'rain-shell', 'tights', 'light-gloves']],
-    ['4. 0, dry, 30 km/h', wx(0, windy), ['long-sleeve', 'light-jacket', 'tights', 'light-gloves', 'headband']],
-    ['5. −5, light dry snow', wx(-5, drySnow), ['long-sleeve', 'light-jacket', 'tights', 'light-gloves', 'headband']],
-    [
-      '6. −10, dry, 30 km/h',
-      wx(-10, windy),
-      ['thermal', 'insulated-jacket', 'windproof-shell', 'winter-tights', 'mittens', 'toque', 'neck-warmer'],
-    ],
-    [
-      '7. 0, wet snow, windy',
-      wx(0, { ...wetSnow, ...windy }),
-      ['long-sleeve', 'light-jacket', 'rain-shell', 'tights', 'light-gloves', 'headband'],
-    ],
-    [
-      '8. −20, dry, 15 km/h',
-      wx(-20, { windKmh: 15 }),
-      ['thermal', 'insulated-jacket', 'windproof-shell', 'winter-tights', 'mittens', 'toque', 'neck-warmer'],
-      /frostbite/,
-    ],
-    ['9. 7, dry, calm', wx(7), ['long-sleeve', 'shorts']],
-    ['10. 2, dry, calm', wx(2), ['long-sleeve', 'tights', 'light-gloves']],
-    ['11. −3, dry, calm', wx(-3), ['long-sleeve', 'light-jacket', 'tights', 'light-gloves', 'headband']],
-    ['12. 15, dry, 35 km/h', wx(15, { windKmh: 35 }), ['tee', 'shorts']],
-    [
-      '13. −3, wet snow, 30 km/h',
-      wx(-3, { ...wetSnow, ...windy }),
-      ['long-sleeve', 'light-jacket', 'rain-shell', 'tights', 'light-gloves', 'headband'],
-    ],
-    ['14. 12, steady rain', wx(12, steadyRain), ['tee', 'rain-shell', 'shorts']],
-    ['15. 25, humid', wx(25, { dewPointC: 21 }), ['singlet', 'shorts'], /Humidex/],
-    [
-      '16. −15, dry, 40 km/h',
-      wx(-15, { windKmh: 40 }),
-      ['thermal', 'insulated-jacket', 'windproof-shell', 'winter-tights', 'mittens', 'toque', 'neck-warmer'],
-      /frostbite/,
-    ],
-  ])('%s', (_name, input, ids, advice) => {
-    const o = whatToWear(input);
-    expect(o.wear.map((i) => i.id)).toEqual(ids);
-    if (advice) expect(o.advisories.map((a) => a.text).join(' ')).toMatch(advice);
+  const approved = SCENARIOS.filter((sc) => sc.expected);
+  it('all 16 are here', () => expect(approved).toHaveLength(16));
+
+  it.each(approved.map((sc) => [`${sc.id}. ${sc.name}`, sc] as const))('%s', (_name, sc) => {
+    expect(whatToWear(sc.input).wear.map((i) => i.id)).toEqual(sc.expected);
+  });
+
+  it('frostbite on the coldest two, heat advice on the humid one', () => {
+    const text = (id: string) =>
+      whatToWear(SCENARIOS.find((sc) => sc.id === id)!.input).advisories.map((a) => a.text).join(' ');
+    expect(text('A8')).toMatch(/frostbite/);
+    expect(text('A16')).toMatch(/frostbite/);
+    expect(text('A15')).toMatch(/Humidex/);
+  });
+
+  it('every review scenario gives a complete, consistent outfit', () => {
+    for (const sc of SCENARIOS) {
+      const o = whatToWear(sc.input);
+      expect(o.wear.length, sc.id).toBeGreaterThanOrEqual(2);
+      expect(o.headline, sc.id).toMatch(/\.$/);
+    }
   });
 
   it('scenario options and extras', () => {

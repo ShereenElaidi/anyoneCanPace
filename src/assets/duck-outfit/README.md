@@ -16,8 +16,8 @@ is needed: every file is simply halved to 512 × 512 WebP (3 to 11 KB each).
   sits on the duck and nothing else. A 1024 × 1024 PNG drawn in place on
   `design/duck-art-brief/01-duck-reference.png` is fine too: halve it to
   512 × 512 and save it as WebP.
-- **Check it:** `npm run dev`, open the Daily Dashboard and pick run times
-  until the outfit uses your piece.
+- **Check it:** `npm run dev` and open `/anyoneCanPace/?duck-sheet`: every
+  test scenario and a playground, dressed with the real rules.
 - **Stacking order** (what covers what) is `LAYER_ORDER` in
   `src/dashboard/duck/pieces.ts`. Add a new item's id there after drawing it.
 - The base duck already wears its blue headband and singlet, so `singlet`
@@ -29,10 +29,16 @@ is needed: every file is simply halved to 512 × 512 WebP (3 to 11 KB each).
 | `light-jacket`, `windbreaker`, `windproof-shell`, `raincoat` | Jackets |
 | `reflective-vest`, `neck-warmer` | Over the top |
 | `shorts`, `tights` | Legs |
-| `light-gloves`, `gloves`, `mittens` | Hands |
-| `cap`, `toque`, `headband`, `headlamp` | Head |
-| `grippy-shoes` | Ice cleats under the feet |
+| `light-gloves`, `mittens` | Hands |
+| `toque`, `headband`, `headlamp` | Head |
 
 The duck is decorative and hidden from screen readers. The text outfit list
 next to it carries the meaning, so a missing or odd drawing never hides
 advice.
+
+Which pieces the duck wears comes from `outfit.drawn` (`src/weather/outfit.ts`):
+legs, the outermost top, hands, head, neck, vest and headlamp. Inner layers
+(thermal top, insulated jacket) are text only, so they have no art. Winter
+tights use `thermal-layers` (always under a shell). The cap, winter gloves and
+grip shoes were retired with the V1 rules (`design/weather-v1-spec.md`); their
+files are in git history.

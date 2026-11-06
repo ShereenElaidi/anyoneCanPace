@@ -1,0 +1,176 @@
+/* Dev-only duck sheet. Reuses the dashboard's duck and outfit styles. */
+.duck-sheet {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  background: var(--pavement);
+  color: var(--asphalt);
+  font-family: var(--font);
+}
+
+.duck-sheet__head h1 {
+  margin: 0 0 4px;
+  color: var(--navy);
+}
+
+.duck-sheet__head p {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+}
+
+.duck-sheet__play {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 12px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.duck-sheet__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-weight: 700;
+}
+
+.duck-sheet__controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.duck-sheet__controls .duck-sheet__check {
+  flex-direction: row;
+  align-items: center;
+}
+
+.duck-sheet__controls input,
+.duck-sheet__controls select {
+  min-height: 44px;
+  font: inherit;
+}
+
+.duck-sheet__filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.duck-sheet__filter button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  background: var(--paper);
+  font: inherit;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.duck-sheet__filter button[aria-pressed='true'] {
+  background: var(--gold);
+}
+
+.duck-sheet__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.duck-sheet__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid var(--asphalt);
+  border-radius: 16px;
+  background: var(--paper);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.duck-sheet__card h2 {
+  align-self: stretch;
+  margin: 0;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.duck-sheet__id {
+  color: var(--navy);
+}
+
+.duck-sheet__badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+.duck-sheet__badge--ok {
+  background: var(--pavement);
+}
+
+.duck-sheet__badge--bad {
+  background: var(--gold);
+}
+
+.duck-sheet__wx,
+.duck-sheet__drawn,
+.duck-sheet__bring,
+.duck-sheet__expected {
+  align-self: stretch;
+  margin: 0;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.duck-sheet__expected {
+  font-weight: 800;
+}
+
+.duck-sheet__drawn {
+  opacity: 0.7;
+}
+
+.duck-sheet__duck {
+  width: 180px;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  background: var(--pavement);
+}
+
+.duck-sheet__card .wear__items li {
+  padding: 3px 9px;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .duck-sheet__play {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .duck-sheet__play,
+  .duck-sheet__filter {
+    display: none;
+  }
+
+  .duck-sheet__grid {
+    display: block;
+    columns: 2;
+  }
+
+  .duck-sheet__card {
+    margin-bottom: 12px;
+  }
+}
