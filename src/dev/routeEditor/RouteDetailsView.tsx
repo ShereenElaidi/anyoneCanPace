@@ -8,7 +8,10 @@ import { useEffect, useState } from 'react';
 import type { RouteData, Turn } from '../../nav/types';
 import { DESCRIPTION_MAX, validateDescription } from '../../sixk/describe';
 import { api, ApiError } from './client';
-import { NAME_MAX, PLACE_MAX, validateTurns, type RouteEdits } from './edits';
+import { NAME_MAX, PLACE_MAX, validateAdvisories, validateTurns, type RouteEdits } from './edits';
+import { AdvisoriesEditor } from './AdvisoriesEditor';
+import { ReviewPanel } from './ReviewPanel';
+import { advisoryToForm, formToAdvisory, mapCoverage, type AdvisoryForm } from './review';
 import { TurnEditor } from './TurnEditor';
 import { normalizeTurns } from './turnEdit';
 import { BuildLog, Errors, km, setLeaveGuard, StatusBadge } from './shared';
@@ -23,6 +26,7 @@ interface Form {
   notes: string;
   startStreet: string;
   turns: Turn[];
+  advisories: AdvisoryForm[];
 }
 
 const toForm = (d: RouteData): Form => ({
@@ -33,6 +37,7 @@ const toForm = (d: RouteData): Form => ({
   notes: d.notes.join('\n'),
   startStreet: d.startStreet ?? '',
   turns: d.turns,
+  advisories: d.advisories.map(advisoryToForm),
 });
 
 /** Only the fields that changed, in the shape the server expects. */
@@ -51,6 +56,8 @@ function changes(form: Form, d: RouteData): RouteEdits {
   if (form.startStreet.trim() !== before.startStreet) edits.startStreet = form.startStreet.trim();
   const turns = normalizeTurns(form.turns);
   if (JSON.stringify(turns) !== JSON.stringify(d.turns)) edits.turns = turns;
+  const advisories = form.advisories.map(formToAdvisory);
+  if (JSON.stringify(advisories) !== JSON.stringify(d.advisories)) edits.advisories = advisories;
   return edits;
 }
 
@@ -62,6 +69,7 @@ export function RouteDetailsView({ id }: { id: string }) {
   const [build, setBuild] = useState<BuildResult>();
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [coverage, setCoverage] = useState<'inside' | 'partly' | 'outside' | null>(null);
 
   const load = () =>
     api
@@ -77,6 +85,26 @@ export function RouteDetailsView({ id }: { id: string }) {
   }, [id]);
 
   const data = detail?.data ?? null;
+
+  // Is the route on the offline street map (public/maps/montreal.pmtiles)? Read from the file's header.
+  const bboxKey = data?.bbox.join(',');
+  useEffect(() => {
+    if (!data) return;
+    let stale = false;
+    void (async () => {
+      try {
+        const [{ PMTiles, FetchSource }, { mapUrl }] = await Promise.all([import('pmtiles'), import('../../sixk/map/offlineMap')]);
+        const h = await new PMTiles(new FetchSource(mapUrl())).getHeader();
+        if (!stale) setCoverage(mapCoverage(data.bbox, { minLon: h.minLon, minLat: h.minLat, maxLon: h.maxLon, maxLat: h.maxLat }));
+      } catch {
+        if (!stale) setCoverage(null);
+      }
+    })();
+    return () => {
+      stale = true;
+    };
+    // Only when the route's box changes.
+  }, [bboxKey]);
   const edits = form && data ? changes(form, data) : {};
   const dirty = Object.keys(edits).length > 0;
 
@@ -108,6 +136,7 @@ export function RouteDetailsView({ id }: { id: string }) {
   const reviewed = data.verification.status !== 'unverified';
   const descriptionProblem = form.description.trim() ? validateDescription(form.description.trim())[0] : undefined;
   const turnProblem = validateTurns(normalizeTurns(form.turns), data.stats.distanceM)[0];
+  const advisoryProblem = validateAdvisories(form.advisories.map(formToAdvisory), id, data.stats.distanceM, detail.today)[0];
   const directionsChanged = 'turns' in edits || 'startStreet' in edits;
   const set = (patch: Partial<Form>) => {
     setForm({ ...form, ...patch });
@@ -151,6 +180,13 @@ export function RouteDetailsView({ id }: { id: string }) {
         {detail.config.recorded ? ' · recorded run' : ''}
       </p>
       {data.source && <p className="re-hint">Credit: {data.source.attribution}</p>}
+      {coverage && coverage !== 'inside' && (
+        <p className="re-problem">
+          {coverage === 'outside' ? 'This route is outside' : 'Part of this route is outside'} the offline street map. Run{' '}
+          <code>npm run map</code> to re-cut it around every route, then bump <code>MAP_VERSION</code> in{' '}
+          <code>src/sixk/map/offlineMap.ts</code> so phones fetch the new file.
+        </p>
+      )}
 
       <div className="re-group">
         <label className="re-field">
@@ -232,6 +268,14 @@ export function RouteDetailsView({ id }: { id: string }) {
         <p className="re-problem">The track file is missing, so turns can’t be edited. Rebuild the route.</p>
       )}
 
+      <AdvisoriesEditor
+        routeId={id}
+        distanceM={data.stats.distanceM}
+        today={detail.today}
+        advisories={form.advisories}
+        onChange={(advisories) => set({ advisories })}
+      />
+
       {reviewed && directionsChanged && (
         <p className="re-problem" role="status">
           This route is {data.verification.status}. Saving changed turns or start street makes it unverified again until someone
@@ -246,7 +290,7 @@ export function RouteDetailsView({ id }: { id: string }) {
         </p>
       )}
       <div className="re-row re-sticky">
-        <button type="button" className="btn btn--primary" disabled={!dirty || busy || !!descriptionProblem || !!turnProblem} onClick={save}>
+        <button type="button" className="btn btn--primary" disabled={!dirty || busy || !!descriptionProblem || !!turnProblem || !!advisoryProblem} onClick={save}>
           {busy ? 'SAVING…' : dirty ? 'SAVE' : 'NO CHANGES'}
         </button>
         {dirty && (
@@ -256,6 +300,8 @@ export function RouteDetailsView({ id }: { id: string }) {
         )}
       </div>
       <BuildLog build={build} />
+
+      <ReviewPanel data={data} today={detail.today} dirty={dirty} onSaved={load} />
     </section>
   );
 }

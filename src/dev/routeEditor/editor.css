@@ -481,3 +481,13 @@ ul.re-problem {
   margin: 0;
   padding-left: 1.2em;
 }
+
+.re-code {
+  margin: 6px 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--asphalt);
+  color: var(--pavement);
+  font-size: 0.8rem;
+}

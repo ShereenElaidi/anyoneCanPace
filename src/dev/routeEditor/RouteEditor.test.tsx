@@ -216,4 +216,50 @@ describe('route editor', () => {
       expect(screen.getByRole('button', { name: 'Show turn 2 on the map' }).getAttribute('aria-pressed')).toBe('true');
     });
   });
+
+  describe('review and advisories', () => {
+    const open = async () => {
+      location.hash = '#route=sample-loop';
+      render(<RouteEditor />);
+      return screen.findByRole('heading', { name: /^Review/ });
+    };
+
+    it('marks a route reviewed only with who, when and an explicit confirmation, then shows the test line', async () => {
+      await open();
+      fireEvent.click(screen.getByLabelText('Desk-reviewed'));
+      const mark = screen.getByRole('button', { name: 'MARK DESK-REVIEWED' });
+      expect(mark.hasAttribute('disabled')).toBe(true);
+      fireEvent.change(screen.getByLabelText(/^Reviewer/), { target: { value: ' Sam ' } });
+      expect(mark.hasAttribute('disabled')).toBe(true); // not confirmed yet
+      fireEvent.click(screen.getByLabelText(/I checked every turn/));
+      expect(mark.hasAttribute('disabled')).toBe(false);
+      fireEvent.click(mark);
+      expect(await screen.findByText("'sample-loop': true, // desk-reviewed by Sam, 2026-11-05")).toBeTruthy();
+      expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({
+        verification: { status: 'desk-reviewed', reviewer: 'Sam', date: '2026-11-05' },
+      });
+    });
+
+    it('waits for other unsaved changes before a review', async () => {
+      await open();
+      fireEvent.change(screen.getByLabelText(/Description/), { target: { value: 'Draft' } });
+      expect(screen.getByText(/Save or undo your other changes first/)).toBeTruthy();
+      expect((screen.getByLabelText('Desk-reviewed') as HTMLInputElement).disabled).toBe(true);
+    });
+
+    it('adds an advisory and saves it with the route', async () => {
+      await open();
+      fireEvent.click(screen.getByRole('button', { name: '+ ADD AN ADVISORY' }));
+      expect(screen.getByText('advisory 1: text is missing.')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'SAVE' }).hasAttribute('disabled')).toBe(true);
+      fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Canal path closed for works' } });
+      fireEvent.change(screen.getByLabelText('From km'), { target: { value: '2,5' } });
+      fireEvent.change(screen.getByLabelText('To km'), { target: { value: '3' } });
+      fireEvent.click(screen.getByRole('button', { name: 'SAVE' }));
+      await screen.findByText(/Saved/);
+      expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({
+        advisories: [{ text: 'Canal path closed for works', fromKm: 2.5, toKm: 3 }],
+      });
+    });
+  });
 });
