@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { setSessionBusy } from './lib/swUpdate';
 import { UpdateBanner } from './components/UpdateBanner';
+import { GearIcon } from './components/GearIcon';
 import { EditPanel } from './components/EditPanel';
 import { MenuSheet } from './components/MenuSheet';
 import { TimerDisplay } from './components/TimerDisplay';
@@ -13,7 +14,7 @@ import { clampSeconds, type Phase } from './timer/engine';
 const STATUS_LABEL = { ready: 'READY', active: 'ACTIVE', paused: 'PAUSED' } as const;
 
 interface AppProps {
-  /** Shows "Switch mode" in Settings. Omitted when the timer runs on its own. */
+  /** Shows MODES in the header. Omitted when the timer runs on its own. */
   onSwitchMode?: () => void;
 }
 
@@ -21,6 +22,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [armedModes, setArmedModes] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const vibrationSupported = useMemo(canVibrate, []);
 
@@ -68,6 +70,23 @@ export default function App({ onSwitchMode }: AppProps = {}) {
     return () => setSessionBusy('timer', false);
   }, [status]);
 
+  // The arm lapses, so a stray later tap never ends a session.
+  useEffect(() => {
+    if (!armedModes) return;
+    const id = window.setTimeout(() => setArmedModes(false), 4000);
+    return () => window.clearTimeout(id);
+  }, [armedModes]);
+
+  /** MODES in the header: one tap when ready, two mid-session (it ends the session). */
+  const switchMode = () => {
+    if (status !== 'ready' && !armedModes) {
+      setArmedModes(true);
+      return;
+    }
+    setArmedModes(false);
+    onSwitchMode?.();
+  };
+
   const setDuration = (phase: Phase, seconds: number) =>
     setPrefs((p) => ({ ...p, [phase]: clampSeconds(seconds) }));
 
@@ -86,27 +105,32 @@ export default function App({ onSwitchMode }: AppProps = {}) {
   const screenMaySleep = status === 'active' && (wakeLock === 'failed' || wakeLock === 'unsupported');
 
   return (
-    <div className={`app${editing ? ' app--editing' : ''}`}>
+    <div className={`app app--paper${editing ? ' app--editing' : ''}`}>
       <header className="header">
         <div>
-          <h1 className="brand">AnyoneCanPace</h1>
-          <p className="tagline">RUN TOGETHER. WALK TOGETHER.</p>
+          <p className="brand brand--small">AnyoneCanPace</p>
+          <h1 className="timer__title">ACR Timer</h1>
+          <span className={`status status--${status}`}>{STATUS_LABEL[status]}</span>
         </div>
         <div className="header__side">
-          <span className={`status status--${status}`}>{STATUS_LABEL[status]}</span>
           <button
             type="button"
-            className="btn btn--icon"
+            className="btn btn--secondary btn--icon"
             aria-label="Settings"
             aria-haspopup="dialog"
             onClick={() => setMenuOpen(true)}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="5" cy="12" r="2.2" />
-              <circle cx="12" cy="12" r="2.2" />
-              <circle cx="19" cy="12" r="2.2" />
-            </svg>
+            <GearIcon />
           </button>
+          {onSwitchMode && (
+            <button
+              type="button"
+              className={`btn btn--secondary btn--small${armedModes ? ' is-confirming' : ''}`}
+              onClick={switchMode}
+            >
+              {armedModes ? 'END? TAP AGAIN' : 'MODES'}
+            </button>
+          )}
         </div>
       </header>
 
@@ -177,7 +201,6 @@ export default function App({ onSwitchMode }: AppProps = {}) {
         }}
         onToggleVibration={() => setPrefs((p) => ({ ...p, vibration: !p.vibration }))}
         onReset={timer.reset}
-        onSwitchMode={onSwitchMode}
       />
     </div>
   );

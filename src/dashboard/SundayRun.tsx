@@ -35,7 +35,7 @@ export function SundayRun({ now, children }: { now: number; children: ReactNode 
       <p className="dash-run__when">
         <span className="dash-run__date">Next Stooopid {EVENT.weekday}:</span>
         <span className="dash-run__meet-time">
-          {monthDayFmt.format(run.startAt)}, {clockTime(run.meetAt).replace(":00", "").replace(/ /g, "\u00a0")} · Weather:
+          {monthDayFmt.format(run.startAt)}, {clockTime(run.meetAt).replace(":00", "").replace(/ /g, "\u00a0")}
         </span>
       </p>
       {children}

@@ -23,7 +23,7 @@ afterEach(() => {
 describe('AnyoneCanPace app', () => {
   it('shows the ready screen with default intervals', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'AnyoneCanPace' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'ACR Timer' })).toBeTruthy();
     expect(phase()).toBe('RUN');
     expect(timer().textContent).toBe('01:30');
     expect(screen.getByText('READY')).toBeTruthy();

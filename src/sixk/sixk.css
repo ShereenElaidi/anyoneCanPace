@@ -46,16 +46,6 @@
 
 /* ---------- Library header, greeting, filter line ---------- */
 
-.lib-gear svg {
-  width: 24px;
-  height: 24px;
-  fill: none;
-  stroke: var(--asphalt);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .lib-greet {
   display: flex;
   align-items: center;

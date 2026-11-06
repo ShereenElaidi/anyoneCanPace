@@ -112,10 +112,9 @@ describe('mode picker', () => {
     tap(/ACR Run\/Walk Timer/);
     tap('START PACING');
     act(() => vi.advanceTimersByTime(5_000));
-    tap('Settings');
-    tap('SWITCH MODE');
+    tap('MODES');
     expect(screen.getByRole('timer')).toBeTruthy(); // first tap only arms it
-    tap('TAP AGAIN: END SESSION & SWITCH');
+    tap('END? TAP AGAIN');
     expect(screen.queryByRole('timer')).toBeNull();
     expect(screen.getByRole('button', { name: /^Route Library/ })).toBeTruthy();
   });
@@ -125,10 +124,9 @@ describe('mode picker', () => {
     render(<Root />);
     tap(/ACR Run\/Walk Timer/);
     tap('START PACING');
-    tap('Settings');
-    tap('SWITCH MODE');
+    tap('MODES');
     act(() => vi.advanceTimersByTime(5_000));
-    tap('SWITCH MODE');
+    tap('MODES'); // the arm lapsed: this only arms it again
     expect(screen.getByRole('timer')).toBeTruthy();
   });
 });

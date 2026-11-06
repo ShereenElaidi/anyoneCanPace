@@ -108,8 +108,8 @@ button {
    screen's, painted on the page itself so it scrolls with it and covers the
    full width. The sky is sized so its colour reaches about halfway down the
    screen (62vh tall, never narrower than the screen; the sides crop).
-   Cards stay solid paper on top. Left off on purpose for the timer and
-   while following a route (neither has .app--paper). */
+   Cards stay solid paper on top. Left off while following a route (no
+   .app--paper there). */
 body:has(.app--paper) {
   background-color: var(--pavement);
   background-image:
@@ -128,7 +128,8 @@ body:has(.app--paper) {
    Co-Pacer" ribbon (paper on navy) instead of navy text on pink, and the
    small brand line goes Asphalt. */
 .app--paper .dash__title,
-.app--paper .sixk__title {
+.app--paper .sixk__title,
+.app--paper .timer__title {
   display: inline-block;
   margin-top: 4px;
   padding: 5px 14px 6px;
@@ -137,6 +138,18 @@ body:has(.app--paper) {
   background: var(--navy);
   color: var(--paper);
   box-shadow: 0 3px 0 var(--asphalt);
+}
+
+.timer__title {
+  font-size: clamp(1.3rem, 6vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.brand.brand--small {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .app--paper .brand--small {
@@ -181,6 +194,15 @@ body:has(.app--paper) {
   font-weight: 800;
   letter-spacing: 0.08em;
   transform: rotate(-3deg);
+}
+
+.header .status {
+  display: inline-block;
+  margin: 8px 0 0 4px;
+}
+
+.btn--secondary.is-confirming {
+  background: var(--gold);
 }
 
 .status--active {
@@ -400,6 +422,14 @@ body:has(.app--paper) {
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+.btn--icon svg.gear-icon {
+  fill: none;
+  stroke: var(--asphalt);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .controls {

@@ -206,7 +206,7 @@ describe('Stooopid Sunday Dashboard', () => {
     await openDashboard();
     const run = screen.getByRole('region', { name: 'Sunday run' });
     expect(run.textContent).toContain('Next Stooopid Sunday:');
-    expect(run.textContent?.replace(/\u00a0/g, ' ')).toContain('November 8, 10 a.m. · Weather:');
+    expect(run.textContent?.replace(/\u00a0/g, ' ')).toContain('November 8, 10 a.m.');
     expect(run.textContent).not.toContain('Rue Clark');
     const link = 'https://www.google.com/maps/search/?api=1&query=45.50935,-73.56488';
     expect(screen.getByRole('link', { name: 'OPEN MAP' }).getAttribute('href')).toBe(link);
