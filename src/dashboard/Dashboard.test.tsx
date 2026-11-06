@@ -26,8 +26,8 @@ function checkedRunTime() {
 
 async function openDashboard() {
   render(<Root />);
-  fireEvent.click(screen.getByRole('button', { name: /Daily Dashboard/ }));
-  const heading = await screen.findByRole('heading', { name: 'Daily Dashboard' });
+  fireEvent.click(screen.getByRole('button', { name: /Stooopid Sunday Dashboard/ }));
+  const heading = await screen.findByRole('heading', { name: 'Stooopid Sunday Dashboard' });
   // The lazy mode sits inside a retry boundary: let its first effects (the forecast check) settle.
   await act(async () => {});
   return heading;
@@ -47,10 +47,10 @@ afterEach(() => {
   Reflect.deleteProperty(navigator, 'onLine');
 });
 
-describe('Daily Dashboard', () => {
+describe('Stooopid Sunday Dashboard', () => {
   it('is the first choice in the mode picker', () => {
     render(<Root />);
-    expect(document.querySelector('.mode-card__name')?.textContent).toBe('Daily Dashboard');
+    expect(document.querySelector('.mode-card__name')?.textContent).toBe('Stooopid Sunday Dashboard');
   });
 
   it('fetches once for Montréal, then shows the weather and outfit as text', async () => {
@@ -64,13 +64,13 @@ describe('Daily Dashboard', () => {
     // Default run time: the next 10 a.m., picked in the hour strip.
     expect(screen.getByRole('radiogroup', { name: 'Run starts' })).toBeTruthy();
     expect(checkedRunTime()).toBe('Today 10 a.m.');
-    expect(screen.getByText(/^Feels like/)).toBeTruthy();
-    const wear = screen.getByRole('region', { name: 'What to wear' });
+    // The forecast doesn't reach Sunday yet, so "Running another time?" starts open.
+    expect(screen.getByRole('button', { name: /^Running another time\?/ }).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain('Sunday’s outfit shows up Wednesday.');
+    const wear = screen.getByRole('region', { name: 'What to wear then' });
     expect(wear.querySelector('.wear__headline')?.textContent).toMatch(/\.$/);
-    expect(wear.querySelectorAll('.wear__items li').length).toBeGreaterThan(1);
-    // Chips are item names only; reasons and tips are folded into the details.
-    const items = [...wear.querySelectorAll('.wear__items li')].map((li) => li.textContent ?? '');
-    expect(items.every((t) => !t.includes('('))).toBe(true);
+    // Air temperature first (it decides the clothes), then feels-like, sky, rain and wind on one line.
+    expect(wear.querySelector('.wear__weather')?.textContent).toMatch(/^Air -?\d+\u00a0°C · feels -?\d+\u00a0°C.+ · \d+\u00a0% (rain|rain or snow) · wind \d+\u00a0km\/h$/);
     const details = document.querySelector('details.dash-details') as HTMLDetailsElement;
     expect(details.open).toBe(false);
     expect(details.querySelector('summary')?.textContent).toBe('Weather details');
@@ -82,7 +82,6 @@ describe('Daily Dashboard', () => {
     const duck = wear.querySelector('.dressed-duck') as HTMLElement;
     expect(duck.getAttribute('aria-hidden')).toBe('true');
     expect(duck.querySelectorAll('img[data-piece]').length).toBeGreaterThan(0);
-    expect(items.length).toBeGreaterThanOrEqual(duck.querySelectorAll('img[data-piece]').length);
     // No advisories: one line, not a card, still saying when they were checked.
     expect(screen.queryByRole('region', { name: 'Route advisories' })).toBeNull();
     expect(screen.getByText(/^No route advisories\./).textContent).toMatch(/Last checked/);
@@ -107,7 +106,7 @@ describe('Daily Dashboard', () => {
     await openDashboard();
     expect(screen.getByText(/Offline: showing the forecast from 6:30 a\.m\./)).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole('region', { name: 'What to wear' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'What to wear then' })).toBeTruthy();
   });
 
   it('offline with nothing saved: "Check outside"', async () => {
@@ -125,7 +124,7 @@ describe('Daily Dashboard', () => {
     expect(screen.getByText(/It may be out of date/)).toBeTruthy();
     // A problem with the forecast is shown above the outfit, not tucked below it.
     const status = screen.getByText(/Couldn’t update/);
-    const wear = screen.getByRole('region', { name: 'What to wear' });
+    const wear = screen.getByRole('region', { name: 'What to wear then' });
     expect(status.compareDocumentPosition(wear) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -162,31 +161,70 @@ describe('Daily Dashboard', () => {
     await screen.findByText(/^Updated /);
     fireEvent.click(screen.getByRole('radio', { name: 'Today 7 p.m.' }));
     expect(checkedRunTime()).toBe('Today 7 p.m.');
-    const wear = screen.getByRole('region', { name: 'What to wear' });
-    expect(wear.textContent).toContain('Reflective vest');
+    const wear = screen.getByRole('region', { name: 'What to wear then' });
+    // The headline names the layers; the rest of the list follows in words.
+    expect(wear.querySelector('.wear__also')?.textContent).toMatch(/^Also: .*reflective vest/);
     expect(wear.textContent).toContain('Dark at run time');
     // No "usual start" button any more: the default is always the next 10 a.m.
     expect(screen.queryByRole('button', { name: /USUAL START/ })).toBeNull();
   });
 
-  it('Sunday run: when and where, and the map link copies for a Link sticker', async () => {
+  it('Sunday run: when and where; the story section copies the map link for a Link sticker', async () => {
     const writeText = vi.fn(async () => {});
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     await openDashboard();
     const run = screen.getByRole('region', { name: 'Sunday run' });
-    expect(run.textContent).toContain('Sunday, November 8 · meet 10:00 a.m., start 10:15 a.m.');
-    expect(run.textContent).toContain('Café Tranquille: at the café entrance, 1442 Rue Clark');
+    expect(run.textContent).toContain('Sunday, November 8 · start 10:15 a.m.');
+    expect(run.textContent).toContain('Meet 10:00 a.m. at Café Tranquille: at the café entrance, 1442 Rue Clark');
     const link = 'https://www.google.com/maps/search/?api=1&query=45.50935,-73.56488';
     expect(screen.getByRole('link', { name: 'OPEN MAP' }).getAttribute('href')).toBe(link);
+
+    // MAKE STORY and the map link sit in their own section, after "Running another time?".
+    const story = screen.getByRole('region', { name: 'Post the Sunday story' });
+    const another = screen.getByRole('region', { name: /^Running another time\?/ });
+    expect(another.compareDocumentPosition(story) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(story.textContent).toContain('The story works from Wednesday.');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'COPY MAP LINK' })));
     expect(writeText).toHaveBeenCalledWith(link);
-    expect(run.textContent).toContain('Map link copied.');
+    expect(story.textContent).toContain('Map link copied.');
 
     // No clipboard (or it refuses): show the link to copy by hand.
     writeText.mockRejectedValueOnce(new Error('denied'));
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'COPY MAP LINK' })));
     expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe(link);
     Reflect.deleteProperty(navigator, 'clipboard');
+  });
+
+  it('once the forecast reaches Sunday: Sunday’s outfit first, another time folded to one line', async () => {
+    // The recording moved 3 days later: Saturday morning, reaching Sunday.
+    const DAYS = 3 * 86_400;
+    const f = structuredClone(fixture) as typeof fixture;
+    f.hourly.time = f.hourly.time.map((t) => t + DAYS);
+    f.daily.time = f.daily.time.map((t) => t + DAYS);
+    f.daily.sunrise = f.daily.sunrise.map((t) => t + DAYS);
+    f.daily.sunset = f.daily.sunset.map((t) => t + DAYS);
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify(f), { headers: { 'Content-Type': 'application/json' } }));
+    vi.setSystemTime(est(7, 8));
+    await openDashboard();
+    await screen.findByText(/^Updated /);
+
+    const run = screen.getByRole('region', { name: 'Sunday run' });
+    const sunday = screen.getByRole('region', { name: 'What to wear on Sunday' });
+    expect(run.contains(sunday)).toBe(true);
+    expect(sunday.querySelector('.wear__headline')?.textContent).toMatch(/\.$/);
+    expect(screen.queryByRole('region', { name: 'Post the Sunday story' })?.textContent).not.toContain('works from');
+
+    // Closed: one line with the time, air temperature and outfit; no picker yet.
+    const toggle = screen.getByRole('button', { name: /^Running another time\?/ });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle.textContent).toMatch(/^Running another time\?\+Today 10 a\.m\. · -?\d+\u00a0°C · .+\.$/);
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    // The default skips Sunday (it has its own card): today 10 a.m., not tomorrow's.
+    expect(checkedRunTime()).toBe('Today 10 a.m.');
+    expect(screen.getByRole('region', { name: 'What to wear then' })).toBeTruthy();
   });
 
   it('refresh asks again, once at a time', async () => {

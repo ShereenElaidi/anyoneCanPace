@@ -31,14 +31,15 @@ export function localDate(at: number): string {
 }
 
 /**
- * Default run start: the next 10:00. If the forecast doesn't reach it, the
+ * Default run start: the next 10:00 (not on `skipDate`, the group run's day,
+ * which has its own card). If the forecast doesn't reach it, the
  * next whole hour between 6:00 and 21:00. Returns null when the forecast has
  * no upcoming hours.
  */
-export function defaultRunTime(f: Forecast, now: number): number | null {
+export function defaultRunTime(f: Forecast, now: number, skipDate?: string): number | null {
   const upcoming = f.hours.map((h) => h.at).filter((at) => at >= now);
   if (!upcoming.length) return null;
-  const next = upcoming.find((at) => localHour(at) === DEFAULT_RUN_HOUR);
+  const next = upcoming.find((at) => localHour(at) === DEFAULT_RUN_HOUR && localDate(at) !== skipDate);
   if (next !== undefined) return next;
   return upcoming.find((at) => localHour(at) >= EARLIEST_RUN_HOUR && localHour(at) <= LATEST_RUN_HOUR) ?? upcoming[0];
 }

@@ -174,3 +174,21 @@
     margin-bottom: 12px;
   }
 }
+
+/* The outfit as pills (the dashboard itself shows the words only). */
+.duck-sheet__card .wear__items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.duck-sheet__card .wear__items li {
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  background: var(--pavement);
+  font-weight: 700;
+}

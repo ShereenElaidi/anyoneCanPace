@@ -35,8 +35,8 @@ export function ModePicker({ onPick }: Props) {
         <ul className="picker__list">
           <li>
             <button type="button" className="mode-card mode-card--dashboard" onClick={() => onPick('dashboard')}>
-              <span className="mode-card__name">Daily Dashboard</span>
-              <span className="mode-card__help">Today’s weather at run time and what to wear.</span>
+              <span className="mode-card__name">Stooopid Sunday Dashboard</span>
+              <span className="mode-card__help">What to wear Sunday, where we meet, and the story.</span>
             </button>
           </li>
           <li>

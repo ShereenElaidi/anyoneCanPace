@@ -36,8 +36,8 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 async function openDashboard() {
   render(<Root />);
-  fireEvent.click(screen.getByRole('button', { name: /Daily Dashboard/ }));
-  await screen.findByRole('heading', { name: 'Daily Dashboard' });
+  fireEvent.click(screen.getByRole('button', { name: /Stooopid Sunday Dashboard/ }));
+  await screen.findByRole('heading', { name: 'Stooopid Sunday Dashboard' });
   await act(async () => {});
   await screen.findByText(/^Updated /);
 }
@@ -65,7 +65,7 @@ describe('Sunday story', () => {
     vi.stubGlobal('fetch', fetchMock);
     await openDashboard();
     fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' }));
-    expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain(
+    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain(
       'The forecast doesn’t reach Sunday, November 8 yet. It covers 5 days: try from Wednesday.',
     );
     expect(drawn).toHaveLength(0);
@@ -123,7 +123,8 @@ describe('Sunday story', () => {
     }
     vi.stubGlobal('fetch', vi.fn(async () => respond(f)));
     await openDashboard();
-    // The hour picker still shows only 3 days.
+    // The hour picker (under "Running another time?") still shows only 3 days.
+    fireEvent.click(screen.getByRole('button', { name: /^Running another time\?/ }));
     expect(screen.getAllByText(/^(Today|Tomorrow|Friday|Saturday|Sunday)$/).map((e) => e.textContent)).toEqual([
       'Today',
       'Tomorrow',

@@ -70,17 +70,17 @@ afterEach(() => {
 });
 
 describe('mode picker', () => {
-  it('opens on "What are we doing today?" with Daily Dashboard first', () => {
+  it('opens on "What are we doing today?" with the Sunday dashboard first', () => {
     render(<Root />);
     expect(screen.getByRole('heading', { name: 'What are we doing today?' })).toBeTruthy();
     const order = [...document.querySelectorAll('.mode-card__name')].map((n) => n.textContent);
-    expect(order).toEqual(['Daily Dashboard', 'ACR Run/Walk Timer', 'Route Library']);
+    expect(order).toEqual(['Stooopid Sunday Dashboard', 'ACR Run/Walk Timer', 'Route Library']);
     // The beta build (a "…-beta" repository) adds a BETA tag; the live build doesn't.
     expect(screen.getByRole('heading', { name: __BETA__ ? 'AnyoneCanPace BETA' : 'AnyoneCanPace' })).toBeTruthy();
     expect(screen.queryByText('BETA') !== null).toBe(__BETA__);
     expect(screen.getByRole('button', { name: /ACR Run\/Walk Timer/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Route Library/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Daily Dashboard/ })).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: /Stooopid Sunday Dashboard/ })).toHaveProperty('disabled', false);
   });
 
   it('picking the timer opens the unchanged timer; reopening the app shows the picker again', () => {

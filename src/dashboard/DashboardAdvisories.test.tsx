@@ -28,8 +28,8 @@ afterEach(() => {
 describe('dashboard advisories', () => {
   it('shows a route’s own advisory with its route name, and never says there are none', async () => {
     render(<Root />);
-    fireEvent.click(screen.getByRole('button', { name: /Daily Dashboard/ }));
-    await screen.findByRole('heading', { name: 'Daily Dashboard' });
+    fireEvent.click(screen.getByRole('button', { name: /Stooopid Sunday Dashboard/ }));
+    await screen.findByRole('heading', { name: 'Stooopid Sunday Dashboard' });
     await act(async () => {});
     const card = screen.getByRole('region', { name: 'Route advisories' });
     expect(card.textContent).toContain('Bridge on Rue Wellington closed.');
