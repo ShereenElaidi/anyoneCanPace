@@ -829,8 +829,8 @@
 
 .map-duck {
   position: relative;
-  width: 54px;
-  height: 54px;
+  width: 80px;
+  height: 80px;
   pointer-events: none;
 }
 
