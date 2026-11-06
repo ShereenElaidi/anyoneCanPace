@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchSharedRoute, routeShareUrl, sharedRouteId, withoutRouteParam } from './routeLink';
+import { matchSharedRoute, routeShareUrl, sharedRouteId, withoutRouteParam, withRouteParam } from './routeLink';
 
 describe('shared route links', () => {
   it('names only the route, on the app’s own address', () => {
@@ -36,6 +36,12 @@ describe('shared route links', () => {
     expect(matchSharedRoute('pi-dayy', ids)).toBeNull();
     expect(matchSharedRoute('pi-da', ids)).toBeNull();
     expect(matchSharedRoute('gone-route', ids)).toBeNull();
+  });
+
+  it('names the route in an address, keeping the rest', () => {
+    expect(withRouteParam('https://x.test/', 'pi-day')).toBe('https://x.test/?route=pi-day');
+    expect(withRouteParam('https://x.test/?route=old', 'pi-day')).toBe('https://x.test/?route=pi-day');
+    expect(withRouteParam('http://localhost:5173/anyoneCanPace/?sim', 'pi-day')).toBe('http://localhost:5173/anyoneCanPace/?sim=&route=pi-day');
   });
 
   it('removes only the route part of the address', () => {

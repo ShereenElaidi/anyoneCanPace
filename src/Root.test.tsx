@@ -67,6 +67,8 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   Reflect.deleteProperty(navigator, 'geolocation');
+  // Route pages put `?route=` in the address; each test starts like a fresh visit.
+  history.replaceState(null, '', '/');
 });
 
 describe('mode picker', () => {
@@ -153,11 +155,8 @@ describe('shared route links', () => {
     tap(/Sample Loop/);
     const shareButton = await screen.findByRole('button', { name: 'Share route' });
     await act(async () => fireEvent.click(shareButton));
-    expect(share).toHaveBeenCalledWith({
-      title: 'Sample Loop',
-      text: 'Sample Loop (6.4 km) on AnyoneCanPace',
-      url: `${location.origin}/?route=sample-loop`,
-    });
+    // Title and link only: a share sheet's "Copy" can drop the link when there's text too.
+    expect(share).toHaveBeenCalledWith({ title: 'Sample Loop', url: `${location.origin}/?route=sample-loop` });
 
     // Closing the share sheet is not an error.
     share.mockRejectedValueOnce(new DOMException('cancelled', 'AbortError'));
@@ -183,16 +182,33 @@ describe('shared route links', () => {
     expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe(link);
   });
 
-  it('opening a shared link shows that route; back goes to the library; the address is cleaned', async () => {
+  it('each route page has its own address; the library and home screen have none', async () => {
+    render(<Root />);
+    tap(/^Route Library/);
+    await screen.findByRole('button', { name: /Pi Day/ });
+    expect(location.search).toBe('');
+    tap(/Pi Day/);
+    expect(await screen.findByRole('heading', { name: 'Pi Day' })).toBeTruthy();
+    expect(location.search).toBe('?route=pi-day');
+    act(() => history.back());
+    expect(await screen.findByRole('heading', { name: 'Route Library' })).toBeTruthy();
+    expect(location.search).toBe('');
+    tap(/Sample Loop/);
+    await screen.findByRole('heading', { name: 'Sample Loop' });
+    expect(location.search).toBe('?route=sample-loop');
+  });
+
+  it('opening a route link shows that route and keeps its address; back goes to the library', async () => {
     history.replaceState(null, '', '/?route=pi-day');
     render(<Root />);
     expect(await screen.findByRole('heading', { name: 'Pi Day' }, { timeout: 3000 })).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'START ROUTE' })).toBeTruthy();
     // SHARE sits with the stats, where the route's shape used to be.
     expect(screen.getByRole('button', { name: 'Share route' }).closest('.route-stats')).toBeTruthy();
-    expect(location.search).toBe('');
+    expect(location.search).toBe('?route=pi-day');
     act(() => history.back());
     expect(await screen.findByRole('heading', { name: 'Route Library' })).toBeTruthy();
+    expect(location.search).toBe('');
   });
 
   it('a link with the share text pasted onto it still opens the route', async () => {
@@ -200,7 +216,8 @@ describe('shared route links', () => {
     render(<Root />);
     expect(await screen.findByRole('heading', { name: 'Pi Day' }, { timeout: 3000 })).toBeTruthy();
     expect(screen.queryByText(/The shared route isn’t in this version/)).toBeNull();
-    expect(location.search).toBe('');
+    // The address is tidied to the route's own.
+    expect(location.search).toBe('?route=pi-day');
   });
 
   it('a link to a route this version doesn’t have opens the library with a note', async () => {

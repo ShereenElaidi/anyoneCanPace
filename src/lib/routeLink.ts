@@ -1,7 +1,8 @@
 /**
- * Shared route links: `<app address>?route=<route id>` opens the Route Library
- * straight on that route's page. Only the route id goes in the link, never a
- * position or anything about the person sharing it.
+ * Route links: `<app address>?route=<route id>` opens the Route Library straight
+ * on that route's page, and every route page shows that address while it's open.
+ * Only the route id goes in the link, never a position or anything about the
+ * person sharing it.
  *
  * Kept tiny and free of route data so the first-load bundle can read it.
  */
@@ -42,7 +43,18 @@ export function matchSharedRoute(value: string, ids: readonly string[]): string 
   return glued[0] ?? null;
 }
 
-/** The same address without the shared-route part, so a reload or the back button doesn't reopen it. */
+/**
+ * The same address naming this route: a route page keeps its own address, so it
+ * can be copied from the address bar and a reload stays on it. Other parts of the
+ * address (`?sim`, `?edit`…) are kept.
+ */
+export function withRouteParam(href: string, id: string): string {
+  const url = new URL(href);
+  url.searchParams.set(ROUTE_PARAM, id);
+  return url.toString();
+}
+
+/** The same address without the route part (the library and the home screen). */
 export function withoutRouteParam(href: string): string {
   const url = new URL(href);
   url.searchParams.delete(ROUTE_PARAM);

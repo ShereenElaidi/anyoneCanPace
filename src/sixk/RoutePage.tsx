@@ -178,7 +178,9 @@ function useShareRoute(data: LoadedRoute['data']) {
   async function share() {
     if (typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: data.name, text: `${data.name} (${formatKm(data.stats.distanceM)}) on AnyoneCanPace`, url });
+        // Title and link only, no extra text: some share sheets' "Copy" (Firefox on Android)
+        // copies just the text and drops the link.
+        await navigator.share({ title: data.name, url });
         setState('idle');
         return;
       } catch (e) {

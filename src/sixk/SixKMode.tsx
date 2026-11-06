@@ -1,7 +1,7 @@
 import { UpdateBanner } from '../components/UpdateBanner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadRoutePace, saveRoutePace } from '../lib/prefs';
-import { matchSharedRoute, withoutRouteParam } from '../lib/routeLink';
+import { matchSharedRoute, withoutRouteParam, withRouteParam } from '../lib/routeLink';
 import { loadRoute, manifest, type LoadedRoute } from './data';
 import { availableFilters, clampPace, PACE, visibleRoutes, type RouteFilter } from './describe';
 import { FollowView } from './FollowView';
@@ -20,6 +20,12 @@ interface Props {
 }
 
 const routeIds = manifest.routes.map((r) => r.id);
+
+/**
+ * The address for a screen: a route (its page or following it) shows `?route=<id>`,
+ * so it can be copied from the address bar and a reload reopens it; the library doesn't.
+ */
+const addressFor = (view: View) => (view.name === 'library' ? withoutRouteParam(location.href) : withRouteParam(location.href, view.id));
 
 /**
  * 6K Route Library mode: library → route page → follow view.
@@ -62,15 +68,19 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
     if (view.name !== 'library') setMissingRoute(false);
   }, [view.name]);
 
-  // Opened from a shared link: drop `?route=` from the address (so a reload doesn't reopen it)
-  // and put the library under the route page, so back goes to the library. Once, even in StrictMode.
+  // Opened from a route link: put the library under the route page, so back goes to the library,
+  // and tidy the address (one for a route this version doesn't have is dropped). Once, even in StrictMode.
   const linkHandled = useRef(false);
   useEffect(() => {
     if (!openRoute || linkHandled.current) return;
     linkHandled.current = true;
     try {
-      history.replaceState({ sixk: { name: 'library' } satisfies View }, '', withoutRouteParam(location.href));
-      if (linkedRoute) history.pushState({ sixk: { name: 'route', id: linkedRoute } satisfies View }, '');
+      const library: View = { name: 'library' };
+      history.replaceState({ sixk: library }, '', addressFor(library));
+      if (linkedRoute) {
+        const page: View = { name: 'route', id: linkedRoute };
+        history.pushState({ sixk: page }, '', addressFor(page));
+      }
     } catch {
       // History unavailable (some embedded browsers): in-app buttons still work.
     }
@@ -92,7 +102,7 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
 
   const go = useCallback((next: View) => {
     try {
-      history.pushState({ sixk: next }, '');
+      history.pushState({ sixk: next }, '', addressFor(next));
     } catch {
       // History unavailable (some embedded browsers): in-app buttons still work.
     }
@@ -104,7 +114,7 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
       const current = viewRef.current;
       if (current.name === 'follow') {
         // Don't leave a route by accident: stay, and open the menu.
-        history.pushState({ sixk: current }, '');
+        history.pushState({ sixk: current }, '', addressFor(current));
         setMenuRequest((n) => n + 1);
         return;
       }
