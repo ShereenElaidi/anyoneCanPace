@@ -27,13 +27,13 @@ const SOURCE = { name: 'Strava', url: 'https://www.strava.com', attribution: 'Ro
 beforeEach(() => {
   // A copy of the real route files, so every test starts from what ships.
   root = mkdtempSync(join(tmpdir(), 'route-editor-'));
-  for (const dir of ['routes/review', 'src/data/routes']) mkdirSync(join(root, dir), { recursive: true });
+  for (const dir of ['routes/review', 'routes/cache', 'src/data/routes']) mkdirSync(join(root, dir), { recursive: true });
   cpSync(join(REPO, 'routes/routes.config.json'), join(root, 'routes/routes.config.json'));
   cpSync(join(REPO, 'routes/review/sample-loop.json'), join(root, 'routes/review/sample-loop.json'));
   cpSync(join(REPO, 'src/data/routes'), join(root, 'src/data/routes'), { recursive: true });
   cpSync(join(REPO, 'src/data/route-tags.json'), join(root, 'src/data/route-tags.json'));
   build = vi.fn(async () => ({ ok: true, log: 'Wrote 3 route(s)' }));
-  ctx = { root, build, today: () => TODAY };
+  ctx = { root, build, today: () => TODAY, gitStatus: async () => [], now: () => new Date('2026-11-05T12:00:00Z') };
 });
 
 afterEach(() => rmSync(root, { recursive: true, force: true }));
@@ -63,7 +63,8 @@ describe('reading', () => {
     expect((await api('GET', '/routes/nope')).status).toBe(404);
     expect((await api('GET', '/routes/..')).status).toBe(404);
     expect((await api('GET', '/routes/sample-loop/extra')).status).toBe(404);
-    expect((await api('DELETE', '/routes/sample-loop')).status).toBe(404);
+    expect((await api('PATCH', '/routes/sample-loop')).status).toBe(404);
+    expect((await api('GET', '/routes/sample-loop/other')).status).toBe(404);
   });
 });
 
@@ -175,5 +176,63 @@ describe('building', () => {
     await api('POST', '/build', { resetTurns: true });
     await api('POST', '/build', {});
     expect(build.mock.calls).toEqual([[{ resetTurns: true }], [{ resetTurns: false }]]);
+  });
+});
+
+describe('deleting a route', () => {
+  const add = () => api('POST', '/routes', { id: 'canal-dawn', name: 'Canal Dawn', gpx: GPX, source: SOURCE });
+  // The fake build doesn't write route files: give the new route the files a real build would.
+  const fakeBuilt = () => {
+    for (const rel of ['src/data/routes/canal-dawn.json', 'src/data/routes/canal-dawn.geojson', 'routes/review/canal-dawn.md', 'routes/cache/canal-dawn.streets.json']) {
+      writeFileSync(join(root, rel), '{}');
+    }
+  };
+
+  it('plans what would go, and blocks on code that names the route', async () => {
+    await add();
+    fakeBuilt();
+    mkdirSync(join(root, 'src/nav'), { recursive: true });
+    writeFileSync(join(root, 'src/nav/x.test.ts'), "replay('canal-dawn');\n");
+    const plan = (await api('GET', '/routes/canal-dawn/delete-plan')).body as { files: string[]; references: { path: string }[] };
+    expect(plan.files).toEqual([
+      'routes/cache/canal-dawn.streets.json',
+      'routes/canal-dawn.gpx',
+      'routes/review/canal-dawn.md',
+      'src/data/routes/canal-dawn.geojson',
+      'src/data/routes/canal-dawn.json',
+    ]);
+    expect(plan.references.map((r) => r.path)).toEqual(['src/nav/x.test.ts']);
+    const res = await api('DELETE', '/routes/canal-dawn', { confirmName: 'Canal Dawn' });
+    expect(res.status).toBe(400);
+    expect(existsSync(join(root, 'routes/canal-dawn.gpx'))).toBe(true);
+  });
+
+  it('needs the exact name, then moves the files to the trash and rebuilds offline', async () => {
+    await add();
+    fakeBuilt();
+    build.mockClear();
+    expect((await api('DELETE', '/routes/canal-dawn', { confirmName: 'canal dawn' })).status).toBe(400);
+    expect(build).not.toHaveBeenCalled();
+    const res = await api('DELETE', '/routes/canal-dawn', { confirmName: 'Canal Dawn' });
+    expect(res.status).toBe(200);
+    const trash = (res.body as { trash: string }).trash;
+    expect(trash).toBe('.cache/route-editor-trash/canal-dawn-2026-11-05T12-00-00-000Z');
+    expect(existsSync(join(root, 'routes/canal-dawn.gpx'))).toBe(false);
+    expect(read(`${trash}/routes/canal-dawn.gpx`)).toContain('<name>Canal Dawn</name>');
+    expect(readJson<RouteConfig[]>(`${trash}/routes/routes.config.json`).map((c) => c.id)).toContain('canal-dawn');
+    expect(readJson<RouteConfig[]>('routes/routes.config.json').map((c) => c.id)).toEqual(SHIPPED.map((c) => c.id));
+    expect(build).toHaveBeenCalledWith({ offline: true });
+  });
+
+  it('puts everything back when the rebuild fails', async () => {
+    await add();
+    fakeBuilt();
+    const config = read('routes/routes.config.json');
+    build.mockResolvedValueOnce({ ok: false, log: 'boom' });
+    const res = await api('DELETE', '/routes/canal-dawn', { confirmName: 'Canal Dawn' });
+    expect(res.status).toBe(500);
+    expect(read('routes/routes.config.json')).toBe(config);
+    expect(existsSync(join(root, 'routes/canal-dawn.gpx'))).toBe(true);
+    expect(existsSync(join(root, 'src/data/routes/canal-dawn.json'))).toBe(true);
   });
 });

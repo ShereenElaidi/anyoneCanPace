@@ -2,6 +2,7 @@
  * The route editor page's calls to the dev-server API (server/api.ts).
  * Every request carries the editor header the server insists on.
  */
+import type { DeletionPlan } from './deletion';
 import type { RouteEdits } from './edits';
 import type { AddRouteResult, BuildResult, NewRoute, RouteDetail, RouteList, SaveRouteResult, TagList } from './types';
 
@@ -40,4 +41,7 @@ export const api = {
   saveRoute: (id: string, edits: RouteEdits) => call<SaveRouteResult>('PUT', `/routes/${id}`, edits),
   saveTags: (tags: TagList) => call<{ tags: TagList }>('PUT', '/tags', tags),
   build: (resetTurns = false) => call<{ build: BuildResult }>('POST', '/build', { resetTurns }),
+  deletionPlan: (id: string) => call<DeletionPlan>('GET', `/routes/${id}/delete-plan`),
+  deleteRoute: (id: string, confirmName: string) =>
+    call<{ trash: string; moved: string[]; build: BuildResult }>('DELETE', `/routes/${id}`, { confirmName }),
 };

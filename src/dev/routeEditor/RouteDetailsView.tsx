@@ -10,6 +10,7 @@ import { DESCRIPTION_MAX, validateDescription } from '../../sixk/describe';
 import { api, ApiError } from './client';
 import { NAME_MAX, PLACE_MAX, validateAdvisories, validateTurns, type RouteEdits } from './edits';
 import { AdvisoriesEditor } from './AdvisoriesEditor';
+import { DeletePanel } from './DeletePanel';
 import { ReviewPanel } from './ReviewPanel';
 import { advisoryToForm, formToAdvisory, mapCoverage, type AdvisoryForm } from './review';
 import { TurnEditor } from './TurnEditor';
@@ -302,6 +303,8 @@ export function RouteDetailsView({ id }: { id: string }) {
       <BuildLog build={build} />
 
       <ReviewPanel data={data} today={detail.today} dirty={dirty} onSaved={load} />
+
+      <DeletePanel id={id} dirty={dirty} />
     </section>
   );
 }

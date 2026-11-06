@@ -25,6 +25,16 @@ function runBuildScript(root: string, { offline, resetTurns }: BuildOptions): Pr
   });
 }
 
+function gitStatus(root: string): Promise<string[]> {
+  return new Promise((resolve) => {
+    const child = spawn('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: root });
+    let out = '';
+    child.stdout.on('data', (d: Buffer) => (out += d.toString()));
+    child.on('error', () => resolve([]));
+    child.on('close', () => resolve(out.split('\n').filter(Boolean)));
+  });
+}
+
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -59,7 +69,8 @@ export function routeEditorPlugin(): Plugin {
     name: 'anyonecanpace-route-editor',
     apply: 'serve',
     configureServer(server) {
-      const ctx: ApiContext = { root: server.config.root, build: (o) => runBuildScript(server.config.root, o), today };
+      const root = server.config.root;
+      const ctx: ApiContext = { root, build: (o) => runBuildScript(root, o), today, gitStatus: () => gitStatus(root) };
       server.middlewares.use(API_PREFIX, (req, res) => {
         const send = (status: number, body: unknown) => {
           res.statusCode = status;
