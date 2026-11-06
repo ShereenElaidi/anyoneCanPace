@@ -192,7 +192,10 @@ export function saveMap(): Promise<void> {
     try {
       const res = await fetch(mapUrl(), { cache: 'no-store' });
       if (!res.ok || !res.body) throw new Error(`Download failed (${res.status})`);
-      const total = Number(res.headers.get('content-length')) || 0;
+      // GitHub Pages gzips the file: Content-Length is then the compressed size while the
+      // body arrives decompressed, so the length only says what to expect when uncompressed.
+      const encoding = (res.headers.get('content-encoding') ?? 'identity').trim().toLowerCase();
+      const total = encoding === 'identity' ? Number(res.headers.get('content-length')) || 0 : 0;
       const reader = res.body.getReader();
       const chunks: Uint8Array<ArrayBuffer>[] = [];
       let received = 0;
