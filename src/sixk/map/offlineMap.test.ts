@@ -138,6 +138,17 @@ describe('offline street map', () => {
     expect(await readSavedMap()).toBeNull();
   });
 
+  it('a gzipped download (GitHub Pages) is saved: its Content-Length is the compressed size', async () => {
+    // Real case: 11,185,558 bytes gzipped on the wire, 11,185,089 bytes once decoded.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(new Uint8Array(1000), { headers: { 'content-length': '1003', 'content-encoding': 'gzip' } })),
+    );
+    await saveMap();
+    expect(getMapStatus().state).toBe('saved');
+    expect((await readSavedMap())?.size).toBe(1000);
+  });
+
   it('eviction is noticed: rechecking (e.g. on returning to the app) stops saying "saved"', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => file(1000)));
     await saveMap();
