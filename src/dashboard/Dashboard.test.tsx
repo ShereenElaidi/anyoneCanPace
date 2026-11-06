@@ -73,9 +73,11 @@ describe('Daily Dashboard', () => {
     expect(items.every((t) => !t.includes('('))).toBe(true);
     const details = document.querySelector('details.dash-details') as HTMLDetailsElement;
     expect(details.open).toBe(false);
-    expect(details.querySelector('summary')?.textContent).toBe('Weather details and tips');
-    expect(details.textContent).toContain('Bring an extra layer for the wait at the start.');
+    expect(details.querySelector('summary')?.textContent).toBe('Weather details');
     expect(details.textContent).toMatch(/Wind \d+ km\/h, gusts \d+ km\/h/);
+    expect(details.textContent).toMatch(/Clothes follow the air temperature/);
+    // No run-feel arithmetic any more.
+    expect(wear.textContent).not.toMatch(/Dress for/);
     // The dressed duck is decorative; the list carries the meaning.
     const duck = wear.querySelector('.dressed-duck') as HTMLElement;
     expect(duck.getAttribute('aria-hidden')).toBe('true');
@@ -162,7 +164,7 @@ describe('Daily Dashboard', () => {
     expect(checkedRunTime()).toBe('Today 7 p.m.');
     const wear = screen.getByRole('region', { name: 'What to wear' });
     expect(wear.textContent).toContain('Reflective vest');
-    expect(document.querySelector('.dash-details')?.textContent).toContain('Dark at run time');
+    expect(wear.textContent).toContain('Dark at run time');
     // No "usual start" button any more: the default is always the next 10 a.m.
     expect(screen.queryByRole('button', { name: /USUAL START/ })).toBeNull();
   });

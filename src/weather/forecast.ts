@@ -21,6 +21,7 @@ const HOURLY = [
   'wind_speed_10m',
   'wind_gusts_10m',
   'is_day',
+  'dew_point_2m',
 ] as const;
 
 export function forecastUrl(): string {
@@ -31,7 +32,9 @@ export function forecastUrl(): string {
     daily: 'sunrise,sunset',
     timezone: MONTREAL.timeZone,
     timeformat: 'unixtime',
-    forecast_days: '2',
+    // Friday evening already reaches Sunday's run; yesterday is for the refreeze check.
+    forecast_days: '3',
+    past_days: '1',
   });
   return `https://api.open-meteo.com/v1/gem?${q}`;
 }
@@ -41,17 +44,20 @@ export interface HourWeather {
   at: number;
   tempC: number;
   feelsC: number;
+  /** Dew point (°C), for humidex. Null if missing (also in forecasts saved before it was asked for). */
+  dewPointC?: number | null;
   /** Chance of precipitation, %, or null if the model has none. */
   precipProb: number | null;
-  precipMm: number;
-  rainMm: number;
-  showersMm: number;
-  snowCm: number;
-  snowDepthM: number;
-  /** WMO weather code. */
-  code: number;
-  windKmh: number;
-  gustKmh: number;
+  /** Amounts in the hour. Null means unknown, never "none". */
+  precipMm: number | null;
+  rainMm: number | null;
+  showersMm: number | null;
+  snowCm: number | null;
+  snowDepthM: number | null;
+  /** WMO weather code, or null if missing. */
+  code: number | null;
+  windKmh: number | null;
+  gustKmh: number | null;
   isDay: boolean;
 }
 
@@ -90,6 +96,8 @@ export function parseGem(json: unknown, fetchedAt: number): Forecast {
 
   const times = arr(hourly, 'time');
   const col = (key: string) => arr(hourly, key);
+  // Asked for later than the rest, so an older recording without it still parses.
+  const dew = Array.isArray(hourly.dew_point_2m) ? hourly.dew_point_2m : [];
   const [temp, feels, prob, precip, rain, showers, snow, depth, code, wind, gust, isDay] = [
     'temperature_2m',
     'apparent_temperature',
@@ -114,15 +122,16 @@ export function parseGem(json: unknown, fetchedAt: number): Forecast {
       at: at * 1000,
       tempC,
       feelsC: num(feels[i]) ?? tempC,
+      dewPointC: num(dew[i]),
       precipProb: num(prob[i]),
-      precipMm: num(precip[i]) ?? 0,
-      rainMm: num(rain[i]) ?? 0,
-      showersMm: num(showers[i]) ?? 0,
-      snowCm: num(snow[i]) ?? 0,
-      snowDepthM: num(depth[i]) ?? 0,
-      code: num(code[i]) ?? 0,
-      windKmh: num(wind[i]) ?? 0,
-      gustKmh: num(gust[i]) ?? num(wind[i]) ?? 0,
+      precipMm: num(precip[i]),
+      rainMm: num(rain[i]),
+      showersMm: num(showers[i]),
+      snowCm: num(snow[i]),
+      snowDepthM: num(depth[i]),
+      code: num(code[i]),
+      windKmh: num(wind[i]),
+      gustKmh: num(gust[i]) ?? num(wind[i]),
       isDay: num(isDay[i]) === 1,
     });
   });
@@ -173,6 +182,7 @@ const CODE_TEXT: [number[], string][] = [
 ];
 
 /** Plain words for a WMO weather code. */
-export function weatherText(code: number): string {
+export function weatherText(code: number | null): string {
+  if (code === null) return 'Unknown';
   return CODE_TEXT.find(([codes]) => codes.includes(code))?.[1] ?? 'Unknown';
 }

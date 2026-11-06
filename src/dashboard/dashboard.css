@@ -189,8 +189,46 @@
   line-height: 1.2;
 }
 
-.wear__runfeel {
-  font-size: 0.8rem;
+/* "Run cold?" options: quieter than the outfit itself. */
+.wear__optional {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.wear__optional li + li {
+  margin-top: 2px;
+}
+
+/* Weather and ground notes. The level is in the words too ("Warning:"), never colour alone. */
+.wear__advice {
+  align-self: stretch;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.wear__advice li {
+  padding: 6px 10px;
+  border-left: 4px solid var(--blue);
+}
+
+.wear__advice li + li {
+  margin-top: 6px;
+}
+
+.wear__advice li.wear__advice--caution {
+  border-left-color: var(--gold);
+}
+
+.wear__advice li.wear__advice--warning {
+  border-left-color: var(--asphalt);
+  background: var(--pavement);
+  font-weight: 700;
 }
 
 .wear__items {
@@ -244,6 +282,7 @@
 }
 
 .dash-details__h3 {
+  align-self: stretch;
   margin: 4px 0 4px;
   font-size: 0.9rem;
   font-weight: 800;
@@ -362,4 +401,12 @@
   .duck-weather {
     display: none;
   }
+}
+
+/* "Bring" sits inside the centred hero card but reads as a left-aligned list. */
+.dash-hero .dash-details__h3,
+.dash-hero .wear__notes {
+  align-self: stretch;
+  margin-bottom: 0;
+  text-align: left;
 }

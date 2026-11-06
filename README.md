@@ -150,32 +150,32 @@ Process for a new or changed route:
 
 ## Daily Dashboard
 
-- **Layout: the answer first.** The dressed duck, with a "feels like" sticker, the outfit headline and the item chips fill the first screen. Weather numbers and tips are folded under **Weather details and tips**. A fresh "Updated …" line and REFRESH sit at the bottom; an offline, failed or old forecast moves that line to the top. With no advisories there's one "No route advisories. Last checked …" line; active ones show as a card at the top.
-- **Weather at run time.** Pick when the run starts from a strip of hour chips (6 a.m. to 9 p.m., for as far as the forecast goes: it's requested for 2 days, which covers today and tomorrow and, late in the evening, a few hours of the day after; radio buttons, so arrow keys and screen readers work). The default is the next **10 a.m.** (today before 10, otherwise tomorrow; `DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The details show feels-like and air temperature, conditions, the chance of rain or snow, wind and gusts, and sunrise and sunset.
-- **What to wear**, always as text: a headline, item chips (names only) and tips. Why an item is worn ("Cap: the brim keeps rain out of your eyes") is the item's `why` in `outfit.ts` and goes in the tips.
-- **The duck dresses for it.** The mascot wears one drawn layer per outfit item (a gold tee, navy long sleeve, gold raincoat and cap, toque and mittens, a safety-yellow vest and headlamp in the dark…), with rain or snow falling behind it (off when the phone asks for reduced motion). It's decoration only, hidden from screen readers; the text list carries the meaning. The pieces were drawn with ChatGPT from the brief in `design/duck-art-brief/` and fitted onto the duck. To swap one, see `src/assets/duck-outfit/README.md`.
-- **Dress for the run feel, not the weather.** Run feel is the feels-like temperature **+ 7 °C** (`RUN_FEEL_OFFSET_C`), lower than the usual racing advice of about +10 °C because pacers run/walk and stand around at the start.
+- **Layout: the answer first.** The dressed duck, with a "feels like" sticker, the outfit headline, the item chips, any "Run cold?" options, weather and ground notes, and what to bring fill the hero card. Weather numbers are folded under **Weather details**. A fresh "Updated …" line and REFRESH sit at the bottom; an offline, failed or old forecast moves that line to the top. With no advisories there's one "No route advisories. Last checked …" line; active ones show as a card at the top.
+- **Weather at run time.** Pick when the run starts from a strip of hour chips (6 a.m. to 9 p.m., three days; radio buttons, so arrow keys and screen readers work). The default is the next **10 a.m.** (`DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The details show conditions, air and feels-like temperature, the chance of rain or snow, wind and gusts, wind chill or humidex when they matter, and sunrise and sunset.
+- **The duck dresses for it.** The mascot wears the running outfit's visible pieces: legs, the outermost top, hands, head, neck, and a vest and headlamp in the dark, with rain or snow falling behind it (off for reduced motion). Inner layers (thermal top, insulated jacket), "Run cold?" options, things to bring and footwear are text only. It's decoration, hidden from screen readers; the text carries the meaning. To swap a piece, see `src/assets/duck-outfit/README.md`.
 
-| Run feel | Starting point |
+**What to wear** (full rules and where each number came from: `design/weather-v1-spec.md`). An easy 45–60 min community run, the same for the 6K and ACR run/walk. One runner's calibration, kept in tables at the top of `src/weather/outfit.ts` (`CUTOFFS`, `ACCESSORIES`, `HEAT`, `WIND`, `WET`, `GROUND`, `FROSTBITE`, `WAITING`).
+
+- **Clothes follow the air temperature.** Feels-like, wind chill and humidex are only for warnings and display, so wind is never counted twice.
+
+| Air temperature | Default |
 |---|---|
-| 25 °C and up | Singlet, shorts, cap |
-| 18 to 25 °C | Tee, shorts, cap |
-| 10 to 18 °C | Tee or light long sleeve, shorts |
-| 3 to 10 °C | Long sleeve, tights, light gloves |
-| −4 to 3 °C | Long sleeve and light jacket, tights, gloves, headband |
-| Below −4 °C | Thermal layers, windproof shell, toque, mittens, neck warmer |
+| 25 °C and up (or humidex 30+) | Singlet, shorts |
+| 12 to 25 °C | Tee, shorts |
+| 7 to 12 °C | Long sleeve, shorts |
+| 2 to 7 °C | Long sleeve, tights |
+| −5 to 2 °C | Long sleeve, light jacket, tights |
+| −12 to −5 °C | Thermal top, light jacket, tights |
+| Below −12 °C | Thermal top, insulated jacket, windproof shell, winter tights |
 
-Modifiers:
+- **"Run cold?"** From each cutoff to 2 °C above it, the colder choice is offered as a line of text (e.g. at 7–9 °C: "Run cold? Wear tights instead of shorts.").
+- **Accessories:** light gloves at 5 °C and below, ear headband at 0 °C and below; at −10 °C mittens, toque and neck warmer replace them (thermal socks suggested). Never a cap.
+- **One outer layer.** Wind (sustained 25 km/h; gusts alone don't count), rain and cold all ask things of one outer layer, so it's never a windbreaker and a rain shell. Windy: a note only from 15 °C, a windbreaker from 2 to 15 °C, a windproof light jacket from −8 to 2 °C, the winter outfit below −8 °C. Rain: nothing from 15 °C unless heavy (then a light shell), a rain shell from 2 to 15 °C, and below 2 °C a waterproof shell over the warm layers. Wet snow (−2 °C and up) counts as wet; dry snow changes no clothes. A chance of rain alone is a note, not gear.
+- **Ground:** forecast words only ("Paths may be slippery", "Possible refreeze", freezing-rain warning), never a claim about a route, never on the duck.
+- **Bring:** a warm layer for the 10–20 min wait at 0 °C and below, or up to 5 °C when wet or windy; dry clothes for after when it's that cold or cool and wet.
+- **Warnings:** frostbite at wind chill −27 or colder (stated neutrally: organisers decide), heat advice at humidex 30 and stronger at 35, reflective vest and headlamp in the dark.
 
-- **Rain** (a 50 % chance, 0.3 mm in the hour, or a rain code): raincoat (it replaces the light jacket or shell) and a cap with a brim.
-- **Strong wind** (25 km/h, or gusts of 40 km/h): windbreaker, or "zip your jacket up" if you already have one.
-- **Snow, freezing rain, snow on the ground, or wet at 1 °C or below**: shoes with grip and a slippery note.
-- **Dark** at the start: reflective vest and headlamp. Getting dark during the run: reflective vest.
-- **Always**: bring an extra layer for the wait at the start.
-
-The tiers and thresholds are starting points. Tune them in the `TIERS` and `MODIFIERS` tables in `src/weather/outfit.ts`; the tests cover each tier and modifier.
-
-**Weather source.** [Open-Meteo](https://open-meteo.com)'s Environment Canada GEM endpoint (`https://api.open-meteo.com/v1/gem`), 48 hours ahead, for fixed central-Montréal coordinates. The data is free for non-commercial use under CC BY 4.0 and credited on the page.
+**Weather source.** [Open-Meteo](https://open-meteo.com)'s Environment Canada GEM endpoint (`https://api.open-meteo.com/v1/gem`), three days ahead plus the past day (for snow on the ground and refreeze), for fixed central-Montréal coordinates. The data is free for non-commercial use under CC BY 4.0 and credited on the page.
 
 **No sun or UV advice.** GEM has no UV index, and the earlier estimate (from the sun's height and cloud cover) was removed along with sunglasses, so the outfit never mentions sun protection.
 
@@ -434,7 +434,7 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **First open online:** "Updated <time>" and an outfit appear within a few seconds. The run time defaults to the next 10 a.m.
 - [ ] **Run time:** it defaults to the next 10 a.m. Pick tonight and tomorrow morning: the outfit changes (reflective vest when it's dark).
 - [ ] **Offline:** in airplane mode, reopen. It shows "Offline: showing the forecast from …" and the same outfit. With storage cleared and offline, it shows "Check outside".
-- [ ] **Does the outfit match reality?** For a week of runs, note the run feel, what the app said and what you actually wore. Tune `RUN_FEEL_OFFSET_C` and the tiers.
+- [ ] **Does the outfit match reality?** For a few weeks of runs, note the air temperature, wind and rain, what the app said and what you actually wore. Tune the tables in `src/weather/outfit.ts`.
 - [ ] **Readable** at arm's length outdoors. The list makes sense without the duck.
 - [ ] **No location prompt** ever appears on the dashboard.
 

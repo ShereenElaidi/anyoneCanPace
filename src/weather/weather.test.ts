@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from './fixtures/gem-2026-11-04.json';
 import { forecastUrl, hourAt, MONTREAL, parseGem, sunFor, weatherText, ForecastError } from './forecast';
-import { defaultRunTime, lightAt, localHour, outfitInputFor, runTimeChoices } from './runTime';
+import { defaultRunTime, lightAt, localHour, outfitInputFor, recentFor, runTimeChoices } from './runTime';
 import { loadForecast, saveForecast } from './cache';
 
 const f = parseGem(fixture, 1_793_800_000_000);
@@ -17,6 +17,9 @@ describe('weather request', () => {
     expect(url.searchParams.get('longitude')).toBe(String(MONTREAL.lon));
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('hourly')).toContain('apparent_temperature');
+    expect(url.searchParams.get('hourly')).toContain('dew_point_2m');
+    expect(url.searchParams.get('forecast_days')).toBe('3');
+    expect(url.searchParams.get('past_days')).toBe('1');
     // Cloud cover was only for the UV estimate, which is gone.
     expect(url.searchParams.get('hourly')).not.toContain('cloud_cover');
   });
@@ -94,9 +97,21 @@ describe('run time', () => {
     const input = outfitInputFor(f, est(4, 12))!;
     const h = hourAt(f, est(4, 12))!;
     expect(input.feelsC).toBe(h.feelsC);
-    expect(input.rainMm).toBe(h.rainMm + h.showersMm);
+    expect(input.rainMm).toBe((h.rainMm ?? 0) + (h.showersMm ?? 0));
+    expect(input.recent).toBeNull(); // the recording starts at midnight, so no past day
     expect(input.light).toBe('day');
     expect(outfitInputFor(f, est(9, 12))).toBeNull();
+  });
+
+  it('sums the 24 hours before the run for snow on the ground and refreeze', () => {
+    const at = est(5, 10);
+    const past = f.hours.filter((h) => h.at < at && h.at >= at - 86_400_000);
+    expect(past).toHaveLength(24);
+    expect(recentFor(f, at)).toEqual({
+      wetMm: past.reduce((s, h) => s + (h.rainMm ?? 0) + (h.showersMm ?? 0), 0),
+      snowCm: past.reduce((s, h) => s + (h.snowCm ?? 0), 0),
+      wasAboveZero: past.some((h) => h.tempC > 0),
+    });
   });
 });
 

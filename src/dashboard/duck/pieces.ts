@@ -37,11 +37,5 @@ export function duckLayers(items: readonly ItemId[]): ItemId[] {
   return LAYER_ORDER.filter((id) => wanted.has(id));
 }
 
+/** Falling weather drawn over the duck (the outfit's `effect`). */
 export type DuckWeather = 'rain' | 'snow' | null;
-
-/** The falling-weather flourish for an outfit's conditions (snow wins over rain). */
-export function duckWeather(conditions: readonly string[]): DuckWeather {
-  if (conditions.includes('snow')) return 'snow';
-  if (conditions.includes('rain')) return 'rain';
-  return null;
-}

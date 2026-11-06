@@ -20,7 +20,6 @@ import { activeNotices, collectNotices, type NoticeFile } from '../advisories/no
 import { ROUTE_NOTICES } from '../advisories/routeAdvisories';
 import type { RouteManifest } from '../nav/types';
 import { DressedDuck } from './duck/DressedDuck';
-import { duckWeather } from './duck/pieces';
 import { useForecast } from './useForecast';
 import './dashboard.css';
 
@@ -119,25 +118,47 @@ export default function DashboardMode({ onSwitchMode }: Props) {
               </h2>
               <div className="duck-slot">
                 {/* Decorative: the text below carries the meaning. */}
-                <DressedDuck items={outfit.items.map((i) => i.id)} weather={duckWeather(outfit.conditions)} />
+                <DressedDuck items={outfit.drawn} weather={outfit.effect} />
                 <p className="duck-feels">
                   <span>Feels like</span> <strong>{degrees(hour.feelsC)}</strong>
                 </p>
               </div>
               <p className="wear__headline">{outfit.headline}</p>
-              <p className="wear__runfeel">
-                Dress for {degrees(outfit.runFeelC)}: you warm up by about{' '}
-                {degrees(outfit.runFeelC - hour.feelsC)} once you’re moving.
-              </p>
               <ul className="wear__items">
-                {outfit.items.map((item) => (
+                {outfit.wear.map((item) => (
                   <li key={item.id}>{item.label}</li>
                 ))}
               </ul>
+              {outfit.optional.length > 0 && (
+                <ul className="wear__optional">
+                  {outfit.optional.map((o) => (
+                    <li key={o.id}>{o.text}</li>
+                  ))}
+                </ul>
+              )}
+              {outfit.advisories.length > 0 && (
+                <ul className="wear__advice">
+                  {outfit.advisories.map((a) => (
+                    <li key={a.text} className={`wear__advice--${a.level}`}>
+                      {a.level === 'warning' && <strong>Warning: </strong>}
+                      {a.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {outfit.bring.length > 0 && (
+                <>
+                  <h3 className="dash-details__h3">Bring</h3>
+                  <ul className="wear__notes">
+                    {outfit.bring.map((b) => (
+                      <li key={b}>{b}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </section>
-
             <details className="dash-details">
-              <summary>Weather details and tips</summary>
+              <summary>Weather details</summary>
               <h3 className="dash-details__h3">Weather for {lowerDay(runTimeLabel(runAt, now))}</h3>
               <ul className="weather__facts">
                 <li>
@@ -145,30 +166,24 @@ export default function DashboardMode({ onSwitchMode }: Props) {
                 </li>
                 <li>
                   {hour.precipProb !== null ? `${Math.round(hour.precipProb)} % chance of rain or snow` : 'Chance of rain unknown'}
-                  {hour.precipMm > 0 ? ` (${hour.precipMm.toFixed(1)} mm)` : ''}
+                  {hour.precipMm ? ` (${hour.precipMm.toFixed(1)} mm)` : ''}
                 </li>
                 <li>
-                  Wind {Math.round(hour.windKmh)} km/h, gusts {Math.round(hour.gustKmh)} km/h
+                  {hour.windKmh !== null
+                    ? `Wind ${Math.round(hour.windKmh)} km/h${hour.gustKmh !== null ? `, gusts ${Math.round(hour.gustKmh)} km/h` : ''}`
+                    : 'Wind unknown'}
                 </li>
+                {outfit.windChillC !== null && <li>Wind chill {degrees(outfit.windChillC)}</li>}
+                {outfit.humidex !== null && outfit.humidex >= 25 && <li>Humidex {Math.round(outfit.humidex)}</li>}
                 {sun && (
                   <li>
                     Sunrise {clockTime(sun.sunrise)} · sunset {clockTime(sun.sunset)}
                   </li>
                 )}
               </ul>
-              <h3 className="dash-details__h3">Tips</h3>
-              <ul className="wear__notes">
-                {outfit.items
-                  .filter((item) => item.why)
-                  .map((item) => (
-                    <li key={item.id}>
-                      {item.label}: {item.why}.
-                    </li>
-                  ))}
-                {outfit.notes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
+              <p className="dash-details__small">
+                Clothes follow the air temperature; wind, rain and snow adjust them. Made for an easy 45–60 min run.
+              </p>
             </details>
           </>
         )}

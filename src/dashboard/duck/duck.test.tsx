@@ -1,32 +1,40 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { ITEM_LABEL, whatToWear, type ItemId, type OutfitInput } from '../../weather/outfit';
+import { whatToWear, type ItemId, type OutfitInput } from '../../weather/outfit';
 import { DressedDuck } from './DressedDuck';
-import { duckLayers, duckWeather, LAYER_ORDER } from './pieces';
+import { duckLayers, LAYER_ORDER } from './pieces';
 
 const pieceFiles = Object.keys(
   import.meta.glob(['../../assets/duck-outfit/*.webp', '!../../assets/duck-outfit/duck-base.webp']),
 ).map((p) => p.replace(/^.*\/(.+)\.webp$/, '$1'));
 
-const base = (feelsC: number, o: Partial<OutfitInput> = {}): OutfitInput => ({
-  tempC: feelsC,
-  feelsC,
+const base = (tempC: number, o: Partial<OutfitInput> = {}): OutfitInput => ({
+  tempC,
+  feelsC: tempC,
+  dewPointC: null,
   precipProb: 0,
   rainMm: 0,
   snowCm: 0,
+  precipMm: 0,
   snowDepthM: 0,
   code: 3,
   windKmh: 5,
   gustKmh: 10,
   light: 'day',
+  recent: null,
   ...o,
 });
 
 describe('dressed duck pieces', () => {
-  it('every outfit item has a drawing, except the singlet the base duck already wears', () => {
-    const items = Object.keys(ITEM_LABEL) as ItemId[];
-    expect(items.filter((id) => !pieceFiles.includes(id))).toEqual(['singlet']);
-    expect(items.filter((id) => !LAYER_ORDER.includes(id))).toEqual(['singlet']);
+  it('every piece the outfit can draw has a file and a place in the stack', () => {
+    const drawn = new Set<ItemId>();
+    for (let t = -30; t <= 32; t += 1) {
+      for (const extra of [{}, { windKmh: 30 }, { code: 63, rainMm: 2 }, { code: 73, snowCm: 1 }, { light: 'dark' as const }]) {
+        whatToWear(base(t, extra)).drawn.forEach((id) => drawn.add(id));
+      }
+    }
+    expect([...drawn].filter((id) => !pieceFiles.includes(id))).toEqual([]);
+    expect([...drawn].filter((id) => !LAYER_ORDER.includes(id))).toEqual([]);
     expect(pieceFiles.filter((f) => !LAYER_ORDER.includes(f as ItemId))).toEqual([]);
   });
 
@@ -44,20 +52,20 @@ describe('dressed duck pieces', () => {
   });
 
   it('falling weather: snow wins over rain, none otherwise', () => {
-    expect(duckWeather(['rain', 'wind'])).toBe('rain');
-    expect(duckWeather(['rain', 'snow', 'slippery'])).toBe('snow');
-    expect(duckWeather(['dark'])).toBeNull();
+    expect(whatToWear(base(8, { code: 63, rainMm: 2 })).effect).toBe('rain');
+    expect(whatToWear(base(1, { code: 73, snowCm: 1, rainMm: 0.5 })).effect).toBe('snow');
+    expect(whatToWear(base(8, { light: 'dark' })).effect).toBeNull();
   });
 });
 
 describe('<DressedDuck>', () => {
   it('draws the base duck plus one layer per item, hidden from assistive tech', () => {
     const outfit = whatToWear(base(-15, { light: 'dark' }));
-    const { container } = render(<DressedDuck items={outfit.items.map((i) => i.id)} weather={null} />);
+    const { container } = render(<DressedDuck items={outfit.drawn} weather={null} />);
     const duck = container.querySelector('.dressed-duck') as HTMLElement;
     expect(duck.getAttribute('aria-hidden')).toBe('true');
     const pieces = [...duck.querySelectorAll('img[data-piece]')].map((img) => img.getAttribute('data-piece'));
-    expect(pieces).toEqual(duckLayers(outfit.items.map((i) => i.id)));
+    expect(pieces).toEqual(duckLayers(outfit.drawn));
     expect(pieces).toEqual(expect.arrayContaining(['toque', 'mittens', 'reflective-vest', 'headlamp']));
     expect([...duck.querySelectorAll('img')].every((img) => img.getAttribute('alt') === '')).toBe(true);
     expect(duck.querySelector('.duck-weather')).toBeNull();
