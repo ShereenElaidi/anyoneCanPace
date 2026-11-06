@@ -13,9 +13,13 @@ import { saveStorySheet } from './scripts/vite/saveStorySheet';
  * so every asset URL needs the "/<repo>/" prefix. The repo name comes from
  * GITHUB_REPOSITORY in Actions, or from the local git remote. A
  * "<owner>.github.io" repository is served from the domain root instead.
+ * Cloudflare Pages (which sets CF_PAGES) serves from the root of its own
+ * domain, so it never takes a path from the git remote. BASE_PATH overrides
+ * everything, e.g. BASE_PATH=/pace/ to host the build under another site.
  */
 function pagesBase(): string {
   if (process.env.BASE_PATH) return process.env.BASE_PATH;
+  if (process.env.CF_PAGES) return '/';
   let repo = process.env.GITHUB_REPOSITORY?.split('/')[1];
   if (!repo) {
     try {
@@ -36,7 +40,8 @@ const base = pagesBase();
  * (its own path, so its service worker never touches the live app). It is
  * labelled "Beta" in the app, the home-screen name and the tab title.
  */
-const isBeta = /beta/i.test(base);
+// On a root-hosted beta (Cloudflare) the path can't say "beta", so BETA=1 does.
+const isBeta = process.env.BETA === '1' || /beta/i.test(base);
 const appName = isBeta ? 'AnyoneCanPace Beta' : 'AnyoneCanPace';
 
 /**

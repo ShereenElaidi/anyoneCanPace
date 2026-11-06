@@ -353,6 +353,26 @@ Deployment is automatic: `.github/workflows/deploy.yml` type-checks, tests, buil
 
 The site is served at `https://<owner>.github.io/<repo>/`. `vite.config.ts` reads the repository name (from `GITHUB_REPOSITORY` in Actions, or `git remote get-url origin` locally) and sets Vite's `base`, the manifest's `start_url`/`scope` and the service worker scope to match. A `<owner>.github.io` repository is served from `/` instead. You can override this with `BASE_PATH=/something/`.
 
+### Hosting on Cloudflare Pages (alternative to GitHub Pages)
+
+Why: a GitHub Pages project site lives under `<owner>.github.io`, so its address leads to the owner's personal site. Cloudflare Pages gives a neutral address (`<project>.pages.dev`), needs no visitor login, allows commercial use, and the free plan is enough.
+
+The build is the same. Differences are handled in `vite.config.ts` and `public/_headers`:
+- `CF_PAGES` (set by Cloudflare) makes `base` `/`. Anywhere else, `BASE_PATH=/pace/` builds for a sub-path.
+- `BETA=1` labels a build as Beta when the path can't say so.
+- `public/_headers` stops `sw.js`, the manifest and `index.html` being cached (so phones see updates), and caches hashed `/assets/*` for a year. GitHub Pages ignores this file.
+
+**Setup (dashboard, one project per site):**
+1. Cloudflare → Workers & Pages → Create → Pages → connect the GitHub repository.
+2. Build command `npm run build`, output directory `dist`.
+3. Environment variable `NODE_VERSION` = the version in `.nvmrc` (check the build log that it is used).
+4. Live project: production branch `main`. Beta project: connect the beta repository and also set `BETA` = `1`.
+5. Later, a custom domain or the community's subdomain (`pace.<their-domain>` as a CNAME to the project) is added under the project's Custom domains. No rebuild is needed.
+
+**Installed apps are tied to their address.** Moving from one address to another means people reinstall and lose their saved pace and the offline map copy, so settle the final address before many people install.
+
+After the new address works, turn GitHub Pages off in the old repositories (Settings → Pages) and remove `.github/workflows/deploy.yml`; the old address stops working then.
+
 **Note:** GitHub Pages on a private repository needs a paid GitHub plan (Pro, Team or Enterprise). On a free account, make the repository public to use Pages.
 
 ### Checking the live site
