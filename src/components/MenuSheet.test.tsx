@@ -3,8 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Status } from '../timer/engine';
 import { MenuSheet } from './MenuSheet';
 
-function sheet(status: Status, updateReady = true) {
-  const onUpdate = vi.fn();
+function sheet(status: Status) {
   const onReset = vi.fn();
   render(
     <MenuSheet
@@ -15,31 +14,15 @@ function sheet(status: Status, updateReady = true) {
       vibration
       vibrationSupported
       wakeLock="off"
-      updateReady={updateReady}
       onToggleSound={() => {}}
       onToggleVibration={() => {}}
       onReset={onReset}
-      onUpdate={onUpdate}
     />,
   );
-  return { onUpdate, onReset };
+  return { onReset };
 }
 
-describe('Settings: updates only when no session exists', () => {
-  it('ready (no session): offers the update', () => {
-    const { onUpdate } = sheet('ready');
-    fireEvent.click(screen.getByRole('button', { name: 'UPDATE TO NEW VERSION' }));
-    expect(onUpdate).toHaveBeenCalledOnce();
-  });
-
-  for (const status of ['active', 'paused'] as const) {
-    it(`${status}: no update button, just a note to end the session first`, () => {
-      sheet(status);
-      expect(screen.queryByRole('button', { name: 'UPDATE TO NEW VERSION' })).toBeNull();
-      expect(screen.getByText('A new version is ready. End the session to update.')).toBeTruthy();
-    });
-  }
-
+describe('Settings sheet', () => {
   it('paused: ending the session still needs two taps', () => {
     const { onReset } = sheet('paused');
     fireEvent.click(screen.getByRole('button', { name: 'END & RESET SESSION' }));
@@ -48,8 +31,11 @@ describe('Settings: updates only when no session exists', () => {
     expect(onReset).toHaveBeenCalledOnce();
   });
 
-  it('no update waiting: nothing about updates', () => {
-    sheet('paused', false);
-    expect(screen.queryByText(/new version/i)).toBeNull();
-  });
+  // Updates are offered only by the UpdateBanner, never in Settings.
+  for (const status of ['ready', 'active', 'paused'] as const) {
+    it(`${status}: nothing about updates`, () => {
+      sheet(status);
+      expect(screen.queryByText(/new version/i)).toBeNull();
+    });
+  }
 });
