@@ -1,32 +1,67 @@
 [
   {
-    "atM": 117,
+    "atM": 1223,
     "dir": "slight-right",
     "street": ""
   },
   {
-    "atM": 162,
+    "atM": 1285,
     "dir": "slight-left",
-    "street": "Piste cyclable des Berges"
-  },
-  {
-    "atM": 2750,
-    "dir": "u-turn",
     "street": ""
   },
   {
-    "atM": 2877,
+    "atM": 2607,
+    "dir": "right",
+    "street": ""
+  },
+  {
+    "atM": 2655,
     "dir": "left",
-    "street": "Piste cyclable des Berges"
+    "street": ""
   },
   {
-    "atM": 3029,
+    "atM": 2894,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 2936,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 3134,
+    "dir": "slight-right",
+    "street": ""
+  },
+  {
+    "atM": 3181,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 3372,
+    "dir": "slight-right",
+    "street": ""
+  },
+  {
+    "atM": 3439,
     "dir": "right",
     "street": ""
   },
   {
-    "atM": 5500,
-    "dir": "right",
+    "atM": 3466,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 3766,
+    "dir": "slight-right",
+    "street": ""
+  },
+  {
+    "atM": 5467,
+    "dir": "slight-right",
     "street": ""
   }
 ]
