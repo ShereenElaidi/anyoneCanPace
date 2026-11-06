@@ -13,10 +13,10 @@
 import { useEffect, useState } from 'react';
 
 /** Bump when public/maps/montreal.pmtiles is re-cut, so phones fetch the new file. */
-export const MAP_VERSION = '20261105-verdun';
+export const MAP_VERSION = '20261106-1st-bday';
 export const MAP_FILE = 'maps/montreal.pmtiles';
 /** Shown before the first download. Keep roughly in line with the real file. */
-export const MAP_SIZE_HINT_MB = 9.9;
+export const MAP_SIZE_HINT_MB = 13.2;
 
 /**
  * The live app (/anyoneCanPace/) and the beta (/anyoneCanPace-beta/) share one

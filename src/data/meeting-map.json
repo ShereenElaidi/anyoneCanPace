@@ -4,6 +4,6 @@
   "zoom": 15.6,
   "width": 960,
   "height": 520,
-  "mapVersion": "20261105-verdun",
+  "mapVersion": "20261106-1st-bday",
   "note": "Made by ?meeting-map (src/dev/meetingMap). Re-make it when src/data/event.json or the map changes."
 }

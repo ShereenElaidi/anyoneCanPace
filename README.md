@@ -157,7 +157,7 @@ Process for a new or changed route (the route editor, `?edit` on `npm run dev`, 
 
 ### The street map
 
-- **Vector tiles**: a self-hosted [PMTiles](https://protomaps.com/docs/pmtiles) file, `public/maps/montreal.pmtiles`. It is a 9.9 MB extract of south-central Montréal (about 8 × 10 km, from downtown and the Plateau's edge down the Lachine Canal past Angrignon, zoom 0–15) from the [Protomaps](https://protomaps.com) daily OpenStreetMap build, drawn with MapLibre GL JS in the brand colours.
+- **Vector tiles**: a self-hosted [PMTiles](https://protomaps.com/docs/pmtiles) file, `public/maps/montreal.pmtiles`. It is a 13.2 MB extract of south-central Montréal (about 8 × 13 km, from the Plateau and Mile End down the Lachine Canal past Angrignon, zoom 0–15) from the [Protomaps](https://protomaps.com) daily OpenStreetMap build, drawn with MapLibre GL JS in the brand colours.
 - **Labels**: street-name glyphs (Noto Sans Medium, SIL OFL) are self-hosted in `public/maps/fonts/` and precached, so labels work offline. No sprites are used.
 - **Re-cutting the map**: run `npm run map` after adding a route outside the current map. It downloads the `pmtiles` CLI into `.cache/tools/` if needed, and covers every route in `src/data/routes/` plus about 1.1 km around them. Use `npm run map -- --bbox=W,S,E,N` for a fixed area instead.
   - The whole island (`-73.98,45.40,-73.47,45.71`) is about **55 MB**, which is too big for a one-time download on a phone. Prefer a box around the routes.
@@ -266,7 +266,7 @@ The Route Library adds **MapLibre GL JS** and the **PMTiles** reader. They are l
 | MapLibre + PMTiles chunk (lazy) | 1,088 kB + 71 kB CSS | 298 kB |
 | MapLibre worker (lazy) | 519 kB | |
 | **Service worker precache, total** | **52 files, about 2.8 MB** | |
-| Street map file (saved on demand, not precached) | 9.9 MB | |
+| Street map file (saved on demand, not precached) | 13.2 MB | |
 
 The map libraries sit in their own vendor chunk (`codeSplitting` group in `vite.config.ts`), so app updates that don't touch them don't download them again.
 
