@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
-import { setSessionBusy, SW_OPTIONS } from './lib/swUpdate';
+import { setSessionBusy } from './lib/swUpdate';
+import { useAppUpdate } from './lib/appUpdate';
+import { UpdateBanner } from './components/UpdateBanner';
 import { EditPanel } from './components/EditPanel';
 import { MenuSheet } from './components/MenuSheet';
 import { TimerDisplay } from './components/TimerDisplay';
@@ -68,10 +69,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
     return () => setSessionBusy('timer', false);
   }, [status]);
 
-  const {
-    needRefresh: [updateReady],
-    updateServiceWorker,
-  } = useRegisterSW(SW_OPTIONS);
+  const { ready: updateReady, update } = useAppUpdate();
 
   const setDuration = (phase: Phase, seconds: number) =>
     setPrefs((p) => ({ ...p, [phase]: clampSeconds(seconds) }));
@@ -116,6 +114,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
       </header>
 
       <main className="main">
+        <UpdateBanner />
         <TimerDisplay state={timer.state} remainingMs={timer.remainingMs} />
 
         <div className="controls">
@@ -182,7 +181,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
         }}
         onToggleVibration={() => setPrefs((p) => ({ ...p, vibration: !p.vibration }))}
         onReset={timer.reset}
-        onUpdate={() => void updateServiceWorker(true)}
+        onUpdate={update}
         onSwitchMode={onSwitchMode}
       />
     </div>

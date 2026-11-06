@@ -1,7 +1,6 @@
+import { UpdateBanner } from '../components/UpdateBanner';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { loadRoutePace, saveRoutePace } from '../lib/prefs';
-import { SW_OPTIONS } from '../lib/swUpdate';
 import { loadRoute, manifest, type LoadedRoute } from './data';
 import { clampPace, PACE, type RouteFilter } from './describe';
 import { FollowView } from './FollowView';
@@ -42,11 +41,6 @@ export default function SixKMode({ onSwitchMode }: Props) {
   }, [view.name]);
   const viewRef = useRef(view);
   viewRef.current = view;
-
-  const {
-    needRefresh: [updateReady],
-    updateServiceWorker,
-  } = useRegisterSW(SW_OPTIONS);
 
   const id = view.name === 'library' ? null : view.id;
   useEffect(() => {
@@ -122,11 +116,7 @@ export default function SixKMode({ onSwitchMode }: Props) {
       </header>
 
       <main className="main">
-        {updateReady && (
-          <button type="button" className="btn btn--secondary btn--block" onClick={() => void updateServiceWorker(true)}>
-            UPDATE TO NEW VERSION
-          </button>
-        )}
+        <UpdateBanner />
         {view.name === 'library' && (
           <>
             <Library onOpen={(routeId) => go({ name: 'route', id: routeId })} pace={pace} filter={filter} onFilter={setFilter} />
