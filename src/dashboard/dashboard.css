@@ -459,3 +459,39 @@
   min-height: 44px;
   font: inherit;
 }
+
+/* ---------- Sunday story ---------- */
+
+.story-sheet__meta,
+.story-sheet__hint {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.story-sheet__preview {
+  display: flex;
+  justify-content: center;
+}
+
+.story-sheet__preview img {
+  width: auto;
+  max-width: 100%;
+  max-height: 58dvh;
+  aspect-ratio: 9 / 16;
+  border: 2px solid var(--asphalt);
+  border-radius: 12px;
+  /* Long-press to save on iPhone. */
+  -webkit-touch-callout: default;
+}
+
+.story-sheet__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.story-sheet__actions .btn {
+  flex: 1 1 auto;
+  text-align: center;
+  text-decoration: none;
+}

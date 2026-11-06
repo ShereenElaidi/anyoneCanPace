@@ -189,7 +189,7 @@ export default function DashboardMode({ onSwitchMode }: Props) {
           </>
         )}
 
-        <SundayRun now={now} />
+        <SundayRun now={now} forecast={forecast} />
         {notices.length === 0 && (
           <p className="dash-clear">
             <span aria-hidden="true">✓ </span>No route advisories. <span className="dash-clear__checked">{lastCheckedText(advisories.lastChecked)}</span>

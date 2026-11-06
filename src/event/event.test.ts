@@ -3,6 +3,7 @@ import { EVENT, mapsLink, montrealTime, nextRun, validateEvent, type RunEvent } 
 import meetingMap from '../data/meeting-map.json';
 import mapImage from '../assets/story/meeting-map.webp?inline';
 import { MAP_VERSION } from '../sixk/map/offlineMap';
+import { MAP_PICTURE } from '../story/layout';
 
 describe('event file', () => {
   it('is valid: Sunday, meet 10:00, run 10:15, Café Tranquille', () => {
@@ -67,6 +68,6 @@ describe('meeting-point picture for the story', () => {
     const bytes = atob(mapImage.replace(/^data:[^,]*,/, ''));
     expect(bytes.slice(0, 4) + bytes.slice(8, 12)).toBe('RIFFWEBP');
     expect(bytes.length).toBeLessThan(200 * 1024);
-    expect([meetingMap.width, meetingMap.height]).toEqual([960, 640]);
+    expect([meetingMap.width, meetingMap.height]).toEqual([MAP_PICTURE.width, MAP_PICTURE.height]);
   });
 });

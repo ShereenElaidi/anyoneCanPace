@@ -1,19 +1,40 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { EVENT, mapsLink, nextRun } from '../event/event';
-import { MONTREAL } from '../weather/forecast';
+import { MONTREAL, type Forecast } from '../weather/forecast';
+import { makeSnapshot, type StorySnapshot } from '../story/snapshot';
 import { clockTime } from './format';
+
+/** The story's drawing code only loads when someone makes a story. */
+const StoryDialog = lazy(() => import('../story/StoryDialog'));
 
 const dateFmt = new Intl.DateTimeFormat('en-CA', { timeZone: MONTREAL.timeZone, weekday: 'long', month: 'long', day: 'numeric' });
 
 /**
- * When and where the weekly run meets (src/data/event.json), with the map
- * link to paste into an Instagram Link sticker.
+ * When and where the weekly run meets (src/data/event.json), the map link to
+ * paste into an Instagram Link sticker, and MAKE STORY.
  */
-export function SundayRun({ now }: { now: number }) {
+export function SundayRun({ now, forecast }: { now: number; forecast: Forecast | null }) {
   const run = nextRun(now);
   const link = mapsLink();
   const place = EVENT.place;
   const [copy, setCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [story, setStory] = useState<StorySnapshot | null>(null);
+  const [storyProblem, setStoryProblem] = useState('');
+
+  /** Freeze the forecast, outfit and event right now; the dialog draws only this. */
+  function makeStory() {
+    if (!forecast) {
+      setStoryProblem('No forecast yet. Connect to the internet and REFRESH.');
+      return;
+    }
+    const r = makeSnapshot(forecast, Date.now());
+    if (r.ok) {
+      setStoryProblem('');
+      setStory(r.snapshot);
+    } else {
+      setStoryProblem(`The forecast doesn’t reach ${dateFmt.format(r.run.startAt)} yet. It covers about 3 days: try from Friday.`);
+    }
+  }
 
   async function copyLink() {
     try {
@@ -43,6 +64,14 @@ export function SundayRun({ now }: { now: number }) {
           OPEN MAP
         </a>
       </div>
+      <div className="dash-run__actions">
+        <button type="button" className="btn btn--primary btn--small" onClick={makeStory}>
+          MAKE STORY
+        </button>
+      </div>
+      <p className="dash-run__copied" aria-live="polite">
+        {storyProblem}
+      </p>
       <p className="dash-run__copied" aria-live="polite">
         {copy === 'copied' && 'Map link copied. Paste it into a Link sticker.'}
       </p>
@@ -51,6 +80,11 @@ export function SundayRun({ now }: { now: number }) {
           Couldn’t copy. Press and hold to copy the link:
           <input type="text" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
         </label>
+      )}
+      {story && (
+        <Suspense fallback={null}>
+          <StoryDialog snapshot={story} onRemake={makeStory} onClose={() => setStory(null)} />
+        </Suspense>
       )}
     </section>
   );

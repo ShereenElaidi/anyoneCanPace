@@ -14,11 +14,12 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { FetchSource, PMTiles, Protocol } from 'pmtiles';
 import { EVENT } from '../../event/event';
+import { MAP_PICTURE } from '../../story/layout';
 import { BRAND, buildStyle } from '../../sixk/map/mapStyle';
 import { MAP_VERSION, mapUrl } from '../../sixk/map/offlineMap';
 
-/** Output size (px). The story shows it 960 px wide. */
-const OUT = { width: 960, height: 640 } as const;
+/** Output size (px): the story's map slot (src/story/layout.ts). */
+const OUT = MAP_PICTURE;
 const PIXEL_RATIO = 2;
 const ZOOM = 15.6;
 const FONT = '"JetBrains Mono", ui-monospace, monospace';
