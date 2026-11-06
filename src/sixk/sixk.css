@@ -1014,3 +1014,8 @@
   background: var(--paper);
   font-size: 0.88rem;
 }
+
+/* "Testing routes" sits apart from the category chips: it adds to whichever one is picked. */
+.lib-settings__testing {
+  margin-top: 12px;
+}

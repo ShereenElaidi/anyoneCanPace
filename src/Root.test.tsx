@@ -263,10 +263,11 @@ describe('Route Library', () => {
     tap('Faster: 15 seconds less per km');
     expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~37 min');
 
-    // Only filters that match a route are offered.
-    for (const name of ['All', 'Shape runs', 'Under 5 km', 'Flat', 'Waterfront', '10 km+']) {
+    // Only filters that match a shown route are offered: "10 km+" is only Canal Test, a testing route.
+    for (const name of ['All', 'Shape runs', 'Under 5 km', 'Flat', 'Waterfront']) {
       expect(screen.getByRole('button', { name })).toBeTruthy();
     }
+    expect(screen.queryByRole('button', { name: '10 km+' })).toBeNull();
     tap('Flat');
     expect(screen.getByRole('button', { name: 'Flat' }).getAttribute('aria-pressed')).toBe('true');
     tap('DONE');
@@ -276,17 +277,47 @@ describe('Route Library', () => {
     tap('Show all');
     expect(screen.getByRole('button', { name: /Sample Loop/ })).toBeTruthy();
 
-    // Filter again, then come back another day: every route shows, at the saved pace.
+    // Filter again and show testing routes, then come back another day:
+    // every route except testing ones shows, at the saved pace.
     tap('Library settings');
     tap('Shape runs');
+    tap('Testing routes');
     tap('DONE');
-    expect(screen.queryByRole('button', { name: /Canal Test/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Sample Loop/ })).toBeNull();
     first.unmount();
     render(<Root />);
     tap(/^Route Library/);
     await screen.findByRole('heading', { name: 'Route Library' });
-    expect(screen.getByRole('button', { name: /Canal Test/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Sample Loop/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /1st bday/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Canal Test/ })).toBeNull();
     expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~37 min');
+  });
+
+  it('testing routes are hidden until "Testing routes" is turned on in the menu', async () => {
+    await openLibrary();
+    // Off by default: no testing routes.
+    expect(screen.queryByRole('button', { name: /Canal Test/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Verdun with this/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Pi Day/ })).toBeTruthy();
+
+    tap('Library settings');
+    const testing = screen.getByRole('button', { name: 'Testing routes' });
+    expect(testing.getAttribute('aria-pressed')).toBe('false');
+    tap('Testing routes');
+    expect(testing.getAttribute('aria-pressed')).toBe('true');
+    // Now "10 km+" matches a shown route (Canal Test).
+    tap('10 km+');
+    tap('DONE');
+    expect(screen.getByRole('button', { name: /Canal Test/ }).textContent).toContain('Testing');
+    expect(screen.queryByRole('button', { name: /Pi Day/ })).toBeNull();
+    expect(screen.getByText(/Testing routes shown/)).toBeTruthy();
+
+    // Hiding them again also drops "10 km+", which no longer matches anything: back to All.
+    tap('Hide them');
+    expect(screen.queryByRole('button', { name: /Canal Test/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Pi Day/ })).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('route page: stats, map, elevation, turns, empty advisories, start button', async () => {

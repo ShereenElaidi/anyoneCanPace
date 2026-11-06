@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadRoutePace, saveRoutePace } from '../lib/prefs';
 import { withoutRouteParam } from '../lib/routeLink';
 import { loadRoute, manifest, type LoadedRoute } from './data';
-import { clampPace, PACE, type RouteFilter } from './describe';
+import { availableFilters, clampPace, PACE, visibleRoutes, type RouteFilter } from './describe';
 import { FollowView } from './FollowView';
 import { Library } from './Library';
 import { GearIcon } from '../components/GearIcon';
@@ -40,6 +40,13 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pace, setPace] = useState(() => loadRoutePace(clampPace) ?? PACE.default);
   const [filter, setFilter] = useState<RouteFilter>('all');
+  // Routes tagged "Testing" stay hidden unless turned on, also for this visit only.
+  const [showTesting, setShowTesting] = useState(false);
+  const changeShowTesting = useCallback((show: boolean) => {
+    setShowTesting(show);
+    // Hiding them can leave a filter that only matched testing routes ("10 km+"): back to All.
+    if (!show) setFilter((f) => (availableFilters(visibleRoutes(manifest.routes, false)).some((a) => a.id === f) ? f : 'all'));
+  }, []);
   const changePace = useCallback((p: number) => {
     setPace(p);
     saveRoutePace(p);
@@ -146,7 +153,14 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
                 The shared route isn’t in this version of the app. It may have been renamed or removed: pick one below.
               </p>
             )}
-            <Library onOpen={(routeId) => go({ name: 'route', id: routeId })} pace={pace} filter={filter} onFilter={setFilter} />
+            <Library
+              onOpen={(routeId) => go({ name: 'route', id: routeId })}
+              pace={pace}
+              filter={filter}
+              onFilter={setFilter}
+              showTesting={showTesting}
+              onShowTesting={changeShowTesting}
+            />
             <LibrarySettings
               open={settingsOpen}
               onClose={() => setSettingsOpen(false)}
@@ -155,6 +169,8 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
               onPace={changePace}
               filter={filter}
               onFilter={setFilter}
+              showTesting={showTesting}
+              onShowTesting={changeShowTesting}
             />
           </>
         )}

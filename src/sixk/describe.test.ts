@@ -105,7 +105,11 @@ describe('tag list', () => {
     expect(validateTagList(ROUTE_TAGS)).toEqual([]);
   });
 
-  const base = { 'shape-run': { label: 'Shape run', tone: 'green' }, waterfront: { label: 'Waterfront', tone: 'gold' } };
+  const base = {
+    'shape-run': { label: 'Shape run', tone: 'green' },
+    waterfront: { label: 'Waterfront', tone: 'gold' },
+    testing: { label: 'Testing', tone: 'gold' },
+  };
 
   it('accepts a new tag with a known tone', () => {
     expect(validateTagList({ ...base, 'hill-repeats': { label: 'Hill repeats', tone: 'blue' } })).toEqual([]);
@@ -129,6 +133,7 @@ describe('tag list', () => {
   it('keeps the tags the filters depend on', () => {
     expect(validateTagList({ waterfront: base.waterfront })).toEqual([
       'tag "shape-run" is used by a "Show routes" filter and can\'t be removed',
+      'tag "testing" is used by a "Show routes" filter and can\'t be removed',
     ]);
   });
 });

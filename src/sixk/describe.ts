@@ -24,8 +24,8 @@ export interface TagDef {
  */
 export const ROUTE_TAGS = routeTagsJson as Record<string, TagDef>;
 
-/** Tags the "Show routes" filters depend on (`matchesFilter`): they can't be removed from the list. */
-export const FILTER_TAGS = ['shape-run', 'waterfront'] as const;
+/** Tags the "Show routes" filters depend on (`matchesFilter`, `visibleRoutes`): they can't be removed from the list. */
+export const FILTER_TAGS = ['shape-run', 'waterfront', 'testing'] as const;
 
 export const TAG_LABEL_MAX = 24;
 const TAG_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -179,6 +179,15 @@ export function matchesFilter(r: RouteSummary, f: RouteFilter): boolean {
   }
 }
 
-/** The filters worth offering: "All", plus each one that matches at least one route. */
+/** Routes still being tried out carry this tag; the library hides them unless asked. */
+export const TESTING_TAG = 'testing';
+
+export const isTestingRoute = (r: RouteSummary) => !!r.tags?.includes(TESTING_TAG);
+
+/** The routes the library lists: testing routes only when "Testing routes" is on. */
+export const visibleRoutes = <R extends RouteSummary>(routes: R[], showTesting: boolean): R[] =>
+  showTesting ? routes : routes.filter((r) => !isTestingRoute(r));
+
+/** The filters worth offering: "All", plus each one that matches at least one (visible) route. */
 export const availableFilters = (routes: RouteSummary[]) =>
   FILTERS.filter((f) => f.id === 'all' || routes.some((r) => matchesFilter(r, f.id)));

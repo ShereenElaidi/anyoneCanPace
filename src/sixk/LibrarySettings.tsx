@@ -8,7 +8,9 @@ import {
   PACE,
   PACE_PRESETS,
   spokenPace,
+  isTestingRoute,
   type RouteFilter,
+  visibleRoutes,
 } from './describe';
 
 interface Props {
@@ -19,10 +21,13 @@ interface Props {
   onPace: (secondsPerKm: number) => void;
   filter: RouteFilter;
   onFilter: (f: RouteFilter) => void;
+  /** Routes tagged "Testing": off by default, for this visit only. */
+  showTesting: boolean;
+  onShowTesting: (show: boolean) => void;
 }
 
 /** Route Library settings: the pace behind the time estimates (saved) and which routes to show (this visit only). */
-export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, onFilter }: Props) {
+export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, onFilter, showTesting, onShowTesting }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -38,7 +43,8 @@ export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, o
   }, [open]);
 
   const example = routes[0];
-  const filters = availableFilters(routes);
+  const filters = availableFilters(visibleRoutes(routes, showTesting));
+  const hasTesting = routes.some(isTestingRoute);
 
   return (
     <dialog
@@ -113,7 +119,7 @@ export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, o
         <section className="lib-settings__group" aria-labelledby="show-label">
           <p id="show-label" className="lib-settings__label">
             Show routes
-            <span className="lib-settings__sub">Just for this visit. Next time you see them all.</span>
+            <span className="lib-settings__sub">Just for this visit. Next time you see them all, except testing routes.</span>
           </p>
           <div className="chips" role="group" aria-labelledby="show-label">
             {filters.map((f) => (
@@ -122,6 +128,16 @@ export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, o
               </button>
             ))}
           </div>
+          {hasTesting && (
+            <>
+              <div className="chips lib-settings__testing">
+                <button type="button" className="chip" aria-pressed={showTesting} onClick={() => onShowTesting(!showTesting)}>
+                  Testing routes
+                </button>
+              </div>
+              <p className="lib-settings__hint">Routes still being tried out. Hidden unless this is on.</p>
+            </>
+          )}
         </section>
 
         <button type="button" className="btn btn--primary btn--block" onClick={onClose}>

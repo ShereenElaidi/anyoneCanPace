@@ -4,7 +4,7 @@ import { formatKm } from '../nav/banner';
 import type { RouteKind, RouteSummary } from '../nav/types';
 import { verificationText } from '../nav/verification';
 import { manifest } from './data';
-import { estimateTime, FILTERS, KIND_WORD, matchesFilter, ROUTE_TAGS, terrainText, type RouteFilter } from './describe';
+import { estimateTime, FILTERS, KIND_WORD, matchesFilter, ROUTE_TAGS, terrainText, visibleRoutes, type RouteFilter } from './describe';
 import { mapStatusText, saveMap, shouldAutoSave, useOfflineMap, type MapStatus } from './map/offlineMap';
 
 export const KIND_LABEL: Record<RouteKind, string> = {
@@ -19,14 +19,17 @@ interface Props {
   pace: number;
   filter: RouteFilter;
   onFilter: (f: RouteFilter) => void;
+  /** Also list routes tagged "Testing" (off by default). */
+  showTesting: boolean;
+  onShowTesting: (show: boolean) => void;
 }
 
-export function Library({ onOpen, pace, filter, onFilter }: Props) {
+export function Library({ onOpen, pace, filter, onFilter, showTesting, onShowTesting }: Props) {
   const status = useOfflineMap();
   useMapAutoSave(status);
   // Saved and current: a quiet line at the bottom. Anything else needs attention, at the top.
   const mapFine = status.state === 'saved' && !status.outdated;
-  const routes = manifest.routes.filter((r) => matchesFilter(r, filter));
+  const routes = visibleRoutes(manifest.routes, showTesting).filter((r) => matchesFilter(r, filter));
   const filterLabel = FILTERS.find((f) => f.id === filter)?.label ?? '';
 
   return (
@@ -48,6 +51,14 @@ export function Library({ onOpen, pace, filter, onFilter }: Props) {
             Showing <b>{filterLabel.toLowerCase()}</b> routes ·{' '}
             <button type="button" className="link-btn" onClick={() => onFilter('all')}>
               Show all
+            </button>
+          </p>
+        )}
+        {showTesting && (
+          <p className="lib-filter" role="status">
+            Testing routes shown ·{' '}
+            <button type="button" className="link-btn" onClick={() => onShowTesting(false)}>
+              Hide them
             </button>
           </p>
         )}
