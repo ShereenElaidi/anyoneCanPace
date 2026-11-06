@@ -69,8 +69,9 @@ describe('Stooopid Sunday Dashboard', () => {
     expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain('Sunday’s outfit shows up Wednesday.');
     const wear = screen.getByRole('region', { name: 'What to wear then' });
     expect(wear.querySelector('.wear__headline')?.textContent).toMatch(/\.$/);
-    // Air temperature first (it decides the clothes), then feels-like, sky, rain and wind on one line.
-    expect(wear.querySelector('.wear__weather')?.textContent).toMatch(/^Air -?\d+\u00a0°C · feels -?\d+\u00a0°C.+ · \d+\u00a0% (rain|rain or snow) · wind \d+\u00a0km\/h$/);
+    // Feels-like on the sticker; air temperature (it decides the clothes), sky, rain and wind on one line.
+    expect(wear.querySelector('.duck-feels')?.textContent).toMatch(/^Feels like -?\d+\u00a0°C$/);
+    expect(wear.querySelector('.wear__weather')?.textContent).toMatch(/^Air -?\d+\u00a0°C · .+ · \d+\u00a0% (rain|rain or snow) · wind \d+\u00a0km\/h$/);
     const details = document.querySelector('details.dash-details') as HTMLDetailsElement;
     expect(details.open).toBe(false);
     expect(details.querySelector('summary')?.textContent).toBe('Weather details');

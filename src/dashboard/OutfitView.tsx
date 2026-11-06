@@ -4,7 +4,7 @@ import { DressedDuck } from './duck/DressedDuck';
 import { clockTime, degrees } from './format';
 
 /**
- * The dressed duck, the outfit in words, one line of weather, and the
+ * The dressed duck with its feels-like sticker, the outfit in words, one line of weather, and the
  * weather numbers folded away. Used by the Sunday run card and by
  * "Running another time?". `label` names the region ("What to wear on Sunday").
  */
@@ -15,13 +15,14 @@ export function OutfitView(props: { label: string; detailsTitle: string; outfit:
       <div className="duck-slot">
         {/* Decorative: the text below carries the meaning. */}
         <DressedDuck items={outfit.drawn} weather={outfit.effect} />
+        <p className="duck-feels">
+          <span>Feels like</span> <strong>{degrees(hour.feelsC)}</strong>
+        </p>
       </div>
       <p className="wear__headline">{outfit.headline}</p>
       {extras(outfit) && <p className="wear__also">Also: {extras(outfit)}</p>}
       <p className="wear__weather">
-        Air <strong>{degrees(hour.tempC)}</strong> · feels {degrees(hour.feelsC)}
-        <br />
-        {weatherLine(hour)}
+        Air <strong>{degrees(hour.tempC)}</strong> · {weatherLine(hour)}
       </p>
       {outfit.optional.length > 0 && (
         <ul className="wear__optional">
