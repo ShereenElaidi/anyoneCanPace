@@ -13,6 +13,7 @@ import {
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { FetchSource, PMTiles, Protocol, type RangeResponse, type Source } from 'pmtiles';
+import { boundsCentredOn, FOLLOW_MAX_ZOOM, offRouteZoom } from './camera';
 import duckImg from '../../assets/duck-runner.webp';
 import lostDuckImg from '../../assets/duck-runner-lost.webp';
 import { offsetPoint } from '../../nav/geo';
@@ -238,19 +239,15 @@ export default function RouteMap(props: RouteMapProps) {
       const duration = reducedMotion() || first ? 0 : 600;
       const back = duck.routePoint;
       if (duck.lost && back) {
-        // Off route: keep both the duck (you) and your place on the route in view.
-        map.fitBounds(
-          [
-            [Math.min(duck.lon, back.lon), Math.min(duck.lat, back.lat)],
-            [Math.max(duck.lon, back.lon), Math.max(duck.lat, back.lat)],
-          ],
-          { padding: 60, maxZoom: 16.5, duration },
-        );
+        // Off route: you stay in the middle; zoom out to show your place on the route too,
+        // but only so far. Further away, the banner gives the direction back.
+        const fit = map.cameraForBounds(boundsCentredOn(duck, back), { padding: 60 });
+        map.easeTo({ center: [duck.lon, duck.lat], zoom: offRouteZoom(fit?.zoom), duration });
         return;
       }
       map.easeTo({
         center: [duck.lon, duck.lat],
-        zoom: first ? 16.5 : map.getZoom(),
+        zoom: first ? FOLLOW_MAX_ZOOM : map.getZoom(),
         duration,
       });
     }
