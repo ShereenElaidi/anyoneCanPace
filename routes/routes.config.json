@@ -30,16 +30,6 @@
     }
   },
   {
-    "id": "back-to-the-burgz-test",
-    "gpx": "back-to-the-burgz-test.gpx",
-    "name": "Back to the Burgz (test)",
-    "source": {
-      "name": "On The Go Map",
-      "url": "https://onthegomap.com",
-      "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
-    }
-  },
-  {
     "id": "verdun-with-this-test",
     "gpx": "verdun-with-this-test.gpx",
     "name": "Verdun with this (Test)",
@@ -47,6 +37,16 @@
       "name": "On The Go Map",
       "url": "https://onthegomap.com",
       "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
+    }
+  },
+  {
+    "id": "1st-bday-of-the-stooopidverse",
+    "gpx": "1st-bday-of-the-stooopidverse.gpx",
+    "name": "1st bday of the StooopidVerse",
+    "source": {
+      "name": "On The Go Map",
+      "url": "https://onthegomap.com",
+      "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors · drawn by RN, LD"
     }
   }
 ]

@@ -57,24 +57,6 @@
       ]
     },
     {
-      "id": "back-to-the-burgz-test",
-      "name": "Back to the Burgz (test)",
-      "kind": "point-to-point",
-      "stats": {
-        "distanceM": 2159,
-        "gainM": 5,
-        "lossM": 29,
-        "minEleM": 23,
-        "maxEleM": 48
-      },
-      "outline": "M27.8 6.0L27.6 6.3L28.0 6.7L56.5 26.3L59.0 29.3L73.6 39.4L73.3 40.0L72.7 39.9L31.9 86.5L26.6 92.7L27.0 93.3L26.4 94.0",
-      "verification": "unverified",
-      "place": "Downtown",
-      "tags": [
-        "testing"
-      ]
-    },
-    {
       "id": "verdun-with-this-test",
       "name": "Verdun with this (Test)",
       "kind": "loop",
@@ -91,6 +73,24 @@
       "tags": [
         "waterfront",
         "testing"
+      ]
+    },
+    {
+      "id": "1st-bday-of-the-stooopidverse",
+      "name": "1st bday of the StooopidVerse",
+      "kind": "point-to-point",
+      "stats": {
+        "distanceM": 6757,
+        "gainM": 31,
+        "lossM": 30,
+        "minEleM": 29,
+        "maxEleM": 57
+      },
+      "outline": "M84.5 94.0L76.5 88.9L77.9 83.8L83.6 59.3L90.8 41.7L82.1 35.9L81.4 39.5L79.4 45.8L81.2 47.0L79.4 45.8L78.9 47.3L78.4 47.0L79.0 45.4L78.1 48.1L34.9 19.9L28.6 15.9L27.0 15.1L25.7 15.0L11.8 6.0L11.2 6.0L9.2 9.6L9.3 11.4L10.4 15.5L11.1 16.0L10.8 16.8L11.6 17.7L12.7 19.9L14.5 26.2L18.3 28.3L21.2 23.8L56.5 46.8L57.0 47.0L57.4 46.7L74.9 58.2L67.3 82.3L76.2 88.3",
+      "verification": "desk-reviewed",
+      "place": "Stooopid HQ",
+      "tags": [
+        "shape-run"
       ]
     }
   ]

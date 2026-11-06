@@ -4,7 +4,7 @@ import type { RouteData, RouteManifest } from './types';
 import { allRoutes } from './testing/replay';
 import { validateVerification, verificationText } from './verification';
 
-const TODAY = '2026-11-05';
+const TODAY = '2026-11-06';
 const manifest = manifestJson as unknown as RouteManifest;
 
 describe('route verification status', () => {
@@ -22,6 +22,7 @@ describe('route verification status', () => {
       'sample-loop': true, // field-verified on a crew run, 2026-11-05
       'canal-test': true, // field-verified on a crew run, 2026-11-05
       'verdun-with-this-test': true, // desk-reviewed by SE, 2026-11-05
+      '1st-bday-of-the-stooopidverse': true, // desk-reviewed by SE, 2026-11-06
     };
     for (const { data } of allRoutes()) {
       if (!reviewed[data.id]) expect((data as RouteData).verification.status, data.id).toBe('unverified');

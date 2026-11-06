@@ -1,8 +1,8 @@
 {
   "id": "verdun-with-this-test",
   "note": "Automated suggestions for manual review. Nothing here has been verified.",
-  "startStreet": "",
-  "startNote": "No named street runs along the first 60 m; check where the route starts.",
+  "startStreet": "Piste cyclable des Berges",
+  "startNote": "",
   "turns": [
     {
       "atM": 1223,
@@ -18,7 +18,7 @@
       "decision": "retained",
       "reason": "50° change of direction; no street name found after the turn",
       "needsReview": true,
-      "streetBefore": "",
+      "streetBefore": "Piste cyclable des Berges",
       "streetAfter": ""
     },
     {
@@ -33,10 +33,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-50° change of direction; no street name found after the turn",
-      "needsReview": true,
+      "reason": "-50° change of direction",
+      "needsReview": false,
       "streetBefore": "",
-      "streetAfter": ""
+      "streetAfter": "Piste cyclable des Berges"
     },
     {
       "atM": 2607,
@@ -50,10 +50,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "63° change of direction; no street name found after the turn",
+      "reason": "63° change of direction; same street before and after: a bend in the road or a turn that stays on it",
       "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "streetBefore": "Piste cyclable des Berges",
+      "streetAfter": "Piste cyclable des Berges"
     },
     {
       "atM": 2655,
@@ -67,10 +67,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-64° change of direction; no street name found after the turn",
+      "reason": "-64° change of direction; same street before and after: a bend in the road or a turn that stays on it",
       "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "streetBefore": "Piste cyclable des Berges",
+      "streetAfter": "Piste cyclable des Berges"
     },
     {
       "atM": 2894,
@@ -86,7 +86,7 @@
       "decision": "retained",
       "reason": "-83° change of direction; no street name found after the turn",
       "needsReview": true,
-      "streetBefore": "",
+      "streetBefore": "Piste cyclable des Berges",
       "streetAfter": ""
     },
     {
@@ -154,7 +154,7 @@
       "decision": "retained",
       "reason": "44° change of direction; no street name found after the turn",
       "needsReview": true,
-      "streetBefore": "",
+      "streetBefore": "Piste cyclable des Berges",
       "streetAfter": ""
     },
     {

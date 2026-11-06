@@ -1,0 +1,67 @@
+[
+  {
+    "atM": 213,
+    "dir": "right",
+    "street": ""
+  },
+  {
+    "atM": 1320,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 1554,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 1783,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 1833,
+    "dir": "u-turn",
+    "street": ""
+  },
+  {
+    "atM": 1883,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 2032,
+    "dir": "right",
+    "street": ""
+  },
+  {
+    "atM": 3804,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 4300,
+    "dir": "slight-left",
+    "street": ""
+  },
+  {
+    "atM": 4397,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 4518,
+    "dir": "right",
+    "street": ""
+  },
+  {
+    "atM": 5951,
+    "dir": "right",
+    "street": ""
+  },
+  {
+    "atM": 6517,
+    "dir": "left",
+    "street": ""
+  }
+]

@@ -9,19 +9,19 @@ Geometry unchanged, so the app keeps the turns in `src/data/routes/verdun-with-t
 
 ## Turns
 
-Start street: *unknown* (No named street runs along the first 60 m; check where the route starts.)
+Start street: Piste cyclable des Berges
 
 | km | Suggestion | Angle | Street before | Street after | Decision | Review? | Reason |
 | --: | --- | --: | --- | --- | --- | :-: | --- |
-| 1.22 | Bear right | +50° | *unknown* | *unknown* | retained | yes | 50° change of direction; no street name found after the turn |
-| 1.28 | Bear left | -50° | *unknown* | *unknown* | retained | yes | -50° change of direction; no street name found after the turn |
-| 2.61 | Right | +63° | *unknown* | *unknown* | retained | yes | 63° change of direction; no street name found after the turn |
-| 2.65 | Left | -64° | *unknown* | *unknown* | retained | yes | -64° change of direction; no street name found after the turn |
-| 2.89 | Left | -83° | *unknown* | *unknown* | retained | yes | -83° change of direction; no street name found after the turn |
+| 1.22 | Bear right | +50° | Piste cyclable des Berges | *unknown* | retained | yes | 50° change of direction; no street name found after the turn |
+| 1.28 | Bear left | -50° | *unknown* | Piste cyclable des Berges | retained |  | -50° change of direction |
+| 2.61 | Right | +63° | Piste cyclable des Berges | Piste cyclable des Berges | retained | yes | 63° change of direction; same street before and after: a bend in the road or a turn that stays on it |
+| 2.65 | Left | -64° | Piste cyclable des Berges | Piste cyclable des Berges | retained | yes | -64° change of direction; same street before and after: a bend in the road or a turn that stays on it |
+| 2.89 | Left | -83° | Piste cyclable des Berges | *unknown* | retained | yes | -83° change of direction; no street name found after the turn |
 | 2.94 | Left | -91° | *unknown* | *unknown* | retained | yes | -91° change of direction; no street name found after the turn |
 | 3.13 | Bear right | +47° | *unknown* | *unknown* | retained | yes | 47° change of direction; no street name found after the turn |
 | 3.18 | Left | -72° | *unknown* | *unknown* | retained | yes | -72° change of direction; no street name found after the turn |
-| 3.37 | Bear right | +44° | *unknown* | *unknown* | retained | yes | 44° change of direction; no street name found after the turn |
+| 3.37 | Bear right | +44° | Piste cyclable des Berges | *unknown* | retained | yes | 44° change of direction; no street name found after the turn |
 | 3.44 | Right | +61° | *unknown* | *unknown* | retained | yes | first half of a dogleg: 2 heading changes within 27 m (net -6°), and the exit is 24 m to the side of the approach. The app may announce both close together; no street name found after the turn |
 | 3.47 | Left | -70° | *unknown* | *unknown* | retained | yes | second half of a dogleg: 2 heading changes within 27 m (net -6°), and the exit is 24 m to the side of the approach. The app may announce both close together; no street name found after the turn |
 | 3.77 | Bear right | +47° | *unknown* | *unknown* | retained | yes | 47° change of direction; no street name found after the turn |
