@@ -18,6 +18,7 @@ import { MONTREAL } from '../weather/forecast';
 import { BRAND } from '../sixk/map/mapStyle';
 import type { Advice } from '../weather/outfit';
 import { extrasText, layersText } from '../weather/outfitText';
+import { funLine } from './funLines';
 
 export const STORY = { width: 1080, height: 1920 } as const;
 export const SAFE = { top: 220, bottom: 1700, side: 60 } as const;
@@ -33,6 +34,8 @@ export const DUCK = { max: 700, min: 380 } as const;
 const STICKER_W = 300;
 /** The outfit line: big when it fits on one line, else smaller and wrapped. */
 const WEAR = { big: 66, small: 52 } as const;
+/** The fun line under the outfit (src/story/funLines.ts), in the bubble's comic font. */
+export const FUN = { size: 42, lineHeight: 54 } as const;
 /** The welcome pill's text size: big when the duck still gets DUCK.max, else small. */
 export const WELCOME = { big: 32, small: 28 } as const;
 
@@ -190,7 +193,12 @@ export function storyLayout(s: StorySnapshot): Op[] {
   const pillH = pillFor(welcomeSize);
   const pillY = SAFE.bottom - pillH;
   const meetY = pillY - 24 - meetLines.length * 40;
-  const room = roomFor(welcomeSize);
+  // A fun line under the words, only when the duck still keeps its full size.
+  const fun = funLine(s.weather.tempC, s.outfit.conditions, s.run.date);
+  const funWrapped = fun ? wrap(fun, FUN.size, inner, 'comic') : [];
+  const funH = 22 + funWrapped.length * FUN.lineHeight;
+  const showFun = funWrapped.length > 0 && roomFor(welcomeSize) - funH >= DUCK.max;
+  const room = roomFor(welcomeSize) - (showFun ? funH : 0);
   const d = Math.max(DUCK.min, Math.min(DUCK.max, room));
   // Short outfits leave room to spare: half above the duck, half below the words.
   const top = heroTop + Math.max(0, room - d) / 2;
@@ -255,6 +263,11 @@ export function storyLayout(s: StorySnapshot): Op[] {
     ops.push({ kind: 'rect', role: 'key', x: x0, y, w: inner, h: noteH, fill: BRAND.paper, stroke: BRAND.asphalt, line: 3, radius: 16 });
     ops.push({ kind: 'rect', role: 'key', x: x0, y, w: 12, h: noteH, fill: note.startsWith('Warning') ? BRAND.asphalt : BRAND.gold, radius: 6 });
     noteLines.forEach((l, i) => ops.push(text(l, y + 13 + i * 38, 28, { x: x0 + 30, w: inner - 44, weight: 600 })));
+    y += noteH;
+  }
+  if (showFun) {
+    y += 22;
+    funWrapped.forEach((l, i) => ops.push(text(l, y + i * FUN.lineHeight, FUN.size, { font: 'comic', color: BRAND.navy, align: 'center' })));
   }
 
   meetLines.forEach((l, i) => ops.push(text(l, meetY + i * 40, 30, { align: 'center', weight: 600 })));

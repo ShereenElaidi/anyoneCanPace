@@ -6,6 +6,7 @@ import { SCENARIOS } from '../weather/scenarios';
 import { EVENT, nextRun } from '../event/event';
 import { outfitInputFor } from '../weather/runTime';
 import { makeSnapshot, type StorySnapshot } from './snapshot';
+import { funLine } from './funLines';
 import {
   DUCK,
   MAP_PICTURE,
@@ -171,6 +172,16 @@ describe('page 1, the poster: every scenario fits a 1080 × 1920 story', () => {
       return welcome;
     });
     expect(sizes).toContain(WELCOME.big);
+  });
+
+  it('a fun line under the outfit when there is room, never next to a frostbite warning', () => {
+    const all = (id: string) => flat(storyLayout(snap(SCENARIOS.find((x) => x.id === id)!.input)));
+    const mild = SCENARIOS.find((x) => x.id === 'A1')!.input;
+    const line = funLine(mild.tempC, whatToWear(mild).conditions, '2026-11-08')!;
+    expect(all('A1')).toContain(line);
+    const comic = texts(storyLayout(snap(mild))).find((o) => o.text === line);
+    expect(comic?.font).toBe('comic');
+    expect(funLine(-15, whatToWear(SCENARIOS.find((x) => x.id === 'A16')!.input).conditions, '2026-11-08')).toBeNull();
   });
 
   it('the note is the most serious advisory, else what to bring', () => {
