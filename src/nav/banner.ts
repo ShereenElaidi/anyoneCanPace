@@ -2,7 +2,7 @@
  * Pure text for the direction banner and stats line. Always text, so the
  * meaning never depends on the arrow icon or colour.
  */
-import { HEADS_UP_M, TURN_NOW_M, TURN_PASSED_GRACE_M } from './constants';
+import { EARLY_WINDOW_M, FINISH_FRACTION, HEADS_UP_M, TURN_NOW_M, TURN_PASSED_GRACE_M } from './constants';
 import { bearingDeg, compassWord } from './geo';
 import { nearestBetween, pointAt, type PreparedRoute } from './route';
 import { POOR_ACCURACY_M } from './constants';
@@ -139,7 +139,11 @@ export function describe(route: PreparedRoute, state: NavState, startStreet?: st
   }
 
   if (state.offRoute && fix) {
-    const target = nearestBetween(route, fix, state.progressM, state.progressM + 1000);
+    // The closest part of the route still to run: anywhere ahead of your progress, never behind
+    // it. Past the next kilometre, the finish stretch only counts once 90 % is covered (on a
+    // loop it runs right by the start, and pointing there would skip the whole route).
+    const ahead = Math.max(state.progressM + EARLY_WINDOW_M, FINISH_FRACTION * route.lengthM);
+    const target = nearestBetween(route, fix, state.progressM, Math.min(route.lengthM, ahead));
     const p = target ? pointAt(route, target.alongM) : pointAt(route, state.progressM);
     const b = bearingDeg(fix, p);
     const dist = formatDistance(target?.distM ?? state.distanceFromRouteM ?? 0);

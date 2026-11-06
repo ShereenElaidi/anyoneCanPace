@@ -123,7 +123,7 @@ export default function DashboardMode({ onSwitchMode }: Props) {
           </h1>
         </div>
         <button type="button" className="btn btn--secondary btn--small" onClick={onSwitchMode}>
-          MODES
+          HOME
         </button>
       </header>
 

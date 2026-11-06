@@ -49,12 +49,12 @@ describe('new version banner', () => {
     await act(async () => {});
     expect(banner()).toBeTruthy();
 
-    tap('MODES');
+    tap('HOME');
     tap(/^Route Library/);
     await screen.findByRole('heading', { name: 'Route Library' });
     expect(banner()).toBeTruthy();
 
-    tap('MODES');
+    tap('HOME');
     tap(/^ACR Run\/Walk Timer/);
     expect(banner()).toBeTruthy();
 

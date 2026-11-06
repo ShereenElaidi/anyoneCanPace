@@ -13,8 +13,6 @@ interface Props {
   onToggleSound: () => void;
   onToggleVibration: () => void;
   onReset: () => void;
-  /** Back to the mode picker. Ends a running session, so it needs a second tap then. */
-  onSwitchMode?: () => void;
 }
 
 const WAKE_TEXT: Record<WakeLockStatus, string> = {
@@ -28,7 +26,6 @@ export function MenuSheet(props: Props) {
   const { open, onClose, status } = props;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [confirming, setConfirming] = useState(false);
-  const [confirmingSwitch, setConfirmingSwitch] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -42,7 +39,6 @@ export function MenuSheet(props: Props) {
     }
     if (!open) {
       setConfirming(false);
-      setConfirmingSwitch(false);
     }
   }, [open]);
 
@@ -52,22 +48,6 @@ export function MenuSheet(props: Props) {
     const id = window.setTimeout(() => setConfirming(false), 4000);
     return () => window.clearTimeout(id);
   }, [confirming]);
-
-  useEffect(() => {
-    if (!confirmingSwitch) return;
-    const id = window.setTimeout(() => setConfirmingSwitch(false), 4000);
-    return () => window.clearTimeout(id);
-  }, [confirmingSwitch]);
-
-  const handleSwitch = () => {
-    if (status !== 'ready' && !confirmingSwitch) {
-      setConfirmingSwitch(true);
-      return;
-    }
-    setConfirmingSwitch(false);
-    onClose();
-    props.onSwitchMode?.();
-  };
 
   const handleReset = () => {
     if (!confirming) {
@@ -119,16 +99,6 @@ export function MenuSheet(props: Props) {
             onClick={handleReset}
           >
             {confirming ? 'TAP AGAIN TO END SESSION' : 'END & RESET SESSION'}
-          </button>
-        )}
-
-        {props.onSwitchMode && (
-          <button
-            type="button"
-            className={`btn btn--secondary btn--block${confirmingSwitch ? ' is-confirming' : ''}`}
-            onClick={handleSwitch}
-          >
-            {confirmingSwitch ? 'TAP AGAIN: END SESSION & SWITCH' : 'SWITCH MODE'}
           </button>
         )}
 

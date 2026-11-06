@@ -13,6 +13,7 @@ import {
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { FetchSource, PMTiles, Protocol, type RangeResponse, type Source } from 'pmtiles';
+import { boundsCentredOn, FOLLOW_MAX_ZOOM, offRouteZoom } from './camera';
 import duckImg from '../../assets/duck-runner.webp';
 import lostDuckImg from '../../assets/duck-runner-lost.webp';
 import { offsetPoint } from '../../nav/geo';
@@ -118,6 +119,9 @@ export default function RouteMap(props: RouteMapProps) {
   const [offline, setOffline] = useState<boolean | null>(null);
   const [userMoved, setUserMoved] = useState(false);
   const centredOnce = useRef(false);
+  /** The pacer pinched or scrolled the zoom: keep their zoom (the camera still follows) until BACK TO DUCK. */
+  const userZoomed = useRef(false);
+  const wasLost = useRef(false);
 
   // Create the map once.
   useEffect(() => {
@@ -145,6 +149,12 @@ export default function RouteMap(props: RouteMapProps) {
         m.touchZoomRotate.disableRotation();
         mapRef.current = m;
         m.on('dragstart', () => setUserMoved(true));
+        // Only real gestures (pinch, wheel, double tap) carry an originalEvent; the camera's own
+        // moves don't. Every zoom step, not zoomstart: that one is skipped when a gesture begins
+        // during the camera's own easeTo, which runs on every GPS fix.
+        m.on('zoom', (e) => {
+          if (e.originalEvent) userZoomed.current = true;
+        });
         let loaded = false;
         m.on('error', (e) => {
           const kind = classifyMapError(e as Parameters<typeof classifyMapError>[0], loaded);
@@ -232,25 +242,28 @@ export default function RouteMap(props: RouteMapProps) {
     const el = marker.getElement();
     el.classList.toggle('is-left', duck.facingLeft);
     el.classList.toggle('is-lost', duck.lost);
+    // Each time you go off route, the camera picks the zoom again.
+    if (duck.lost !== wasLost.current) {
+      wasLost.current = duck.lost;
+      userZoomed.current = false;
+    }
     if (follow && !userMoved) {
       const first = !centredOnce.current;
       centredOnce.current = true;
       const duration = reducedMotion() || first ? 0 : 600;
       const back = duck.routePoint;
       if (duck.lost && back) {
-        // Off route: keep both the duck (you) and your place on the route in view.
-        map.fitBounds(
-          [
-            [Math.min(duck.lon, back.lon), Math.min(duck.lat, back.lat)],
-            [Math.max(duck.lon, back.lon), Math.max(duck.lat, back.lat)],
-          ],
-          { padding: 60, maxZoom: 16.5, duration },
-        );
+        // Off route: you stay in the middle; zoom out to show your place on the route too,
+        // but only so far. Further away, the banner gives the direction back.
+        const zoom = userZoomed.current
+          ? map.getZoom()
+          : offRouteZoom(map.cameraForBounds(boundsCentredOn(duck, back), { padding: 60 })?.zoom);
+        map.easeTo({ center: [duck.lon, duck.lat], zoom, duration });
         return;
       }
       map.easeTo({
         center: [duck.lon, duck.lat],
-        zoom: first ? 16.5 : map.getZoom(),
+        zoom: first ? FOLLOW_MAX_ZOOM : map.getZoom(),
         duration,
       });
     }
@@ -258,6 +271,7 @@ export default function RouteMap(props: RouteMapProps) {
 
   const recenter = () => {
     setUserMoved(false);
+    userZoomed.current = false;
     const map = mapRef.current;
     if (map && !duck) map.fitBounds(bbox, { padding: 28, duration: reducedMotion() ? 0 : 400 });
   };
