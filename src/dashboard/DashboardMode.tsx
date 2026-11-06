@@ -20,7 +20,7 @@ import { activeNotices, collectNotices, type NoticeFile } from '../advisories/no
 import { ROUTE_NOTICES } from '../advisories/routeAdvisories';
 import type { RouteManifest } from '../nav/types';
 import { OutfitView } from './OutfitView';
-import { forecastReachesFrom, SundayRun, SundayStory } from './SundayRun';
+import { outfitLaterText, SundayRun, SundayStory } from './SundayRun';
 import { useForecast } from './useForecast';
 import './dashboard.css';
 
@@ -108,9 +108,7 @@ export default function DashboardMode({ onSwitchMode }: Props) {
     runSlot = checkOutside;
   } else {
     runSlot = (
-      <p className="dash-run__later">
-        {EVENT.weekday}’s outfit shows up {forecastReachesFrom(run)}.
-      </p>
+      <p className="dash-run__later">{outfitLaterText(run, now)}</p>
     );
   }
 

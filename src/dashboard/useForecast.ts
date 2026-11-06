@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { forecastUrl, parseGem, type Forecast } from '../weather/forecast';
-import { FRESH_FOR_MS, loadForecast, saveForecast } from '../weather/cache';
+import { loadForecast, needsRefresh, saveForecast } from '../weather/cache';
+import { nextRun } from '../event/event';
 
 export type FetchState = 'idle' | 'loading' | 'offline' | 'failed';
 
@@ -8,7 +9,8 @@ const TIMEOUT_MS = 10_000;
 
 /**
  * The last known forecast, refreshed when the dashboard opens (or comes back
- * into view) and the saved copy is older than 30 minutes. One small request
+ * into view) and the saved copy is older than 30 minutes, or stops before
+ * the group run when a fresh one would reach it. One small request
  * for fixed Montréal coordinates, never the user's location. It goes straight
  * from the phone to Open-Meteo, so like any web request it shows them the
  * phone's IP address and browser details.
@@ -47,8 +49,8 @@ export function useForecast() {
 
   useEffect(() => {
     const refreshIfStale = () => {
-      const f = forecastRef.current;
-      if (!f || Date.now() - f.fetchedAt > FRESH_FOR_MS) void refresh();
+      const now = Date.now();
+      if (needsRefresh(forecastRef.current, now, nextRun(now).startAt)) void refresh();
     };
     refreshIfStale();
     const onVisible = () => {

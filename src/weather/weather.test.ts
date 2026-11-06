@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fixture from './fixtures/gem-2026-11-04.json';
-import { forecastUrl, hourAt, MONTREAL, parseGem, sunFor, weatherText, ForecastError } from './forecast';
+import { daysAhead, forecastUrl, freshForecastReaches, hourAt, MONTREAL, parseGem, sunFor, weatherText, ForecastError } from './forecast';
 import { defaultRunTime, lightAt, localHour, outfitInputFor, recentFor, runTimeChoices } from './runTime';
-import { loadForecast, saveForecast } from './cache';
+import { loadForecast, needsRefresh, saveForecast } from './cache';
 
 const f = parseGem(fixture, 1_793_800_000_000);
 
@@ -123,5 +123,23 @@ describe('cache', () => {
     expect(loadForecast()?.hours).toHaveLength(48);
     localStorage.setItem('anyonecanpace:weather:v1', '{broken');
     expect(loadForecast()).toBeNull();
+  });
+
+  it('counts days in Montréal time and knows when a fresh download reaches a time', () => {
+    const sunday = est(8, 10, 15);
+    expect(daysAhead(sunday, est(4, 23, 59))).toBe(4); // Wednesday, late evening
+    expect(daysAhead(sunday, est(5, 0, 1))).toBe(3);
+    expect(daysAhead(sunday, est(8, 9))).toBe(0);
+    expect(freshForecastReaches(sunday, est(3, 23))).toBe(false); // Tuesday
+    expect(freshForecastReaches(sunday, est(4, 0, 1))).toBe(true); // from Wednesday on
+  });
+
+  it('downloads again when the saved copy is old, or short of a time a fresh one would reach', () => {
+    const saved = parseGem(fixture, est(4, 9)); // covers Nov 4 and 5
+    expect(needsRefresh(null, est(4, 9), est(8, 10))).toBe(true);
+    expect(needsRefresh(saved, est(4, 9, 10), est(5, 10))).toBe(false); // fresh and covers it
+    expect(needsRefresh(saved, est(4, 9, 40), est(5, 10))).toBe(true); // over 30 min old
+    expect(needsRefresh(saved, est(4, 9, 10), est(10, 10))).toBe(false); // a fresh one wouldn't reach it either
+    expect(needsRefresh(saved, est(4, 9, 10), est(8, 10))).toBe(true); // Wednesday: a fresh one reaches Sunday
   });
 });

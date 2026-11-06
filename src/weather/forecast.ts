@@ -14,6 +14,18 @@ export const MONTREAL = { lat: 45.5017, lon: -73.5673, timeZone: 'America/Toront
  */
 export const FORECAST_DAYS = 5;
 
+const ymd = new Intl.DateTimeFormat('en-CA', { timeZone: MONTREAL.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+
+/** Calendar days from `now`'s Montréal date to `at`'s (0 = same day). */
+export function daysAhead(at: number, now: number): number {
+  return Math.round((Date.parse(`${ymd.format(at)}T00:00Z`) - Date.parse(`${ymd.format(now)}T00:00Z`)) / 86_400_000);
+}
+
+/** True when a forecast downloaded at `now` reaches `at` (today plus FORECAST_DAYS − 1 days). */
+export function freshForecastReaches(at: number, now: number): boolean {
+  return daysAhead(at, now) <= FORECAST_DAYS - 1;
+}
+
 const HOURLY = [
   'temperature_2m',
   'apparent_temperature',
