@@ -136,7 +136,7 @@ body:has(.app--paper) {
   border: 2px solid var(--asphalt);
   border-radius: 16px;
   background: var(--navy);
-  color: var(--paper);
+  color: var(--gold);
   box-shadow: 0 3px 0 var(--asphalt);
 }
 

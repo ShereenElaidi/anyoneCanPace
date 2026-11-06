@@ -112,7 +112,7 @@ describe('mode picker', () => {
     tap(/ACR Run\/Walk Timer/);
     tap('START PACING');
     act(() => vi.advanceTimersByTime(5_000));
-    tap('MODES');
+    tap('HOME');
     expect(screen.getByRole('timer')).toBeTruthy(); // first tap only arms it
     tap('END? TAP AGAIN');
     expect(screen.queryByRole('timer')).toBeNull();
@@ -124,9 +124,9 @@ describe('mode picker', () => {
     render(<Root />);
     tap(/ACR Run\/Walk Timer/);
     tap('START PACING');
-    tap('MODES');
+    tap('HOME');
     act(() => vi.advanceTimersByTime(5_000));
-    tap('MODES'); // the arm lapsed: this only arms it again
+    tap('HOME'); // the arm lapsed: this only arms it again
     expect(screen.getByRole('timer')).toBeTruthy();
   });
 });
@@ -386,9 +386,9 @@ describe('Route Library', () => {
     expect(screen.getByText(/Location is blocked/)).toBeTruthy();
   });
 
-  it('MODES goes back to the picker', async () => {
+  it('HOME goes back to the picker', async () => {
     await openLibrary();
-    tap('MODES');
+    tap('HOME');
     expect(screen.getByRole('button', { name: /ACR Run\/Walk Timer/ })).toBeTruthy();
   });
 });

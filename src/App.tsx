@@ -14,7 +14,7 @@ import { clampSeconds, type Phase } from './timer/engine';
 const STATUS_LABEL = { ready: 'READY', active: 'ACTIVE', paused: 'PAUSED' } as const;
 
 interface AppProps {
-  /** Shows MODES in the header. Omitted when the timer runs on its own. */
+  /** Shows HOME in the header. Omitted when the timer runs on its own. */
   onSwitchMode?: () => void;
 }
 
@@ -77,7 +77,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
     return () => window.clearTimeout(id);
   }, [armedModes]);
 
-  /** MODES in the header: one tap when ready, two mid-session (it ends the session). */
+  /** HOME in the header: one tap when ready, two mid-session (it ends the session). */
   const switchMode = () => {
     if (status !== 'ready' && !armedModes) {
       setArmedModes(true);
@@ -128,7 +128,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
               className={`btn btn--secondary btn--small${armedModes ? ' is-confirming' : ''}`}
               onClick={switchMode}
             >
-              {armedModes ? 'END? TAP AGAIN' : 'MODES'}
+              {armedModes ? 'END? TAP AGAIN' : 'HOME'}
             </button>
           )}
         </div>

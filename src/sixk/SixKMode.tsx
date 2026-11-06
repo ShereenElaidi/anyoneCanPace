@@ -103,7 +103,7 @@ export default function SixKMode({ onSwitchMode }: Props) {
               <GearIcon />
             </button>
             <button type="button" className="btn btn--secondary btn--small" onClick={onSwitchMode}>
-              MODES
+              HOME
             </button>
           </div>
         ) : (
