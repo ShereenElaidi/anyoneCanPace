@@ -8,12 +8,13 @@ vi.mock('virtual:pwa-register/react', () => ({
   useRegisterSW: () => ({ needRefresh: [false, () => {}], offlineReady: [false, () => {}], updateServiceWorker: async () => {} }),
 }));
 
-// jsdom has no canvas: stand in for the drawing, and record what it was asked to draw.
+// jsdom has no canvas: stand in for the drawing (two pages), and record what it was asked to draw.
 const drawn: StorySnapshot[] = [];
+let blobs = 0;
 vi.mock('./render', () => ({
   renderStory: vi.fn(async (s: StorySnapshot) => {
     drawn.push(s);
-    return new Blob([`story ${drawn.length}`], { type: 'image/png' });
+    return [1, 2].map((p) => new Blob([`story ${drawn.length} page ${p}`], { type: 'image/png' }));
   }),
 }));
 
@@ -44,9 +45,10 @@ async function openDashboard() {
 
 beforeEach(() => {
   drawn.length = 0;
+  blobs = 0;
   vi.useFakeTimers({ toFake: ['Date'] });
   Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
-  URL.createObjectURL = vi.fn(() => `blob:story-${drawn.length}`);
+  URL.createObjectURL = vi.fn(() => `blob:story-${drawn.length}-${(blobs++ % 2) + 1}`);
   URL.revokeObjectURL = vi.fn();
 });
 
@@ -82,28 +84,32 @@ describe('Sunday story', () => {
 
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' })));
     const dialog = await screen.findByRole('dialog', { name: 'Sunday story' });
-    const img = (await screen.findByRole('img', { name: /^Story: See you Sunday/ })) as HTMLImageElement;
-    expect(img.getAttribute('src')).toBe('blob:story-1');
+    const img = (await screen.findByRole('img', { name: /^Story page 1: See you Sunday/ })) as HTMLImageElement;
+    expect(img.getAttribute('src')).toBe('blob:story-1-1');
+    const map = screen.getByRole('img', { name: /^Story page 2: Lost\? Find your Flock! Map to Café Tranquille/ });
+    expect(map.getAttribute('src')).toBe('blob:story-1-2');
     expect(drawn).toHaveLength(1);
     expect(drawn[0].run.date).toBe('2026-11-08');
     expect(drawn[0].weather.hourAt).toBe(est(8, 10));
     expect(dialog.textContent).toMatch(/Forecast from Saturday/);
     expect(dialog.textContent).not.toMatch(/Early forecast/); // Saturday night: the day before
 
-    // The same picture goes out, named for the day.
-    const save = screen.getByRole('link', { name: 'SAVE IMAGE' });
-    expect(save.getAttribute('href')).toBe('blob:story-1');
-    expect(save.getAttribute('download')).toBe('anyonecanpace-sunday-2026-11-08.png');
+    // The same pictures go out, named for the day and in posting order.
+    const save1 = screen.getByRole('link', { name: 'SAVE PAGE 1' });
+    expect(save1.getAttribute('href')).toBe('blob:story-1-1');
+    expect(save1.getAttribute('download')).toBe('anyonecanpace-sunday-2026-11-08-1.png');
+    expect(screen.getByRole('link', { name: 'SAVE PAGE 2' }).getAttribute('download')).toBe('anyonecanpace-sunday-2026-11-08-2-map.png');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'SHARE' })));
-    const sent = (share.mock.calls[0] as unknown as [{ files: File[] }])[0].files[0];
-    expect(sent.name).toBe('anyonecanpace-sunday-2026-11-08.png');
-    expect(await sent.text()).toBe('story 1');
+    const sent = (share.mock.calls[0] as unknown as [{ files: File[] }])[0].files;
+    expect(sent.map((f) => f.name)).toEqual(['anyonecanpace-sunday-2026-11-08-1.png', 'anyonecanpace-sunday-2026-11-08-2-map.png']);
+    expect(await sent[0].text()).toBe('story 1 page 1');
+    expect(await sent[1].text()).toBe('story 1 page 2');
 
     // A background refresh with a colder forecast: the open story stays as it was.
     fetchMock.mockImplementation(async () => respond(shifted(-10)));
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'REFRESH' })));
     expect(drawn).toHaveLength(1);
-    expect(img.getAttribute('src')).toBe('blob:story-1');
+    expect(img.getAttribute('src')).toBe('blob:story-1-1');
 
     // REMAKE takes the new forecast.
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'REMAKE' })));
@@ -141,9 +147,10 @@ describe('Sunday story', () => {
     vi.stubGlobal('fetch', vi.fn(async () => respond(shifted())));
     await openDashboard();
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' })));
-    await screen.findByRole('img', { name: /^Story:/ });
+    await screen.findByRole('img', { name: /^Story page 1:/ });
     expect(screen.queryByRole('button', { name: 'SHARE' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'SAVE IMAGE' })).toBeTruthy();
-    expect(screen.getByText(/press and hold the picture/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'SAVE PAGE 1' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'SAVE PAGE 2' })).toBeTruthy();
+    expect(screen.getByText(/press and hold a picture/)).toBeTruthy();
   });
 });

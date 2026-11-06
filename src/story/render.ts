@@ -1,5 +1,6 @@
 /**
- * Draws a story snapshot to a 1080 × 1920 PNG with the Canvas API (no
+ * Draws a story snapshot as two 1080 × 1920 PNGs (the poster, then the map)
+ * with the Canvas API (no
  * libraries). Loaded on demand from the dashboard's MAKE STORY.
  *
  * - Fonts are loaded before drawing (JetBrains Mono from the app's CSS,
@@ -10,9 +11,10 @@
  */
 import comicUrl from '../assets/fonts/comic-neue-latin-700-normal.woff2';
 import mapUrl from '../assets/story/meeting-map.webp';
+import photoUrl from '../assets/story/meeting-photo.webp';
 import { duckImages } from '../dashboard/duck/art';
 import { BRAND } from '../sixk/map/mapStyle';
-import { STORY, storyLayout, type Op } from './layout';
+import { STORY, storyPages, type Op } from './layout';
 import type { StorySnapshot } from './snapshot';
 
 const MONO = '"JetBrains Mono", ui-monospace, monospace';
@@ -54,7 +56,7 @@ function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number,
 /** A few raindrops or snowflakes, always in the same places. */
 function drawEffect(g: CanvasRenderingContext2D, o: Extract<Op, { kind: 'effect' }>) {
   g.save();
-  roundRect(g, o.x, o.y, o.w, o.h, 28);
+  roundRect(g, o.x, o.y, o.w, o.h, o.radius);
   g.clip();
   for (let i = 0; i < 26; i++) {
     const x = o.x + ((i * 73) % 100) / 100 * o.w;
@@ -82,15 +84,18 @@ function drawEffect(g: CanvasRenderingContext2D, o: Extract<Op, { kind: 'effect'
   g.restore();
 }
 
-/** The story as a PNG. Throws if a font or picture can't load. */
-export async function renderStory(s: StorySnapshot): Promise<Blob> {
-  const ops = storyLayout(s);
-  const [, map, ...duck] = await Promise.all([
+/** The story's pages as PNGs, in posting order. Throws if a font or picture can't load. */
+export async function renderStory(s: StorySnapshot): Promise<Blob[]> {
+  const [, map, photo, ...duck] = await Promise.all([
     loadFonts(),
     loadImage(mapUrl),
+    loadImage(photoUrl),
     ...duckImages(s.outfit.drawn).map((d) => loadImage(d.url)),
   ]);
+  return Promise.all(storyPages(s).map((ops) => draw(ops, { map, photo }, duck)));
+}
 
+function draw(ops: Op[], pictures: { map: HTMLImageElement; photo: HTMLImageElement }, duck: HTMLImageElement[]): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = STORY.width;
   canvas.height = STORY.height;
@@ -112,6 +117,19 @@ export async function renderStory(s: StorySnapshot): Promise<Blob> {
           g.stroke();
         }
         break;
+      case 'poly':
+        g.beginPath();
+        o.points.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+        g.closePath();
+        g.fillStyle = o.fill;
+        g.fill();
+        if (o.stroke) {
+          g.strokeStyle = o.stroke;
+          g.lineWidth = o.line ?? 2;
+          g.lineJoin = 'round';
+          g.stroke();
+        }
+        break;
       case 'text':
         g.font = `${o.weight} ${o.size}px ${o.font === 'comic' ? COMIC : MONO}`;
         g.fillStyle = o.color;
@@ -125,10 +143,11 @@ export async function renderStory(s: StorySnapshot): Promise<Blob> {
         for (const img of duck) g.drawImage(img, o.x, o.y, o.w, o.h);
         break;
       case 'map':
+      case 'photo':
         g.save();
         roundRect(g, o.x, o.y, o.w, o.h, o.radius);
         g.clip();
-        g.drawImage(map, o.x, o.y, o.w, o.h);
+        g.drawImage(pictures[o.kind], o.x, o.y, o.w, o.h);
         g.restore();
         break;
     }

@@ -1,5 +1,6 @@
 import { weatherText, type DaySun, type HourWeather } from '../weather/forecast';
 import type { Outfit } from '../weather/outfit';
+import { extrasText } from '../weather/outfitText';
 import { DressedDuck } from './duck/DressedDuck';
 import { clockTime, degrees } from './format';
 
@@ -20,7 +21,7 @@ export function OutfitView(props: { label: string; detailsTitle: string; outfit:
         </p>
       </div>
       <p className="wear__headline">{outfit.headline}</p>
-      {extras(outfit) && <p className="wear__also">Also: {extras(outfit)}</p>}
+      {extrasText(outfit) && <p className="wear__also">Also: {extrasText(outfit)}</p>}
       <p className="wear__weather">
         Air <strong>{degrees(hour.tempC)}</strong> · {weatherLine(hour)}
       </p>
@@ -91,9 +92,3 @@ function weatherLine(hour: HourWeather): string {
   return parts.join(' · ');
 }
 
-/** What the headline leaves out (hat, gloves, neck warmer, reflective gear): "reflective vest, gloves." */
-function extras(o: Outfit): string {
-  const main: string[] = [o.base, o.warm, o.outer, o.legs].filter((id): id is NonNullable<typeof id> => id !== null);
-  const rest = o.wear.filter((i) => !main.includes(i.id)).map((i) => i.label.toLowerCase());
-  return rest.length ? `${rest.join(', ')}.` : '';
-}
