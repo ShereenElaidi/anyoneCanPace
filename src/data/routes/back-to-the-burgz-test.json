@@ -1,0 +1,84 @@
+{
+  "id": "back-to-the-burgz-test",
+  "name": "Back to the Burgz (test)",
+  "kind": "point-to-point",
+  "stats": {
+    "distanceM": 2159,
+    "gainM": 5,
+    "lossM": 29,
+    "minEleM": 23,
+    "maxEleM": 48
+  },
+  "track": "back-to-the-burgz-test.geojson",
+  "startStreet": "Rue Peel",
+  "place": "Downtown",
+  "tags": [
+    "testing"
+  ],
+  "bbox": [-73.57683, 45.48875, -73.5668, 45.50187],
+  "profile": [
+    [0, 48],
+    [50, 47.4],
+    [100, 46.3],
+    [150, 45],
+    [200, 43.7],
+    [250, 42.5],
+    [300, 41.3],
+    [350, 40.1],
+    [400, 40],
+    [450, 39.8],
+    [500, 39],
+    [550, 39],
+    [600, 38.2],
+    [650, 38],
+    [700, 37],
+    [750, 34.4],
+    [800, 31.5],
+    [850, 29.6],
+    [900, 26.7],
+    [950, 23.8],
+    [1000, 23.9],
+    [1050, 25],
+    [1100, 25.4],
+    [1150, 25.6],
+    [1200, 26.9],
+    [1250, 27.4],
+    [1300, 28],
+    [1350, 28.5],
+    [1400, 28.4],
+    [1450, 28],
+    [1500, 28.4],
+    [1550, 27.8],
+    [1600, 27.3],
+    [1650, 26.7],
+    [1700, 26.5],
+    [1750, 26.3],
+    [1800, 25.4],
+    [1850, 24.8],
+    [1900, 24.6],
+    [1950, 25.3],
+    [2000, 25.6],
+    [2050, 26],
+    [2100, 26.3],
+    [2150, 25],
+    [2159, 24.7]
+  ],
+  "turns": [
+    {
+      "atM": 948,
+      "dir": "right",
+      "street": "Rue Saint-Antoine Ouest"
+    }
+  ],
+  "notes": [],
+  "advisories": [],
+  "source": {
+    "name": "On The Go Map",
+    "url": "https://onthegomap.com",
+    "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
+  },
+  "verification": {
+    "status": "unverified"
+  },
+  "geometry": "fed8a392375ae4be"
+}
