@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { routeEditorPlugin } from './src/dev/routeEditor/server/plugin';
 
 /**
  * GitHub Pages serves a project site at https://<owner>.github.io/<repo>/,
@@ -52,6 +53,8 @@ export default defineConfig({
   define: { __BETA__: JSON.stringify(isBeta) },
   plugins: [
     react(),
+    // Dev only (`apply: 'serve'`): the route editor's file API for `?edit`. Never in a build.
+    routeEditorPlugin(),
     {
       name: 'beta-title',
       transformIndexHtml: (html) => (isBeta ? html.replaceAll('>AnyoneCanPace<', `>${appName}<`).replace('content="AnyoneCanPace"', `content="${appName}"`) : html),

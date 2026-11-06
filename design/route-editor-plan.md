@@ -17,7 +17,7 @@ A page at `/anyoneCanPace/?edit` on `npm run dev` for adding routes and editing 
 
 ```
 browser (?edit, dev only)  ──fetch──▶  Vite dev-server plugin (apply: 'serve')
-  src/dev/routeEditor/*                 scripts/route-editor-plugin.ts
+  src/dev/routeEditor/*                 src/dev/routeEditor/server/plugin.ts
                                           ├─ GET  /__route-editor/routes        list + review JSON
                                           ├─ POST /__route-editor/routes        upload GPX + config entry
                                           ├─ PUT  /__route-editor/routes/:id    save hand-edited fields
@@ -32,7 +32,7 @@ browser (?edit, dev only)  ──fetch──▶  Vite dev-server plugin (apply: 
 
 ## Guardrails
 
-- **Local only.** `npm run dev:https` uses `--host`, and tunnels are allowed, so a write endpoint could be reached from the LAN or the internet. The plugin rejects any request that doesn't come from a loopback address, and any request whose `Origin` isn't the dev server's own.
+- **Local only.** `npm run dev:https` uses `--host`, and tunnels are allowed, so a write endpoint could be reached from the LAN or the internet. The plugin rejects any request that doesn't come from a loopback address with a loopback `Host` (tunnels connect from localhost but carry their own host name), any request without the editor's `x-route-editor` header, and any write whose `Origin` isn't the dev server's own.
 - **GPX is cleaned before it's saved.** The repo is public and the raw GPX is committed. The server rewrites the upload as a minimal GPX with only `trkpt lat/lon/ele`, dropping `<time>`, heart rate, cadence, `<extensions>`, `<metadata>` and author. The page also asks you to confirm the start and finish are public places, not someone's home.
 - **Verification stays deliberate.**
   - Uploads are always `unverified` (the build already does this).
@@ -50,7 +50,7 @@ browser (?edit, dev only)  ──fetch──▶  Vite dev-server plugin (apply: 
 | `scripts/lib/json.ts` | `formatJson` moved out of `build-routes.ts` so the plugin writes the same format (keeps diffs clean) |
 | `scripts/lib/sanitize-gpx.ts` | Pure: GPX string → minimal GPX. Tested with a watch export (time, HR, extensions) |
 | `src/dev/routeEditor/edits.ts` | Pure: slug from name, merge of editable fields, validation, turn-change → unverified. Tested. In `src/`, not `scripts/lib/`, because it reuses app validators (`describe.ts`, `verification.ts`, `notices.ts`) that only resolve through Vite/Vitest, not plain Node |
-| `scripts/route-editor-plugin.ts` | Middleware. Handlers take the repo root as a parameter, so tests run against a temp folder |
+| `src/dev/routeEditor/server/` | `plugin.ts` (Vite middleware), `api.ts` (handlers over a repo folder, so tests run against a temp copy), `guard.ts` (who may call it). Type-checked by `tsconfig.node.json` (Node types), excluded from `tsconfig.app.json` |
 | `src/dev/routeEditor/` | `RouteEditor.tsx` (list + add), `RouteForm.tsx` (details), `TurnEditor.tsx` (list + map), `VerificationPanel.tsx`, `editor.css` |
 | `src/main.tsx` | One more dev-only branch next to `?sim` |
 | `vite.config.ts` | Register the plugin |
