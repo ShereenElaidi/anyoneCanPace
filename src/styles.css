@@ -102,6 +102,47 @@ button {
   gap: 14px;
 }
 
+/* Browsing screens (Dashboard, Route Library): the home screen's look as a
+   quiet backdrop. The riverside sky (its own picture, already faded to
+   transparent at the bottom) over graph paper fainter than the home
+   screen's, painted on the page itself so it scrolls with it and covers the
+   full width. The sky is sized so its colour reaches about halfway down the
+   screen (62vh tall, never narrower than the screen; the sides crop).
+   Cards stay solid paper on top. Left off on purpose for the timer and
+   while following a route (neither has .app--paper). */
+body:has(.app--paper) {
+  background-color: var(--pavement);
+  background-image:
+    url('./assets/home/sky.webp'),
+    linear-gradient(rgb(55 138 221 / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(55 138 221 / 0.09) 1px, transparent 1px);
+  background-position: top center, 0 0, 0 0;
+  background-size:
+    auto max(100vw * 2 / 3, 62vh),
+    10px 10px,
+    10px 10px;
+  background-repeat: no-repeat, repeat, repeat;
+}
+
+/* On the sky, the page title wears the home screen's "Your Stooopid
+   Co-Pacer" ribbon (paper on navy) instead of navy text on pink, and the
+   small brand line goes Asphalt. */
+.app--paper .dash__title,
+.app--paper .sixk__title {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 5px 14px 6px;
+  border: 2px solid var(--asphalt);
+  border-radius: 16px;
+  background: var(--navy);
+  color: var(--paper);
+  box-shadow: 0 3px 0 var(--asphalt);
+}
+
+.app--paper .brand--small {
+  color: var(--asphalt);
+}
+
 .header {
   display: flex;
   align-items: center;

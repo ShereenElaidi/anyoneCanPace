@@ -90,7 +90,7 @@ export default function SixKMode({ onSwitchMode }: Props) {
   }
 
   return (
-    <div className="app sixk">
+    <div className="app app--paper sixk">
       <header className="header">
         <div>
           <p className="brand brand--small">AnyoneCanPace</p>

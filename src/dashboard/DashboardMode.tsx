@@ -113,11 +113,14 @@ export default function DashboardMode({ onSwitchMode }: Props) {
   }
 
   return (
-    <div className="app dash">
+    <div className="app app--paper dash">
       <header className="header">
         <div>
           <p className="brand brand--small">AnyoneCanPace</p>
-          <h1 className="dash__title">Stooopid Sunday Dashboard</h1>
+          {/* Short on screen so the ribbon fits on one line; read in full. */}
+          <h1 className="dash__title" aria-label="Stooopid Sunday Dashboard">
+            Stooopid Sunday
+          </h1>
         </div>
         <button type="button" className="btn btn--secondary btn--small" onClick={onSwitchMode}>
           MODES
