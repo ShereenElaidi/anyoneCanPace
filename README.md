@@ -347,7 +347,7 @@ The site is served at `https://<owner>.github.io/<repo>/`. `vite.config.ts` read
 
 ### Updates
 
-The app never reloads itself mid-session. When a new version has been downloaded, **Update to new version** appears in Settings, but only while no session is running. Closing and reopening the app also picks up the new version.
+The app never reloads itself mid-session. When a new version has been downloaded, a gold **A new version of the app is ready · UPDATE** banner appears at the top of every screen (home, Sunday dashboard, timer, Route Library), but never while a timer session is running or paused or a route is being followed; it comes back when that ends. The timer's Settings also offers it when no session is running. An installed app left open checks again for a new version when you come back to it after 30 minutes (preview the banner in dev with `?update-banner`). Closing and reopening the app also picks up the new version.
 
 ## Installing on a phone (optional)
 

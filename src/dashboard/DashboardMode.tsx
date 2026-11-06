@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
-import { SW_OPTIONS } from '../lib/swUpdate';
+import { UpdateBanner } from '../components/UpdateBanner';
 import { EVENT, nextRun } from '../event/event';
 import { hourAt, sunFor } from '../weather/forecast';
 import { whatToWear } from '../weather/outfit';
@@ -45,7 +44,6 @@ interface Props {
  * the Sunday story for whoever posts it. Loaded on demand.
  */
 export default function DashboardMode({ onSwitchMode }: Props) {
-  useRegisterSW(SW_OPTIONS);
   const { forecast, state, refresh } = useForecast();
   const [picked, setPicked] = useState<number | null>(null);
   // "Now" moves on while the page stays open, so the default hour stays sensible.
@@ -129,6 +127,7 @@ export default function DashboardMode({ onSwitchMode }: Props) {
       </header>
 
       <main className="main">
+        <UpdateBanner />
         {statusNeedsAttention && status}
 
         {notices.length > 0 && (

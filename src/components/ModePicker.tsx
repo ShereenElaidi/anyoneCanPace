@@ -1,7 +1,6 @@
-import { useRegisterSW } from 'virtual:pwa-register/react';
-import { SW_OPTIONS } from '../lib/swUpdate';
 import duck from '../assets/duck-runner.webp';
 import type { AppMode } from '../lib/prefs';
+import { UpdateBanner } from './UpdateBanner';
 
 interface Props {
   onPick: (mode: AppMode) => void;
@@ -9,9 +8,6 @@ interface Props {
 
 /** Home screen: the app always opens here. */
 export function ModePicker({ onPick }: Props) {
-  // Registers the service worker (offline support) when the app opens here.
-  useRegisterSW(SW_OPTIONS);
-
   return (
     <div className="app picker">
       <header className="picker__head">
@@ -31,6 +27,7 @@ export function ModePicker({ onPick }: Props) {
       </header>
 
       <main className="main">
+        <UpdateBanner />
         <h2 className="picker__title">What are we doing today?</h2>
         <ul className="picker__list">
           <li>
