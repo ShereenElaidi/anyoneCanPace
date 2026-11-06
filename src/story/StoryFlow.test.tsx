@@ -86,7 +86,7 @@ describe('Sunday story', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Sunday story' });
     const img = (await screen.findByRole('img', { name: /^Story page 1: See you Sunday/ })) as HTMLImageElement;
     expect(img.getAttribute('src')).toBe('blob:story-1-1');
-    const map = screen.getByRole('img', { name: /^Story page 2: Lost\? Find your Flock\? Map to Café Tranquille/ });
+    const map = screen.getByRole('img', { name: /^Story page 2: Lost\? Find your Flock! Map to Café Tranquille/ });
     expect(map.getAttribute('src')).toBe('blob:story-1-2');
     expect(drawn).toHaveLength(1);
     expect(drawn[0].run.date).toBe('2026-11-08');

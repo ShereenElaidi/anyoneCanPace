@@ -7,7 +7,7 @@
  * Two pages, posted one after the other:
  * 1. the poster: the dressed duck big, the weather on a sticker beside it,
  *    what to wear, the most important note and a welcome;
- * 2. the map: "Lost? Find your Flock?", where and when, the meeting-point
+ * 2. the map: "Lost? Find your Flock!", where and when, the meeting-point
  *    map, the photo of the spot, and empty space for Instagram's Link sticker.
  *
  * Instagram draws its own header over the top of a story and the reply bar
@@ -28,7 +28,11 @@ export const PHOTO = { width: 960, height: 540 } as const;
 /** The map and photo shrink together to fit the page, never below this (tests). */
 export const MIN_PICTURE_SCALE = 0.8;
 /** The duck's circle on the poster: as big as the outfit text leaves room for. */
-export const DUCK = { max: 600, min: 380 } as const;
+export const DUCK = { max: 700, min: 380 } as const;
+/** The weather sticker's width beside a big duck (it may overlap the circle's edge). */
+const STICKER_W = 300;
+/** The outfit line: big when it fits on one line, else smaller and wrapped. */
+const WEAR = { big: 66, small: 52 } as const;
 /** The welcome pill's text size: big when the duck still gets DUCK.max, else small. */
 export const WELCOME = { big: 32, small: 28 } as const;
 
@@ -158,7 +162,8 @@ export function storyLayout(s: StorySnapshot): Op[] {
   let y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, 352, 34, 44, {
     align: 'center',
   });
-  const heroTop = y + 20;
+  // Room above the bubble for its (Beta) tag, which sticks out over the top.
+  const heroTop = y + 52;
 
   // From the bottom up: the welcome, the pointer to the map page, then the outfit words.
   const welcome = ["New here? You're welcome!", 'Run/walk friendly · No experience required.'];
@@ -166,18 +171,19 @@ export function storyLayout(s: StorySnapshot): Op[] {
   const meetLines = wrap(meet, 30, inner);
 
   const layers = layersText(s.outfit);
-  const layerLines = wrap(layers, 52, inner).length;
+  const wearSize = wrap(layers, WEAR.big, inner).length === 1 ? WEAR.big : WEAR.small;
+  const layerLines = wrap(layers, wearSize, inner).length;
   const extras = extrasText(s.outfit);
   const also = extras ? `Also: ${extras}` : '';
   const alsoLines = also ? wrap(also, 34, inner).length : 0;
   const note = storyNote(s);
   const noteLines = note ? wrap(note, 28, inner - 44) : [];
   const noteH = note ? noteLines.length * 38 + 26 : 0;
-  const wearH = layerLines * 62 + (also ? 10 + alsoLines * 44 : 0) + (note ? 20 + noteH : 0);
+  const wearH = layerLines * (wearSize + 10) + (also ? 10 + alsoLines * 44 : 0) + (note ? 20 + noteH : 0);
 
   // The duck takes what's left (the speech bubble sits above it). The welcome is
   // bigger when that still leaves the duck its full size, for balance.
-  const bubbleH = 72;
+  const bubbleH = 80;
   const pillFor = (size: number) => welcome.length * (size + 10) + 22;
   const roomFor = (size: number) => SAFE.bottom - pillFor(size) - 24 - meetLines.length * 40 - 30 - wearH - 24 - (heroTop + bubbleH);
   const welcomeSize = roomFor(WELCOME.big) >= DUCK.max ? WELCOME.big : WELCOME.small;
@@ -220,10 +226,11 @@ export function storyLayout(s: StorySnapshot): Op[] {
   // Covers the stroke where the tail joins the bubble.
   ops.push({ kind: 'rect', role: 'decor', x: bx + 47, y: top + bubbleH - 17, w: 34, h: 8, fill: BRAND.paper });
   // Centred: Comic Neue is narrower than the width allowed for it.
-  ops.push(text(bubble, top + 12, 46, { x: bx + 20, w: bw - 40, font: 'comic', color: BRAND.navy, align: 'center' }));
+  ops.push(text(bubble, top + 14, 46, { x: bx + 20, w: bw - 40, font: 'comic', color: BRAND.navy, align: 'center' }));
 
   // The weather on a sticker beside the duck: air temperature big, then feels-like, sky, wind and wet.
-  const sx = x0 + d + 30;
+  // A big duck leaves too little beside it: the sticker then overlaps the circle's edge (never the duck itself).
+  const sx = Math.min(x0 + d + 30, W - SAFE.side - STICKER_W);
   const sw = W - SAFE.side - sx;
   const temp = `${Math.round(s.weather.tempC) || 0}°C`;
   const tSize = Math.min(110, Math.floor((sw - 32) / ([...temp].length * MONO_EM)));
@@ -241,7 +248,7 @@ export function storyLayout(s: StorySnapshot): Op[] {
 
   // What to wear: the layers big, the rest under them, then the one note.
   y = duckY + d + 24;
-  y = lines(layers, y, 52, 62, { weight: 800, color: BRAND.navy, align: 'center' });
+  y = lines(layers, y, wearSize, wearSize + 10, { weight: 800, color: BRAND.navy, align: 'center' });
   if (also) y = lines(also, y + 10, 34, 44, { weight: 600, align: 'center' });
   if (note) {
     y += 20;
@@ -267,7 +274,7 @@ export function mapPageLayout(s: StorySnapshot): Op[] {
   const { ops, text, lines, frame } = page();
   frame('Map © OpenStreetMap contributors · Protomaps');
 
-  ops.push(text('Lost? Find your Flock?', 240, 72, { weight: 800, color: BRAND.navy, align: 'center' }));
+  ops.push(text('Lost? Find your Flock!', 240, 72, { weight: 800, color: BRAND.navy, align: 'center' }));
   let y = 348;
   ops.push(text(s.place.name, y, 44, { weight: 800, color: BRAND.navy, align: 'center' }));
   y = lines(`${s.place.spot}, ${s.place.address}`, y + 60, 30, 38, { weight: 500, align: 'center' });

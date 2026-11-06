@@ -94,6 +94,24 @@ function expectFits(ops: Op[]) {
     expect(b.x1).toBeLessThanOrEqual(STORY.width - SAFE.side + 0.01);
     if (o.kind === 'text') expect(textWidth(o.text, o.size, o.font), o.text).toBeLessThanOrEqual(o.w + 0.01);
   }
+  // Text never runs half over a box: it sits inside one, drawn over any other box it touches
+  // (a bubble, a sticker, the pill, the (Beta) tag on the bubble's corner).
+  // The duck's round frame is exempt: its square bounds aren't what's drawn.
+  const boxes = key
+    .map((o, i) => ({ o, i }))
+    .filter(({ o }) => o.kind === 'rect' && !(o.radius === o.w / 2 && o.w === o.h))
+    .map(({ o, i }) => ({ ...box(o), i }));
+  key.forEach((t, ti) => {
+    if (t.kind !== 'text') return;
+    const b = box(t);
+    const touched = boxes.filter((r) => b.x0 < r.x1 && r.x0 < b.x1 && b.y0 < r.y1 && r.y0 < b.y1);
+    if (!touched.length) return;
+    // A box drawn after the text would cover it.
+    expect(touched.every((r) => r.i < ti), `"${t.text}" is covered by a box`).toBe(true);
+    const inside = touched.filter((r) => b.x0 >= r.x0 && b.x1 <= r.x1 && b.y0 >= r.y0 - 2 && b.y1 <= r.y1 + 2);
+    const top = Math.max(...touched.map((r) => r.i));
+    expect(inside.some((r) => r.i === top), `"${t.text}" runs into a box`).toBe(true);
+  });
   const lines = key.filter((o) => o.kind === 'text').map(box);
   for (let i = 0; i < lines.length; i++)
     for (let j = i + 1; j < lines.length; j++) {
@@ -110,13 +128,11 @@ describe('page 1, the poster: every scenario fits a 1080 × 1920 story', () => {
     // The duck stays big: it only shrinks as far as DUCK.min to make room for the words.
     const duck = ops.find((o) => o.kind === 'rect' && o.radius !== undefined && o.w === o.h && o.radius === o.w / 2);
     expect(duck && duck.kind === 'rect' && duck.w).toBeGreaterThanOrEqual(DUCK.min);
-    // Nothing key is drawn over the duck's circle (its own picture and rain or snow aside).
-    const d = box(duck as Boxed);
-    for (const o of keyOps(ops).filter((x): x is Boxed => x.kind !== 'poly' && x.kind !== 'duck' && x !== duck)) {
+    // No words over the duck itself (the weather sticker may overlap its circle's edge).
+    const d = box(ops.find((o) => o.kind === 'duck') as Boxed);
+    for (const o of texts(ops).filter((x) => x.role === 'key')) {
       const b = box(o);
-      const inside = b.x0 < d.x1 && d.x0 < b.x1 && b.y0 < d.y1 && d.y0 < b.y1;
-      // The bubble may touch the circle's top edge (its tail points at the duck).
-      if (inside) expect(b.y1, `${o.kind} over the duck`).toBeLessThanOrEqual(d.y0 + 1);
+      expect(b.x0 < d.x1 && d.x0 < b.x1 && b.y0 < d.y1 && d.y0 < b.y1, `"${o.text}" over the duck`).toBe(false);
     }
   });
 
@@ -186,10 +202,11 @@ describe('page 2, the map', () => {
 
   it('says where and when', () => {
     const all = flat(ops);
-    expect(all).toContain('Lost? Find your Flock?');
+    expect(all).toContain('Lost? Find your Flock!');
     expect(all).toContain('View from Rue St. Catherine.');
     expect(all).toContain('Café Tranquille');
     expect(all).toContain('At the café entrance, 1442 Rue Clark');
+    expect(all).not.toContain('Esplanade');
     expect(all).toContain('Sunday, November 8 · meet 10:00, run 10:15');
     expect(all).toContain('© OpenStreetMap contributors');
   });
