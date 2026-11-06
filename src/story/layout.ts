@@ -5,10 +5,13 @@
  * a canvas, and the tests can check nothing is clipped or covered.
  *
  * Two pages, posted one after the other:
- * 1. the poster: the dressed duck big, the weather on a sticker beside it,
- *    what to wear, the most important note and a welcome;
+ * 1. the poster: SEE YOU SOON!, the dressed duck big, the weather on a sticker
+ *    beside it, what to wear, the most important note and a welcome;
  * 2. the map: "Lost? Find your Flock!", where and when, the meeting-point
  *    map, the photo of the spot, and empty space for Instagram's Link sticker.
+ *
+ * The look is the home screen's: the sunset sky over graph paper, cream cards
+ * with a hard Asphalt shadow, navy pills, white titles with a navy outline.
  *
  * Instagram draws its own header over the top of a story and the reply bar
  * over the bottom, so key content stays between SAFE.top and SAFE.bottom.
@@ -18,7 +21,6 @@ import { MONTREAL } from '../weather/forecast';
 import { BRAND } from '../sixk/map/mapStyle';
 import type { Advice } from '../weather/outfit';
 import { extrasText, layersText } from '../weather/outfitText';
-import { funLine } from './funLines';
 
 export const STORY = { width: 1080, height: 1920 } as const;
 export const SAFE = { top: 220, bottom: 1700, side: 60 } as const;
@@ -34,8 +36,10 @@ export const DUCK = { max: 700, min: 380 } as const;
 const STICKER_W = 300;
 /** The outfit line: big when it fits on one line, else smaller and wrapped. */
 const WEAR = { big: 66, small: 52 } as const;
-/** The fun line under the outfit (src/story/funLines.ts), in the bubble's comic font. */
-export const FUN = { size: 42, lineHeight: 54 } as const;
+/** How far a card's hard shadow drops below it. */
+const SHADOW = 12;
+/** Peach behind the duck, warmer than the old grey-beige. */
+const PEACH = '#FBE3C4';
 /** The welcome pill's text size: big when the duck still gets DUCK.max, else small. */
 export const WELCOME = { big: 32, small: 28 } as const;
 
@@ -61,7 +65,11 @@ export type Op =
       color: string;
       font: Font;
       align: 'left' | 'center';
+      /** Colour of an outline drawn round the letters (titles on the sky). */
+      outline?: string;
     }
+  /** The whole page's background: Pavement, graph paper, then the sunset sky on top. */
+  | { kind: 'backdrop'; role: Role; x: number; y: number; w: number; h: number }
   | { kind: 'duck'; role: Role; x: number; y: number; w: number; h: number }
   | { kind: 'effect'; role: Role; x: number; y: number; w: number; h: number; radius: number; effect: 'rain' | 'snow' }
   /** A filled outline, e.g. the speech bubble's tail. */
@@ -134,21 +142,23 @@ function page() {
     }
     return y;
   };
-  /** Background and brand bands (decor; Instagram's header and reply bar sit over them), and the footer. */
+  /** A hard Asphalt shadow under a card (decor), drawn before the card itself. */
+  const shadow = (x: number, y: number, w: number, h: number, radius: number) =>
+    ops.push({ kind: 'rect', role: 'decor', x, y: y + SHADOW, w, h, fill: BRAND.asphalt, radius });
+  /** A navy pill with its shadow; the caller draws the text on it. */
+  const pill = (x: number, y: number, w: number, h: number, radius = h / 2) => {
+    shadow(x, y, w, h, radius);
+    ops.push({ kind: 'rect', role: 'key', x, y, w, h, fill: BRAND.navy, stroke: BRAND.asphalt, line: 5, radius });
+  };
+  /** The sunset backdrop and the footer (under Instagram's reply bar: nice to have, not needed). */
   const frame = (credits: string) => {
-    const W = STORY.width;
-    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 0, w: W, h: STORY.height, fill: BRAND.pavement });
-    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 0, w: W, h: 190, fill: BRAND.navy });
-    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 190, w: W, h: 12, fill: BRAND.gold });
-    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1718, w: W, h: 12, fill: BRAND.gold });
-    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1730, w: W, h: STORY.height - 1730, fill: BRAND.navy });
-    // Under the reply bar is fine: nice to have, not needed.
-    ops.push(text('Stooopid Run Crew', 1760, 30, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 800 }));
+    ops.push({ kind: 'backdrop', role: 'decor', x: 0, y: 0, w: STORY.width, h: STORY.height });
+    ops.push(text('Stooopid Run Crew', 1790, 30, { role: 'footer', align: 'center', color: BRAND.navy, weight: 800 }));
     wrap(credits, 18, inner).forEach((l, i) =>
-      ops.push(text(l, 1810 + i * 26, 18, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 500 })),
+      ops.push(text(l, 1838 + i * 26, 18, { role: 'footer', align: 'center', weight: 500 })),
     );
   };
-  return { ops, x0, inner, text, lines, frame };
+  return { ops, x0, inner, text, lines, frame, shadow, pill };
 }
 
 /** Both pages, in posting order. */
@@ -156,22 +166,22 @@ export const storyPages = (s: StorySnapshot): Op[][] => [storyLayout(s), mapPage
 
 /** Page 1: the poster. */
 export function storyLayout(s: StorySnapshot): Op[] {
-  const { ops, x0, inner, text, lines, frame } = page();
+  const { ops, x0, inner, text, lines, frame, shadow, pill } = page();
   const W = STORY.width;
   frame(`Forecast from ${stampFmt.format(s.forecastFetchedAt)} · Open-Meteo / ECCC GEM (CC BY 4.0)`);
 
   // Headline, date and times.
-  ops.push(text(`SEE YOU ${s.weekday.toUpperCase()}!`, 240, 92, { weight: 800, color: BRAND.navy, align: 'center' }));
-  let y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, 352, 34, 44, {
-    align: 'center',
-  });
+  ops.push(text('SEE YOU SOON!', 240, 92, { weight: 800, color: BRAND.paper, outline: BRAND.navy, align: 'center' }));
+  const when = `${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`;
+  const whenW = textWidth(when, 32) + 80;
+  const whenY = 366;
+  pill((STORY.width - whenW) / 2, whenY, whenW, 68);
+  ops.push(text(when, whenY + 17, 32, { x: (STORY.width - whenW) / 2 + 40, w: whenW - 80, align: 'center', color: BRAND.paper, weight: 800 }));
   // Room above the bubble for its (Beta) tag, which sticks out over the top.
-  const heroTop = y + 52;
+  const heroTop = whenY + 68 + SHADOW + 36;
 
   // From the bottom up: the welcome, the pointer to the map page, then the outfit words.
   const welcome = ["New here? You're welcome!", 'Run/walk friendly · No experience required.'];
-  const meet = `Meet at ${s.place.name}: map on the next page`;
-  const meetLines = wrap(meet, 30, inner);
 
   const layers = layersText(s.outfit);
   const wearSize = wrap(layers, WEAR.big, inner).length === 1 ? WEAR.big : WEAR.small;
@@ -188,22 +198,16 @@ export function storyLayout(s: StorySnapshot): Op[] {
   // bigger when that still leaves the duck its full size, for balance.
   const bubbleH = 80;
   const pillFor = (size: number) => welcome.length * (size + 10) + 22;
-  const roomFor = (size: number) => SAFE.bottom - pillFor(size) - 24 - meetLines.length * 40 - 30 - wearH - 24 - (heroTop + bubbleH);
+  const roomFor = (size: number) => SAFE.bottom - pillFor(size) - 24 - 30 - wearH - 24 - (heroTop + bubbleH);
   const welcomeSize = roomFor(WELCOME.big) >= DUCK.max ? WELCOME.big : WELCOME.small;
   const pillH = pillFor(welcomeSize);
   const pillY = SAFE.bottom - pillH;
-  const meetY = pillY - 24 - meetLines.length * 40;
-  // A fun line under the words, only when the duck still keeps its full size.
-  const fun = funLine(s.weather.tempC, s.outfit.conditions, s.run.date);
-  const funWrapped = fun ? wrap(fun, FUN.size, inner, 'comic') : [];
-  const funH = 22 + funWrapped.length * FUN.lineHeight;
-  const showFun = funWrapped.length > 0 && roomFor(welcomeSize) - funH >= DUCK.max;
-  const room = roomFor(welcomeSize) - (showFun ? funH : 0);
+  const room = roomFor(welcomeSize);
   const d = Math.max(DUCK.min, Math.min(DUCK.max, room));
   // Short outfits leave room to spare: half above the duck, half below the words.
   const top = heroTop + Math.max(0, room - d) / 2;
   const duckY = top + bubbleH;
-  ops.push({ kind: 'rect', role: 'key', x: x0, y: duckY, w: d, h: d, fill: '#EDE5D8', stroke: BRAND.asphalt, line: 5, radius: d / 2 });
+  ops.push({ kind: 'rect', role: 'key', x: x0, y: duckY, w: d, h: d, fill: PEACH, stroke: BRAND.asphalt, line: 5, radius: d / 2 });
   if (s.outfit.effect) ops.push({ kind: 'effect', role: 'decor', x: x0, y: duckY, w: d, h: d, radius: d / 2, effect: s.outfit.effect });
   const pad = d * 0.07;
   ops.push({ kind: 'duck', role: 'key', x: x0 + pad, y: duckY + pad, w: d - 2 * pad, h: d - 2 * pad });
@@ -248,6 +252,7 @@ export function storyLayout(s: StorySnapshot): Op[] {
   const factLines = facts.flatMap((f) => wrap(f, 28, sw - 32));
   const sh = 24 + tSize * 1.15 + factLines.length * 36 + 18;
   const sy = Math.max(top + bubbleH + 20, duckY + d / 2 - sh / 2);
+  shadow(sx, sy, sw, sh, 26);
   ops.push({ kind: 'rect', role: 'key', x: sx, y: sy, w: sw, h: sh, fill: BRAND.paper, stroke: BRAND.asphalt, line: 5, radius: 26 });
   ops.push(text(temp, sy + 20, tSize, { x: sx + 16, w: sw - 32, weight: 800, color: BRAND.navy, align: 'center' }));
   factLines.forEach((l, i) =>
@@ -255,23 +260,19 @@ export function storyLayout(s: StorySnapshot): Op[] {
   );
 
   // What to wear: the layers big, the rest under them, then the one note.
-  y = duckY + d + 24;
+  let y = duckY + d + 24;
   y = lines(layers, y, wearSize, wearSize + 10, { weight: 800, color: BRAND.navy, align: 'center' });
   if (also) y = lines(also, y + 10, 34, 44, { weight: 600, align: 'center' });
   if (note) {
     y += 20;
+    shadow(x0, y, inner, noteH, 16);
     ops.push({ kind: 'rect', role: 'key', x: x0, y, w: inner, h: noteH, fill: BRAND.paper, stroke: BRAND.asphalt, line: 3, radius: 16 });
     ops.push({ kind: 'rect', role: 'key', x: x0, y, w: 12, h: noteH, fill: note.startsWith('Warning') ? BRAND.asphalt : BRAND.gold, radius: 6 });
     noteLines.forEach((l, i) => ops.push(text(l, y + 13 + i * 38, 28, { x: x0 + 30, w: inner - 44, weight: 600 })));
     y += noteH;
   }
-  if (showFun) {
-    y += 22;
-    funWrapped.forEach((l, i) => ops.push(text(l, y + i * FUN.lineHeight, FUN.size, { font: 'comic', color: BRAND.navy, align: 'center' })));
-  }
 
-  meetLines.forEach((l, i) => ops.push(text(l, meetY + i * 40, 30, { align: 'center', weight: 600 })));
-  ops.push({ kind: 'rect', role: 'key', x: x0, y: pillY, w: inner, h: pillH, fill: BRAND.navy, radius: pillH / 2 });
+  pill(x0, pillY, inner, pillH);
   welcome.forEach((l, i) =>
     // Kept clear of the pill's rounded ends.
     ops.push(text(l, pillY + 12 + i * (welcomeSize + 10), welcomeSize, { x: x0 + 40, w: inner - 80, align: 'center', color: BRAND.paper, weight: 800 })),
@@ -284,18 +285,20 @@ export const STICKER_SPACE_MIN = 120;
 
 /** Page 2: where to find us, as a map and a photo. */
 export function mapPageLayout(s: StorySnapshot): Op[] {
-  const { ops, text, lines, frame } = page();
+  const { ops, text, frame, shadow, pill } = page();
   frame('Map © OpenStreetMap contributors · Protomaps');
 
-  ops.push(text('Lost? Find your Flock!', 240, 72, { weight: 800, color: BRAND.navy, align: 'center' }));
-  let y = 348;
-  ops.push(text(s.place.name, y, 44, { weight: 800, color: BRAND.navy, align: 'center' }));
-  y = lines(`${s.place.spot}, ${s.place.address}`, y + 60, 30, 38, { weight: 500, align: 'center' });
-  y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, y + 8, 28, 36, {
-    weight: 700,
-    align: 'center',
-  });
-  y += 24;
+  ops.push(text('Lost? Find your Flock!', 240, 72, { weight: 800, color: BRAND.paper, outline: BRAND.navy, align: 'center' }));
+  // The place and the times share one navy ribbon.
+  const when = `meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`;
+  const rw = Math.max(textWidth(s.place.name, 44), textWidth(when, 30)) + 100;
+  const ry = 350;
+  const rh = 146;
+  const rx = (STORY.width - rw) / 2;
+  pill(rx, ry, rw, rh, 44);
+  ops.push(text(s.place.name, ry + 20, 44, { x: rx + 50, w: rw - 100, weight: 800, color: BRAND.paper, align: 'center' }));
+  ops.push(text(when, ry + 88, 30, { x: rx + 50, w: rw - 100, weight: 700, color: BRAND.paper, align: 'center' }));
+  let y = ry + rh + SHADOW + 24;
 
   // The map, then the photo, the same width, as big as fits above the sticker space.
   const gap = 24;
@@ -303,10 +306,12 @@ export function mapPageLayout(s: StorySnapshot): Op[] {
   const w = MAP_PICTURE.width * k;
   const x = (STORY.width - w) / 2;
   const mh = MAP_PICTURE.height * k;
+  shadow(x, y, w, mh, 22);
   ops.push({ kind: 'map', role: 'key', x, y, w, h: mh, radius: 22 });
   ops.push({ kind: 'rect', role: 'key', x, y, w, h: mh, stroke: BRAND.asphalt, line: 5, radius: 22 });
   y += mh + gap;
   const ph = PHOTO.height * k;
+  shadow(x, y, w, ph, 22);
   ops.push({ kind: 'photo', role: 'key', x, y, w, h: ph, radius: 22 });
   ops.push({ kind: 'rect', role: 'key', x, y, w, h: ph, stroke: BRAND.asphalt, line: 5, radius: 22 });
   // Labelled like the map's place name: a white tag with a dark outline, in a corner.

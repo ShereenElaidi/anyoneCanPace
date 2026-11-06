@@ -10,12 +10,18 @@
  *   tainted and toBlob always works.
  */
 import comicUrl from '../assets/fonts/comic-neue-latin-700-normal.woff2';
+import skyUrl from '../assets/home/sky.webp';
 import mapUrl from '../assets/story/meeting-map.webp';
 import photoUrl from '../assets/story/meeting-photo.webp';
 import { duckImages } from '../dashboard/duck/art';
 import { BRAND } from '../sixk/map/mapStyle';
 import { STORY, storyPages, type Op } from './layout';
 import type { StorySnapshot } from './snapshot';
+
+/** The sky picture is drawn this tall, centred, its sides cropped (the home screen's sizing). */
+const SKY_HEIGHT = 1300;
+/** Graph paper: the app's own 10 px grid, doubled for a 1080 px canvas. */
+const GRID = 20;
 
 const MONO = '"JetBrains Mono", ui-monospace, monospace';
 const COMIC = '"Comic Neue Story", "Comic Neue", "Comic Sans MS", cursive';
@@ -84,18 +90,30 @@ function drawEffect(g: CanvasRenderingContext2D, o: Extract<Op, { kind: 'effect'
   g.restore();
 }
 
+/** Pavement, graph paper, then the sunset sky on top (its bottom fades out, so the paper shows below it). */
+function drawBackdrop(g: CanvasRenderingContext2D, o: Extract<Op, { kind: 'backdrop' }>, sky: HTMLImageElement) {
+  g.fillStyle = BRAND.pavement;
+  g.fillRect(o.x, o.y, o.w, o.h);
+  g.fillStyle = 'rgb(55 138 221 / 0.09)';
+  for (let x = 0; x < o.w; x += GRID) g.fillRect(o.x + x, o.y, 2, o.h);
+  for (let y = 0; y < o.h; y += GRID) g.fillRect(o.x, o.y + y, o.w, 2);
+  const w = (sky.naturalWidth / sky.naturalHeight) * SKY_HEIGHT;
+  g.drawImage(sky, o.x + (o.w - w) / 2, o.y, w, SKY_HEIGHT);
+}
+
 /** The story's pages as PNGs, in posting order. Throws if a font or picture can't load. */
 export async function renderStory(s: StorySnapshot): Promise<Blob[]> {
-  const [, map, photo, ...duck] = await Promise.all([
+  const [, sky, map, photo, ...duck] = await Promise.all([
     loadFonts(),
+    loadImage(skyUrl),
     loadImage(mapUrl),
     loadImage(photoUrl),
     ...duckImages(s.outfit.drawn).map((d) => loadImage(d.url)),
   ]);
-  return Promise.all(storyPages(s).map((ops) => draw(ops, { map, photo }, duck)));
+  return Promise.all(storyPages(s).map((ops) => draw(ops, { sky, map, photo }, duck)));
 }
 
-function draw(ops: Op[], pictures: { map: HTMLImageElement; photo: HTMLImageElement }, duck: HTMLImageElement[]): Promise<Blob> {
+function draw(ops: Op[], pictures: { sky: HTMLImageElement; map: HTMLImageElement; photo: HTMLImageElement }, duck: HTMLImageElement[]): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = STORY.width;
   canvas.height = STORY.height;
@@ -130,12 +148,24 @@ function draw(ops: Op[], pictures: { map: HTMLImageElement; photo: HTMLImageElem
           g.stroke();
         }
         break;
-      case 'text':
-        g.font = `${o.weight} ${o.size}px ${o.font === 'comic' ? COMIC : MONO}`;
-        g.fillStyle = o.color;
-        g.textAlign = o.align;
-        g.fillText(o.text, o.align === 'center' ? o.x + o.w / 2 : o.x, o.y);
+      case 'backdrop':
+        drawBackdrop(g, o, pictures.sky);
         break;
+      case 'text': {
+        g.font = `${o.weight} ${o.size}px ${o.font === 'comic' ? COMIC : MONO}`;
+        g.textAlign = o.align;
+        const tx = o.align === 'center' ? o.x + o.w / 2 : o.x;
+        if (o.outline) {
+          // Stroke first, then the fill over it, so the letters stay full width.
+          g.strokeStyle = o.outline;
+          g.lineWidth = Math.round(o.size / 7);
+          g.lineJoin = 'round';
+          g.strokeText(o.text, tx, o.y);
+        }
+        g.fillStyle = o.color;
+        g.fillText(o.text, tx, o.y);
+        break;
+      }
       case 'effect':
         drawEffect(g, o);
         break;

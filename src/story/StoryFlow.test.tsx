@@ -84,7 +84,7 @@ describe('Sunday story', () => {
 
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' })));
     const dialog = await screen.findByRole('dialog', { name: 'Sunday story' });
-    const img = (await screen.findByRole('img', { name: /^Story page 1: See you Sunday/ })) as HTMLImageElement;
+    const img = (await screen.findByRole('img', { name: /^Story page 1: See you soon/ })) as HTMLImageElement;
     expect(img.getAttribute('src')).toBe('blob:story-1-1');
     const map = screen.getByRole('img', { name: /^Story page 2: Lost\? Find your Flock! Map to Café Tranquille/ });
     expect(map.getAttribute('src')).toBe('blob:story-1-2');

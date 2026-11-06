@@ -66,7 +66,7 @@ export default function StoryDialog({ snapshot, onRemake, onClose }: Props) {
   const canShare = files.length > 0 && typeof navigator.canShare === 'function' && navigator.canShare({ files });
   const alts = snapshot
     ? [
-        `Story page 1: See you ${snapshot.weekday}. ${snapshot.outfit.headline} Meet at ${snapshot.place.name}.`,
+        `Story page 1: See you soon. ${snapshot.outfit.headline}`,
         `Story page 2: Lost? Find your Flock! Map to ${snapshot.place.name}, ${snapshot.place.address}.`,
       ]
     : [];

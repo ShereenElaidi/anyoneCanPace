@@ -6,7 +6,6 @@ import { SCENARIOS } from '../weather/scenarios';
 import { EVENT, nextRun } from '../event/event';
 import { outfitInputFor } from '../weather/runTime';
 import { makeSnapshot, type StorySnapshot } from './snapshot';
-import { funLine } from './funLines';
 import {
   DUCK,
   MAP_PICTURE,
@@ -137,10 +136,10 @@ describe('page 1, the poster: every scenario fits a 1080 × 1920 story', () => {
     }
   });
 
-  it('says what the website says: the outfit, date, times, the welcome, and points to the map page', () => {
+  it('says what the website says: the outfit, date, times and the welcome', () => {
     const s = snap(SCENARIOS.find((x) => x.id === 'A16')!.input);
     const all = flat(storyLayout(s));
-    expect(all).toContain('SEE YOU SUNDAY!');
+    expect(all).toContain('SEE YOU SOON!');
     expect(all).toContain('Sunday, November 8 · meet 10:00, run 10:15');
     expect(all).toContain('Dress like me!');
     expect(all).toContain('(Beta)');
@@ -148,7 +147,7 @@ describe('page 1, the poster: every scenario fits a 1080 × 1920 story', () => {
     for (const item of s.outfit.wear) expect(all.toLowerCase()).toContain(item.label.toLowerCase());
     expect(all).toContain('Also: mittens, toque, neck warmer.');
     expect(all).toMatch(/Warning: Wind chill/);
-    expect(all).toContain('Meet at Café Tranquille: map on the next page');
+    expect(all).not.toContain('map on the next page');
     expect(all).toContain("New here? You're welcome!");
     expect(all).toContain('Run/walk friendly · No experience required.');
     expect(all).toMatch(/Forecast from Sat/);
@@ -174,14 +173,19 @@ describe('page 1, the poster: every scenario fits a 1080 × 1920 story', () => {
     expect(sizes).toContain(WELCOME.big);
   });
 
-  it('a fun line under the outfit when there is room, never next to a frostbite warning', () => {
-    const all = (id: string) => flat(storyLayout(snap(SCENARIOS.find((x) => x.id === id)!.input)));
-    const mild = SCENARIOS.find((x) => x.id === 'A1')!.input;
-    const line = funLine(mild.tempC, whatToWear(mild).conditions, '2026-11-08')!;
-    expect(all('A1')).toContain(line);
-    const comic = texts(storyLayout(snap(mild))).find((o) => o.text === line);
-    expect(comic?.font).toBe('comic');
-    expect(funLine(-15, whatToWear(SCENARIOS.find((x) => x.id === 'A16')!.input).conditions, '2026-11-08')).toBeNull();
+  it('has no fun line: the words under the duck are the outfit, the note and the pointer to the map', () => {
+    const all = flat(storyLayout(snap(SCENARIOS.find((x) => x.id === 'A1')!.input)));
+    expect(all).not.toContain('Cold hands');
+    expect(texts(storyLayout(snap(SCENARIOS[0].input))).some((o) => o.font === 'comic' && o.text !== 'Dress like me!')).toBe(false);
+  });
+
+  it('wears the home screen’s look: sunset backdrop, outlined title, navy pills, no navy bands', () => {
+    const ops = storyLayout(snap(SCENARIOS[0].input));
+    expect(ops.filter((o) => o.kind === 'backdrop')).toHaveLength(1);
+    const title = texts(ops).find((o) => o.text === 'SEE YOU SOON!')!;
+    expect(title.outline).toBeTruthy();
+    // Nothing is a full-width band any more.
+    expect(ops.some((o) => o.kind === 'rect' && o.w === STORY.width && o.fill)).toBe(false);
   });
 
   it('the note is the most serious advisory, else what to bring', () => {
@@ -216,9 +220,14 @@ describe('page 2, the map', () => {
     expect(all).toContain('Lost? Find your Flock!');
     expect(all).toContain('View from Rue St. Catherine.');
     expect(all).toContain('Café Tranquille');
-    expect(all).toContain('At the café entrance, 1442 Rue Clark');
     expect(all).not.toContain('Esplanade');
-    expect(all).toContain('Sunday, November 8 · meet 10:00, run 10:15');
+    // The place and the times share one ribbon: no separate address or date line.
+    expect(all).toContain('meet 10:00, run 10:15');
+    expect(all).not.toContain('1442 Rue Clark');
+    const name = texts(ops).find((o) => o.text === 'Café Tranquille')!;
+    const times = texts(ops).find((o) => o.text === 'meet 10:00, run 10:15')!;
+    const ribbon = ops.find((o) => o.kind === 'rect' && o.role === 'key' && o.fill === '#1B3F72' && o.x <= name.x && o.x <= times.x && o.y < name.y && o.y + o.h > times.y + times.size) as Extract<Op, { kind: 'rect' }> | undefined;
+    expect(ribbon, 'place and times on one ribbon').toBeDefined();
     expect(all).toContain('© OpenStreetMap contributors');
   });
 
