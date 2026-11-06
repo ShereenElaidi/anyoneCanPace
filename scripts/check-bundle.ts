@@ -68,5 +68,22 @@ console.log(
     '\n  Not included: the street map file (public/maps/*.pmtiles), saved on demand by the Route Library.',
 );
 
+// Dev-only tools (route editor, GPS simulator) must not be in the build at all.
+const DEV_ONLY = [
+  { what: 'route editor', text: '__route-editor' },
+  { what: 'route editor', text: 'Route editor failed to load' },
+];
+for (const f of readdirSync(join(DIST, 'assets'))) {
+  if (!/\.m?js$/.test(f)) continue;
+  const text = readFileSync(join(DIST, 'assets', f), 'utf8');
+  for (const sig of DEV_ONLY) {
+    if (text.includes(sig.text)) {
+      console.error(`  ✗ The ${sig.what} is in assets/${f}: it must stay dev-only.`);
+      failed = true;
+    }
+  }
+}
+
 if (failed) process.exit(1);
 console.log('\n✓ Map libraries are not in the first-load bundle.');
+console.log('✓ No dev-only tools (route editor) in the build.');

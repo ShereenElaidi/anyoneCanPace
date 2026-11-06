@@ -7,6 +7,8 @@ import { handleApi, type ApiContext, type BuildOptions, type RouteConfig } from 
 
 const REPO = process.cwd(); // Vitest runs from the repository root
 const TODAY = '2026-11-05';
+/** The routes in the repository today (tests don't assume how many there are). */
+const SHIPPED = JSON.parse(readFileSync(join(REPO, 'routes/routes.config.json'), 'utf8')) as RouteConfig[];
 
 let root: string;
 let ctx: ApiContext;
@@ -41,7 +43,7 @@ describe('reading', () => {
     const res = await api('GET', '/routes');
     const body = res.body as { routes: { id: string; built: boolean; verification: string }[]; tags: object; today: string };
     expect(res.status).toBe(200);
-    expect(body.routes.map((r) => r.id)).toEqual(['sample-loop', 'pi-day', 'canal-test']);
+    expect(body.routes.map((r) => r.id)).toEqual(SHIPPED.map((c) => c.id));
     expect(body.routes.every((r) => r.built && r.verification)).toBe(true);
     expect(body.tags).toHaveProperty('waterfront');
     expect(body.today).toBe(TODAY);
@@ -76,7 +78,7 @@ describe('adding a route', () => {
     expect(saved).toContain('<name>Canal Dawn</name>');
     const config = readJson<RouteConfig[]>('routes/routes.config.json');
     expect(config.at(-1)).toEqual({ id: 'canal-dawn', gpx: 'canal-dawn.gpx', name: 'Canal Dawn', source: SOURCE, recorded: true });
-    expect(config).toHaveLength(4);
+    expect(config).toHaveLength(SHIPPED.length + 1);
     expect(build).toHaveBeenCalledWith({});
   });
 

@@ -19,22 +19,11 @@ import { join } from 'node:path';
 import { formatJson } from '../../../../scripts/lib/json.ts';
 import { sanitizeGpx } from '../../../../scripts/lib/sanitize-gpx.ts';
 import type { RouteData, RouteSource } from '../../../nav/types';
+import type { BuildResult, RouteConfig } from '../types';
+
+export type { BuildResult, RouteConfig };
 import { validateTagList, type TagDef } from '../../../sixk/describe';
 import { applyEdits, NAME_MAX, validateNewRouteId } from '../edits';
-
-export interface RouteConfig {
-  id: string;
-  gpx: string;
-  name: string;
-  source?: RouteSource;
-  /** Recorded on a run (not drawn on a map): its turns need a closer look. Build-time only. */
-  recorded?: boolean;
-}
-
-export interface BuildResult {
-  ok: boolean;
-  log: string;
-}
 
 export interface BuildOptions {
   offline?: boolean;
