@@ -1,4 +1,5 @@
-import duck from '../assets/duck-runner.webp';
+import scene from '../assets/home/riverside.webp';
+import sceneDuck from '../assets/home/riverside-duck.webp';
 import type { AppMode } from '../lib/prefs';
 import { UpdateBanner } from './UpdateBanner';
 
@@ -6,29 +7,38 @@ interface Props {
   onPick: (mode: AppMode) => void;
 }
 
-/** Home screen: the app always opens here. */
+/**
+ * Home screen: the app always opens here. The duck runs along the river under
+ * a Montréal skyline; the scene fades into graph paper (the Route Library's
+ * thumbnail grid) while the duck, a separate cut-out, stays solid over the fade.
+ */
 export function ModePicker({ onPick }: Props) {
   return (
     <div className="app picker">
-      <header className="picker__head">
-        <img className="picker__duck" src={duck} alt="" width={72} height={72} />
-        <div>
-          <h1 className="brand">
-            AnyoneCanPace
-            {__BETA__ && (
-              <>
-                {' '}
-                <span className="beta-tag">BETA</span>
-              </>
-            )}
+      <header className="picker__hero">
+        <div className="picker__sky">
+          {/* Read as "AnyoneCanPace" (plus "BETA"); drawn as ANYONE CAN / PACE with a sticker. */}
+          <h1 className="picker__title" aria-label={__BETA__ ? 'AnyoneCanPace BETA' : 'AnyoneCanPace'}>
+            <span className="picker__t1" aria-hidden="true">
+              Anyone Can
+            </span>
+            <span className="picker__t2" aria-hidden="true">
+              Pace
+              {__BETA__ && <span className="beta-tag picker__beta">BETA</span>}
+            </span>
           </h1>
-          <p className="tagline">RUN TOGETHER. WALK TOGETHER.</p>
+          <p className="picker__ribbon">Your Stooopid Co-Pacer</p>
+        </div>
+        <div className="picker__scene" aria-hidden="true">
+          <img className="picker__scene-bg" src={scene} alt="" width={720} height={720} />
+          <span className="picker__shadow" />
+          <img className="picker__scene-duck" src={sceneDuck} alt="" width={720} height={720} />
         </div>
       </header>
 
-      <main className="main">
+      <main className="main picker__main">
         <UpdateBanner />
-        <h2 className="picker__title">What are we doing today?</h2>
+        <h2 className="visually-hidden">What are we doing today?</h2>
         <ul className="picker__list">
           <li>
             <button type="button" className="mode-card mode-card--dashboard" onClick={() => onPick('dashboard')}>
