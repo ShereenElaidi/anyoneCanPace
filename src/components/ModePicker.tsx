@@ -17,20 +17,14 @@ export function ModePicker({ onPick }: Props) {
     <div className="app picker">
       <header className="picker__hero">
         <div className="picker__sky">
-          {/* Read as "AnyoneCanPace" (plus "BETA"); drawn as ANYONE CAN / PACE. */}
-          <h1 className="picker__title">
-            <span className="visually-hidden">AnyoneCanPace</span>
+          {/* Read as "AnyoneCanPace" (plus "BETA"); drawn as ANYONE CAN / PACE with a sticker. */}
+          <h1 className="picker__title" aria-label={__BETA__ ? 'AnyoneCanPace BETA' : 'AnyoneCanPace'}>
             <span className="picker__t1" aria-hidden="true">
               Anyone Can
             </span>
-            <span className="picker__t2">
-              <span aria-hidden="true">Pace</span>
-              {__BETA__ && (
-                <>
-                  {' '}
-                  <span className="beta-tag picker__beta">BETA</span>
-                </>
-              )}
+            <span className="picker__t2" aria-hidden="true">
+              Pace
+              {__BETA__ && <span className="beta-tag picker__beta">BETA</span>}
             </span>
           </h1>
           <p className="picker__ribbon">Your Stooopid Co-Pacer</p>
