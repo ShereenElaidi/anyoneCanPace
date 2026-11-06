@@ -472,6 +472,12 @@
   gap: 14px;
 }
 
+.route-page__description {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
 .route-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

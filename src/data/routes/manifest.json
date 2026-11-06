@@ -52,7 +52,45 @@
       "place": "Lachine Canal · Saint-Henri",
       "tags": [
         "waterfront",
-        "canal-path"
+        "canal-path",
+        "testing"
+      ]
+    },
+    {
+      "id": "back-to-the-burgz-test",
+      "name": "Back to the Burgz (test)",
+      "kind": "point-to-point",
+      "stats": {
+        "distanceM": 2159,
+        "gainM": 5,
+        "lossM": 29,
+        "minEleM": 23,
+        "maxEleM": 48
+      },
+      "outline": "M27.8 6.0L27.6 6.3L28.0 6.7L56.5 26.3L59.0 29.3L73.6 39.4L73.3 40.0L72.7 39.9L31.9 86.5L26.6 92.7L27.0 93.3L26.4 94.0",
+      "verification": "unverified",
+      "place": "Downtown",
+      "tags": [
+        "testing"
+      ]
+    },
+    {
+      "id": "verdun-with-this-test",
+      "name": "Verdun with this (Test)",
+      "kind": "loop",
+      "stats": {
+        "distanceM": 5864,
+        "gainM": 3,
+        "lossM": 3,
+        "minEleM": 17,
+        "maxEleM": 20
+      },
+      "outline": "M88.8 6.4L75.5 21.8L73.0 24.7L61.5 38.1L57.3 43.3L52.7 44.8L37.0 63.7L33.6 66.3L29.6 70.2L21.5 78.4L19.9 83.3L15.4 85.8L9.8 94.0L15.4 88.8L18.0 88.7L20.8 81.2L22.7 79.2L24.3 78.3L30.2 73.0L31.9 70.0L36.4 66.8L37.6 64.6L47.1 56.2L50.3 52.7L53.6 48.6L56.8 44.9L61.2 39.7L63.9 36.4L69.3 30.4L73.5 25.9L79.0 18.8L79.9 17.8L86.7 10.6L90.2 6.0",
+      "verification": "desk-reviewed",
+      "place": "Verdun",
+      "tags": [
+        "waterfront",
+        "testing"
       ]
     }
   ]

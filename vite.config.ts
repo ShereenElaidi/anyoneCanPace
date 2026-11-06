@@ -5,6 +5,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { saveMeetingMap } from './scripts/vite/saveMeetingMap';
+import { routeEditorPlugin } from './src/dev/routeEditor/server/plugin';
 import { saveStorySheet } from './scripts/vite/saveStorySheet';
 
 /**
@@ -56,6 +57,8 @@ export default defineConfig({
     react(),
     // Dev server only: the ?meeting-map page saves the story's map picture.
     saveMeetingMap(),
+    // Dev only (`apply: 'serve'`): the route editor's file API for `?edit`. Never in a build.
+    routeEditorPlugin(),
     // Dev server only: the ?story-sheet page saves its example stories to .cache/story-sheet/.
     saveStorySheet(),
     {

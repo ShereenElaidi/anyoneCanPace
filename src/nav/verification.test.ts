@@ -21,6 +21,7 @@ describe('route verification status', () => {
     const reviewed: Record<string, true> = {
       'sample-loop': true, // field-verified on a crew run, 2026-11-05
       'canal-test': true, // field-verified on a crew run, 2026-11-05
+      'verdun-with-this-test': true, // desk-reviewed by SE, 2026-11-05
     };
     for (const { data } of allRoutes()) {
       if (!reviewed[data.id]) expect((data as RouteData).verification.status, data.id).toBe('unverified');

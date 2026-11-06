@@ -11,8 +11,9 @@ function render() {
   );
 }
 
-// Dev only: `?sim` swaps in a fake GPS that runs along a route (src/dev/simulateGps.ts).
-// `import.meta.env.DEV` is false in production builds, so this branch and its chunk are dropped.
+// Dev only: `?duck-sheet`, `?meeting-map` and `?edit` (the route editor, src/dev/routeEditor/) open a
+// dev page instead of the app, and `?sim` swaps in a fake GPS that runs along a route (src/dev/simulateGps.ts).
+// `import.meta.env.DEV` is false in production builds, so these branches and their chunks are dropped.
 const params = new URLSearchParams(location.search);
 if (import.meta.env.DEV && params.has('duck-sheet')) {
   // Dev only: `?duck-sheet` shows every outfit scenario on the dressed duck (src/dev/duckSheet/).
@@ -47,6 +48,16 @@ if (import.meta.env.DEV && params.has('duck-sheet')) {
       ),
     )
     .catch((err) => console.error('Meeting map failed', err));
+} else if (import.meta.env.DEV && params.has('edit')) {
+  import('./dev/routeEditor/RouteEditor')
+    .then(({ default: RouteEditor }) =>
+      createRoot(document.getElementById('root') as HTMLElement).render(
+        <StrictMode>
+          <RouteEditor />
+        </StrictMode>,
+      ),
+    )
+    .catch((err) => console.error('Route editor failed to load', err));
 } else if (import.meta.env.DEV && params.has('sim')) {
   import('./dev/simulateGps')
     .then((m) => m.installSimulatedGps(params))

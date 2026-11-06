@@ -14,7 +14,8 @@
   "place": "Lachine Canal · Saint-Henri",
   "tags": [
     "waterfront",
-    "canal-path"
+    "canal-path",
+    "testing"
   ],
   "bbox": [-73.62609, 45.4513, -73.566, 45.48538],
   "profile": [

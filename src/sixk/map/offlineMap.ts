@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react';
 
 /** Bump when public/maps/montreal.pmtiles is re-cut, so phones fetch the new file. */
-export const MAP_VERSION = '20261104-canal';
+export const MAP_VERSION = '20261105-verdun';
 export const MAP_FILE = 'maps/montreal.pmtiles';
 /** Shown before the first download. Keep roughly in line with the real file. */
 export const MAP_SIZE_HINT_MB = 9.9;
@@ -192,7 +192,10 @@ export function saveMap(): Promise<void> {
     try {
       const res = await fetch(mapUrl(), { cache: 'no-store' });
       if (!res.ok || !res.body) throw new Error(`Download failed (${res.status})`);
-      const total = Number(res.headers.get('content-length')) || 0;
+      // GitHub Pages gzips the file: Content-Length is then the compressed size while the
+      // body arrives decompressed, so the length only says what to expect when uncompressed.
+      const encoding = (res.headers.get('content-encoding') ?? 'identity').trim().toLowerCase();
+      const total = encoding === 'identity' ? Number(res.headers.get('content-length')) || 0 : 0;
       const reader = res.body.getReader();
       const chunks: Uint8Array<ArrayBuffer>[] = [];
       let received = 0;
