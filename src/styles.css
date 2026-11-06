@@ -551,6 +551,12 @@ button {
 /* The hero runs edge to edge, so the picker drops the side and top padding
    and gives it back to the cards and footer. */
 .picker {
+  /* Side of the square riverside scene: the full width when there's room,
+     smaller on short screens so all three cards fit below it. 412px is
+     roughly the sky band plus the three cards; svh (toolbars shown) keeps it
+     from jumping while the browser bars slide away. */
+  --scene: min(100vw, 34rem, max(220px, 100vh - 412px));
+  --scene: min(100vw, 34rem, max(220px, 100svh - 412px));
   padding-top: 0;
   padding-right: 0;
   padding-left: 0;
@@ -650,14 +656,39 @@ button {
    so his feet stay solid over the fade. */
 .picker__scene {
   position: relative;
+  width: var(--scene);
   /* Tuck under the sky band so no hairline shows between them. */
-  margin-top: -2px;
+  margin: -2px auto 0;
   aspect-ratio: 1;
 }
 
 /* The bottom of the picture is already faded out: start the cards over it. */
 .picker__main {
-  margin-top: -7%;
+  margin-top: calc(var(--scene) * -0.07);
+}
+
+/* Short screens (a phone with the browser bars showing, a laptop): the scene
+   is narrower than the screen, so its sides fade too, into the sky colour at
+   the top and the paper lower down, instead of ending in hard edges. */
+@media (max-height: 820px) {
+  /* Sky down to about the skyline, then paper by the river. */
+  .picker__hero {
+    background: linear-gradient(
+      var(--picker-sky) calc(100% - var(--scene) * 0.5),
+      transparent calc(100% - var(--scene) * 0.22)
+    );
+  }
+
+  .picker__scene-bg {
+    -webkit-mask-image:
+      linear-gradient(#000 64%, transparent 94%),
+      linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(#000 64%, transparent 94%),
+      linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    mask-composite: intersect;
+  }
 }
 
 .picker__scene img {
@@ -683,10 +714,24 @@ button {
   background: radial-gradient(closest-side, rgb(44 44 42 / 0.28), transparent);
 }
 
+/* Compact cards with one-line help, so the three fit under the scene. */
+.picker .picker__list {
+  gap: 12px;
+}
+
 .picker .mode-card {
-  min-height: 76px;
-  padding-top: 11px;
-  padding-bottom: 11px;
+  gap: 2px;
+  min-height: 64px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.picker .mode-card__name {
+  font-size: 1.1rem;
+}
+
+.picker .mode-card__help {
+  font-size: 0.8rem;
 }
 
 .picker__list {
