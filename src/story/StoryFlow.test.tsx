@@ -66,7 +66,7 @@ describe('Sunday story', () => {
     await openDashboard();
     fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' }));
     expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain(
-      'The forecast doesn’t reach Sunday, November 8 yet. It covers about 3 days: try from Friday.',
+      'The forecast doesn’t reach Sunday, November 8 yet. It covers 5 days: try from Wednesday.',
     );
     expect(drawn).toHaveLength(0);
   });
@@ -88,6 +88,7 @@ describe('Sunday story', () => {
     expect(drawn[0].run.date).toBe('2026-11-08');
     expect(drawn[0].weather.hourAt).toBe(est(8, 10));
     expect(dialog.textContent).toMatch(/Forecast from Saturday/);
+    expect(dialog.textContent).not.toMatch(/Early forecast/); // Saturday night: the day before
 
     // The same picture goes out, named for the day.
     const save = screen.getByRole('link', { name: 'SAVE IMAGE' });
@@ -108,6 +109,30 @@ describe('Sunday story', () => {
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'REMAKE' })));
     expect(drawn).toHaveLength(2);
     expect(drawn[1].weather.tempC).toBe(drawn[0].weather.tempC - 10);
+  });
+
+  it('Wednesday: the story can be made, labelled as an early forecast', async () => {
+    vi.setSystemTime(est(4, 9, 12));
+    // Fetched on Wednesday Nov 4, reaching Sunday Nov 8 and beyond: the recording (Nov 4–5)
+    // repeated 2 and 4 days later, like a 5-day forecast.
+    const f = structuredClone(fixture) as typeof fixture;
+    const two = 2 * 86_400;
+    for (const k of Object.keys(f.hourly) as (keyof typeof f.hourly)[]) {
+      const col = fixture.hourly[k] as number[];
+      (f.hourly[k] as number[]) = k === 'time' ? [...col, ...col.map((t) => t + two), ...col.map((t) => t + 2 * two)] : [...col, ...col, ...col];
+    }
+    vi.stubGlobal('fetch', vi.fn(async () => respond(f)));
+    await openDashboard();
+    // The hour picker still shows only 3 days.
+    expect(screen.getAllByText(/^(Today|Tomorrow|Friday|Saturday|Sunday)$/).map((e) => e.textContent)).toEqual([
+      'Today',
+      'Tomorrow',
+      'Friday',
+    ]);
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' })));
+    const dialog = await screen.findByRole('dialog', { name: 'Sunday story' });
+    expect(drawn[0].run.date).toBe('2026-11-08');
+    expect(dialog.textContent).toContain('Early forecast: it can still change. Check again on Saturday and REMAKE if it did.');
   });
 
   it('no file sharing (desktop browsers): SAVE IMAGE and press-and-hold only', async () => {

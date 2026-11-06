@@ -31,6 +31,7 @@ const routeNames = Object.fromEntries((manifestFile as unknown as RouteManifest)
 const OLD_FORECAST_MS = 6 * 3_600_000;
 
 /** How many days of run times the hour strip offers. */
+/** Only the first 3 days, even though 5 are fetched (the extra days are for the Sunday story). */
 const PICKER_DAYS = 3;
 
 interface Props {

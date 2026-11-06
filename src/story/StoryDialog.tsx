@@ -5,6 +5,8 @@ import { MONTREAL } from '../weather/forecast';
 const stampFmt = new Intl.DateTimeFormat('en-CA', { timeZone: MONTREAL.timeZone, weekday: 'long', hour: 'numeric', minute: '2-digit' });
 /** A forecast older than this gets a "may be out of date" line. */
 const OLD_MS = 6 * 3_600_000;
+/** A run further ahead than this gets an "early forecast" line: the detailed models reach about 3 days. */
+const EARLY_MS = 3 * 86_400_000;
 
 type State = { kind: 'drawing' } | { kind: 'ready'; blob: Blob; url: string } | { kind: 'failed'; message: string };
 
@@ -73,6 +75,7 @@ export default function StoryDialog({ snapshot, onRemake, onClose }: Props) {
   }
 
   const old = snapshot ? snapshot.madeAt - snapshot.forecastFetchedAt > OLD_MS : false;
+  const early = snapshot ? snapshot.run.startAt - snapshot.forecastFetchedAt > EARLY_MS : false;
 
   return (
     <dialog
@@ -96,6 +99,7 @@ export default function StoryDialog({ snapshot, onRemake, onClose }: Props) {
         {snapshot && (
           <p className="story-sheet__meta">
             Forecast from {stampFmt.format(snapshot.forecastFetchedAt).replace(/\.$/, '')}.{old ? ' It may be out of date: REFRESH the dashboard, then REMAKE.' : ''}
+            {early && ' Early forecast: it can still change. Check again on Saturday and REMAKE if it did.'}
           </p>
         )}
         <div className="story-sheet__preview">

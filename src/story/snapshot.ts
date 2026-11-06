@@ -31,7 +31,7 @@ export interface StorySnapshot {
 
 export type SnapshotResult =
   | { ok: true; snapshot: StorySnapshot }
-  /** The forecast doesn't reach the run yet (it covers about 3 days). */
+  /** The forecast doesn't reach the run yet (it covers FORECAST_DAYS days). */
   | { ok: false; reason: 'not-covered'; run: RunTimes };
 
 export function makeSnapshot(f: Forecast, now: number): SnapshotResult {
