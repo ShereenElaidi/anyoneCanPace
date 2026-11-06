@@ -30,9 +30,8 @@ export function ModePicker({ onPick }: Props) {
           <p className="picker__ribbon">Your Stooopid Co-Pacer</p>
         </div>
         <div className="picker__scene" aria-hidden="true">
-          <img className="picker__scene-bg" src={scene} alt="" width={720} height={720} />
-          <span className="picker__shadow" />
-          <img className="picker__scene-duck" src={sceneDuck} alt="" width={720} height={720} />
+          <img className="picker__scene-bg" src={scene} alt="" width={1080} height={720} />
+          <img className="picker__scene-duck" src={sceneDuck} alt="" width={1080} height={720} />
         </div>
       </header>
 

@@ -551,12 +551,14 @@ button {
 /* The hero runs edge to edge, so the picker drops the side and top padding
    and gives it back to the cards and footer. */
 .picker {
-  /* Side of the square riverside scene: the full width when there's room,
-     smaller on short screens so all three cards fit below it. 412px is
-     roughly the sky band plus the three cards; svh (toolbars shown) keeps it
-     from jumping while the browser bars slide away. */
-  --scene: min(100vw, 34rem, max(220px, 100vh - 412px));
-  --scene: min(100vw, 34rem, max(220px, 100svh - 412px));
+  /* The riverside scene (a 3:2 picture) always runs the full width. Its
+     height takes what the screen can spare: 412px is roughly the sky band
+     plus the three cards. From the picture's own 3:2 on short screens up to
+     a square on tall ones (cropping the sides, never the duck). svh (browser
+     bars shown) keeps it from jumping while the bars slide away. */
+  --scene-w: min(100vw, 34rem);
+  --scene-h: min(var(--scene-w), max(var(--scene-w) * 2 / 3, 100vh - 412px));
+  --scene-h: min(var(--scene-w), max(var(--scene-w) * 2 / 3, 100svh - 412px));
   padding-top: 0;
   padding-right: 0;
   padding-left: 0;
@@ -582,7 +584,7 @@ button {
 
 .picker__hero {
   /* The picture's own sky colour, so the band and the image meet without a seam. */
-  --picker-sky: #a7bbe7;
+  --picker-sky: #9db5ea;
   display: flex;
   flex-direction: column;
 }
@@ -656,62 +658,33 @@ button {
    so his feet stay solid over the fade. */
 .picker__scene {
   position: relative;
-  width: var(--scene);
+  width: var(--scene-w);
+  height: var(--scene-h);
   /* Tuck under the sky band so no hairline shows between them. */
   margin: -2px auto 0;
-  aspect-ratio: 1;
 }
 
 /* The bottom of the picture is already faded out: start the cards over it. */
 .picker__main {
-  margin-top: calc(var(--scene) * -0.07);
+  margin-top: calc(var(--scene-h) * -0.06);
 }
 
-/* Short screens (a phone with the browser bars showing, a laptop): the scene
-   is narrower than the screen, so its sides fade too, into the sky colour at
-   the top and the paper lower down, instead of ending in hard edges. */
-@media (max-height: 820px) {
-  /* Sky down to about the skyline, then paper by the river. */
-  .picker__hero {
-    background: linear-gradient(
-      var(--picker-sky) calc(100% - var(--scene) * 0.5),
-      transparent calc(100% - var(--scene) * 0.22)
-    );
-  }
-
-  .picker__scene-bg {
-    -webkit-mask-image:
-      linear-gradient(#000 64%, transparent 94%),
-      linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      linear-gradient(#000 64%, transparent 94%),
-      linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-    mask-composite: intersect;
-  }
-}
-
+/* Both layers crop the same way, so the duck stays exactly on his spot (and
+   his shadow, which is part of his layer). Centred on the duck, not the
+   picture. */
 .picker__scene img {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: 46% 50%;
 }
 
 .picker__scene-bg {
-  -webkit-mask-image: linear-gradient(#000 64%, transparent 94%);
-  mask-image: linear-gradient(#000 64%, transparent 94%);
-}
-
-.picker__shadow {
-  position: absolute;
-  top: 88.5%;
-  left: 19%;
-  width: 61%;
-  height: 4.5%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(44 44 42 / 0.28), transparent);
+  -webkit-mask-image: linear-gradient(#000 72%, transparent 97%);
+  mask-image: linear-gradient(#000 72%, transparent 97%);
 }
 
 /* Compact cards with one-line help, so the three fit under the scene. */
