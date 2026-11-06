@@ -4,6 +4,12 @@
  * monospaced (every glyph is 0.6 em wide), so widths are exact here without
  * a canvas, and the tests can check nothing is clipped or covered.
  *
+ * Two pages, posted one after the other:
+ * 1. the poster: the dressed duck big, the weather on a sticker beside it,
+ *    what to wear, the most important note and a welcome;
+ * 2. the map: "Lost? Find your Flock?", where and when, the meeting-point
+ *    map, and empty space for Instagram's Link sticker.
+ *
  * Instagram draws its own header over the top of a story and the reply bar
  * over the bottom, so key content stays between SAFE.top and SAFE.bottom.
  */
@@ -11,13 +17,14 @@ import type { StorySnapshot } from './snapshot';
 import { MONTREAL } from '../weather/forecast';
 import { BRAND } from '../sixk/map/mapStyle';
 import type { Advice } from '../weather/outfit';
+import { extrasText, layersText } from '../weather/outfitText';
 
 export const STORY = { width: 1080, height: 1920 } as const;
 export const SAFE = { top: 220, bottom: 1700, side: 60 } as const;
 /** The meeting-map picture's own size (src/assets/story/meeting-map.webp). */
 export const MAP_PICTURE = { width: 960, height: 520 } as const;
-/** Smallest the map may shrink to before the layout counts as broken (tests). */
-export const MIN_MAP_SCALE = 0.75;
+/** The duck's circle on the poster: as big as the outfit text leaves room for. */
+export const DUCK = { max: 600, min: 380 } as const;
 
 const MONO_EM = 0.6;
 /** Comic Neue isn't monospaced; this bounds its widest common letters. */
@@ -43,7 +50,9 @@ export type Op =
       align: 'left' | 'center';
     }
   | { kind: 'duck'; role: Role; x: number; y: number; w: number; h: number }
-  | { kind: 'effect'; role: Role; x: number; y: number; w: number; h: number; effect: 'rain' | 'snow' }
+  | { kind: 'effect'; role: Role; x: number; y: number; w: number; h: number; radius: number; effect: 'rain' | 'snow' }
+  /** A filled outline, e.g. the speech bubble's tail. */
+  | { kind: 'poly'; role: Role; points: [number, number][]; fill: string; stroke?: string; line?: number }
   | { kind: 'map'; role: Role; x: number; y: number; w: number; h: number; radius: number };
 
 export const textWidth = (text: string, size: number, font: Font = 'mono') =>
@@ -81,17 +90,14 @@ export function storyNote(s: StorySnapshot): string | null {
   return a.find((x) => x.level === 'info' && !/% chance of rain or snow/.test(x.text))?.text ?? null;
 }
 
-export function storyLayout(s: StorySnapshot): Op[] {
+type TextOp = Extract<Op, { kind: 'text' }>;
+
+/** Drawing helpers for one page: text with defaults, wrapped lines, the brand bands and footer. */
+function page() {
   const ops: Op[] = [];
-  const W = STORY.width;
   const x0 = SAFE.side;
-  const inner = W - 2 * SAFE.side;
-  const text = (
-    t: string,
-    y: number,
-    size: number,
-    o: Partial<Extract<Op, { kind: 'text' }>> = {},
-  ): Extract<Op, { kind: 'text' }> => ({
+  const inner = STORY.width - 2 * SAFE.side;
+  const text = (t: string, y: number, size: number, o: Partial<TextOp> = {}): TextOp => ({
     kind: 'text',
     role: 'key',
     x: x0,
@@ -106,93 +112,158 @@ export function storyLayout(s: StorySnapshot): Op[] {
     ...o,
   });
   /** Wrapped lines from y; returns the y below them. */
-  const lines = (t: string, y: number, size: number, lh: number, o: Partial<Extract<Op, { kind: 'text' }>> = {}) => {
-    const w = o.w ?? inner;
-    for (const l of wrap(t, size, w, o.font)) {
+  const lines = (t: string, y: number, size: number, lh: number, o: Partial<TextOp> = {}) => {
+    for (const l of wrap(t, size, o.w ?? inner, o.font)) {
       ops.push(text(l, y, size, o));
       y += lh;
     }
     return y;
   };
+  /** Background and brand bands (decor; Instagram's header and reply bar sit over them), and the footer. */
+  const frame = (credits: string) => {
+    const W = STORY.width;
+    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 0, w: W, h: STORY.height, fill: BRAND.pavement });
+    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 0, w: W, h: 190, fill: BRAND.navy });
+    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 190, w: W, h: 12, fill: BRAND.gold });
+    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1718, w: W, h: 12, fill: BRAND.gold });
+    ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1730, w: W, h: STORY.height - 1730, fill: BRAND.navy });
+    // Under the reply bar is fine: nice to have, not needed.
+    ops.push(text('LES STOOOPIDS · ANYONECANPACE', 1760, 30, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 800 }));
+    wrap(credits, 18, inner).forEach((l, i) =>
+      ops.push(text(l, 1810 + i * 26, 18, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 500 })),
+    );
+  };
+  return { ops, x0, inner, text, lines, frame };
+}
 
-  // Background and brand bands (decor; Instagram's header and reply bar sit over them).
-  ops.push({ kind: 'rect', role: 'decor', x: 0, y: 0, w: W, h: STORY.height, fill: BRAND.pavement });
-  ops.push({ kind: 'rect', role: 'decor', x: 0, y: 0, w: W, h: 190, fill: BRAND.navy });
-  ops.push({ kind: 'rect', role: 'decor', x: 0, y: 190, w: W, h: 12, fill: BRAND.gold });
-  ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1718, w: W, h: 12, fill: BRAND.gold });
-  ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1730, w: W, h: STORY.height - 1730, fill: BRAND.navy });
+/** Both pages, in posting order. */
+export const storyPages = (s: StorySnapshot): Op[][] => [storyLayout(s), mapPageLayout(s)];
+
+/** Page 1: the poster. */
+export function storyLayout(s: StorySnapshot): Op[] {
+  const { ops, x0, inner, text, lines, frame } = page();
+  const W = STORY.width;
+  frame(`Forecast from ${stampFmt.format(s.forecastFetchedAt)} · Open-Meteo / ECCC GEM (CC BY 4.0)`);
 
   // Headline, date and times.
-  let y = 240;
-  ops.push(text(`SEE YOU ${s.weekday.toUpperCase()}!`, y, 92, { weight: 800, color: BRAND.navy, align: 'center' }));
-  y += 112;
-  y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, y, 34, 44, {
+  ops.push(text(`SEE YOU ${s.weekday.toUpperCase()}!`, 240, 92, { weight: 800, color: BRAND.navy, align: 'center' }));
+  let y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, 352, 34, 44, {
     align: 'center',
   });
-  y += 16;
+  const heroTop = y + 20;
 
-  // Duck card and the weather beside it.
-  const card = 330;
-  ops.push({ kind: 'rect', role: 'key', x: x0, y, w: card, h: card, fill: '#EDE5D8', stroke: BRAND.asphalt, line: 5, radius: 28 });
-  if (s.outfit.effect) ops.push({ kind: 'effect', role: 'decor', x: x0, y, w: card, h: card, effect: s.outfit.effect });
-  ops.push({ kind: 'duck', role: 'key', x: x0 + 10, y: y + 10, w: card - 20, h: card - 20 });
-  const cx = x0 + card + 30;
-  const cw = W - SAFE.side - cx;
-  const bubble = 'Dress like me!';
-  const bw = textWidth(bubble, 36, 'comic') + 40;
-  ops.push({ kind: 'rect', role: 'key', x: cx, y, w: bw, h: 62, fill: BRAND.paper, stroke: BRAND.asphalt, line: 4, radius: 22 });
-  ops.push(text(bubble, y + 13, 36, { x: cx + 20, w: bw - 40, font: 'comic', color: BRAND.navy }));
-  // No space before the unit at this size: a monospaced space is wide.
-  ops.push(text(`${Math.round(s.weather.tempC) || 0}°C`, y + 78, 116, { x: cx, w: cw, weight: 800, color: BRAND.navy }));
-  ops.push(text(s.weather.text, y + 220, 36, { x: cx, w: cw }));
-  const wind = s.weather.windKmh !== null ? `${NB}· wind ${Math.round(s.weather.windKmh)}${NB}km/h` : '';
-  const wet =
-    s.weather.precipProb !== null && s.weather.precipProb >= 40 ? `${NB}· ${Math.round(s.weather.precipProb)}${NB}% rain/snow` : '';
-  lines(`Feels like ${deg(s.weather.feelsC)}${wind}${wet}`, y + 266, 26, 32, { x: cx, w: cw, weight: 500 });
-  y += card + 26;
-
-  // What to wear: the same labels as the website, in the same order.
-  ops.push(text('WHAT TO WEAR', y, 28, { weight: 800, color: BRAND.navy }));
-  y += 40;
-  // A "·" never starts a line: it sticks to the word before it.
-  y = lines(s.outfit.wear.map((i) => i.label).join(`${NB}· `), y, 36, 46);
-  y += 14;
-
-  const note = storyNote(s);
-  if (note) {
-    const tl = wrap(note, 27, inner - 44);
-    const h = tl.length * 36 + 26;
-    ops.push({ kind: 'rect', role: 'key', x: x0, y, w: inner, h, fill: BRAND.paper, stroke: BRAND.asphalt, line: 3, radius: 16 });
-    ops.push({ kind: 'rect', role: 'key', x: x0, y, w: 12, h, fill: note.startsWith('Warning') ? BRAND.asphalt : BRAND.gold, radius: 6 });
-    lines(note, y + 13, 27, 36, { x: x0 + 30, w: inner - 44, weight: 600 });
-    y += h;
-  }
-  y += 22;
-
-  // Meeting point: map, then place, then the welcome. The map takes what's left.
-  const caption = `${s.place.name} · ${s.place.spot.toLowerCase()}, ${s.place.address}`;
-  const captionLines = wrap(caption, 26, inner).length;
+  // From the bottom up: the welcome, the pointer to the map page, then the outfit words.
   const welcome = ["New here? You're welcome!", 'Run/walk friendly · Nobody left behind.'];
-  const tail = 10 + captionLines * 34 + 18 + welcome.length * 38 + 20;
-  const scale = Math.min(1, (SAFE.bottom - y - tail) / MAP_PICTURE.height);
-  const mw = MAP_PICTURE.width * scale;
-  const mh = MAP_PICTURE.height * scale;
-  ops.push({ kind: 'map', role: 'key', x: (W - mw) / 2, y, w: mw, h: mh, radius: 22 });
-  ops.push({ kind: 'rect', role: 'key', x: (W - mw) / 2, y, w: mw, h: mh, stroke: BRAND.asphalt, line: 5, radius: 22 });
-  y += mh + 10;
-  y = lines(caption, y, 26, 34, { weight: 600, align: 'center' });
-  y += 18;
   const pillH = welcome.length * 38 + 20;
-  ops.push({ kind: 'rect', role: 'key', x: x0, y, w: inner, h: pillH, fill: BRAND.navy, radius: pillH / 2 });
-  welcome.forEach((l, i) => ops.push(text(l, y + 12 + i * 38, 28, { align: 'center', color: BRAND.paper, weight: 800 })));
+  const pillY = SAFE.bottom - pillH;
+  const meet = `Meet at ${s.place.name}: map on the next page`;
+  const meetLines = wrap(meet, 30, inner);
+  const meetY = pillY - 24 - meetLines.length * 40;
 
-  // Footer (under the reply bar is fine: nice to have, not needed).
-  ops.push(text('LES STOOOPIDS · ANYONECANPACE', 1760, 30, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 800 }));
-  const stamp = `Forecast from ${stampFmt.format(s.forecastFetchedAt)} · Open-Meteo / ECCC GEM (CC BY 4.0) · Map © OpenStreetMap contributors`;
-  wrap(stamp, 18, inner).forEach((l, i) =>
-    ops.push(text(l, 1810 + i * 26, 18, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 500 })),
+  const layers = layersText(s.outfit);
+  const layerLines = wrap(layers, 52, inner).length;
+  const extras = extrasText(s.outfit);
+  const also = extras ? `Also: ${extras}` : '';
+  const alsoLines = also ? wrap(also, 34, inner).length : 0;
+  const note = storyNote(s);
+  const noteLines = note ? wrap(note, 28, inner - 44) : [];
+  const noteH = note ? noteLines.length * 38 + 26 : 0;
+  const wearH = layerLines * 62 + (also ? 10 + alsoLines * 44 : 0) + (note ? 20 + noteH : 0);
+
+  // The duck takes what's left (the speech bubble sits above it).
+  const bubbleH = 72;
+  const room = meetY - 30 - wearH - 24 - (heroTop + bubbleH);
+  const d = Math.max(DUCK.min, Math.min(DUCK.max, room));
+  // Short outfits leave room to spare: half above the duck, half below the words.
+  const top = heroTop + Math.max(0, room - d) / 2;
+  const duckY = top + bubbleH;
+  ops.push({ kind: 'rect', role: 'key', x: x0, y: duckY, w: d, h: d, fill: '#EDE5D8', stroke: BRAND.asphalt, line: 5, radius: d / 2 });
+  if (s.outfit.effect) ops.push({ kind: 'effect', role: 'decor', x: x0, y: duckY, w: d, h: d, radius: d / 2, effect: s.outfit.effect });
+  const pad = d * 0.07;
+  ops.push({ kind: 'duck', role: 'key', x: x0 + pad, y: duckY + pad, w: d - 2 * pad, h: d - 2 * pad });
+
+  // "Dress like me!" in a comic speech bubble, its tail pointing down at the duck's head.
+  const bubble = 'Dress like me!';
+  const bw = textWidth(bubble, 46, 'comic') + 40;
+  const bx = x0 + d * 0.42;
+  ops.push({ kind: 'rect', role: 'key', x: bx, y: top, w: bw, h: bubbleH - 8, fill: BRAND.paper, stroke: BRAND.asphalt, line: 5, radius: 30 });
+  ops.push({
+    kind: 'poly',
+    role: 'decor',
+    points: [
+      [bx + 44, top + bubbleH - 13],
+      [bx + 84, top + bubbleH - 13],
+      [bx + 30, top + bubbleH + 26],
+    ],
+    fill: BRAND.paper,
+    stroke: BRAND.asphalt,
+    line: 5,
+  });
+  // Covers the stroke where the tail joins the bubble.
+  ops.push({ kind: 'rect', role: 'decor', x: bx + 47, y: top + bubbleH - 17, w: 34, h: 8, fill: BRAND.paper });
+  // Centred: Comic Neue is narrower than the width allowed for it.
+  ops.push(text(bubble, top + 12, 46, { x: bx + 20, w: bw - 40, font: 'comic', color: BRAND.navy, align: 'center' }));
+
+  // The weather on a sticker beside the duck: air temperature big, then feels-like, sky, wind and wet.
+  const sx = x0 + d + 30;
+  const sw = W - SAFE.side - sx;
+  const temp = `${Math.round(s.weather.tempC) || 0}°C`;
+  const tSize = Math.min(110, Math.floor((sw - 32) / ([...temp].length * MONO_EM)));
+  const facts = [`feels ${deg(s.weather.feelsC)}`, s.weather.text];
+  if (s.weather.windKmh !== null && s.weather.windKmh >= 20) facts.push(`wind ${Math.round(s.weather.windKmh)}${NB}km/h`);
+  if (s.weather.precipProb !== null && s.weather.precipProb >= 40) facts.push(`${Math.round(s.weather.precipProb)}${NB}% rain/snow`);
+  const factLines = facts.flatMap((f) => wrap(f, 28, sw - 32));
+  const sh = 24 + tSize * 1.15 + factLines.length * 36 + 18;
+  const sy = Math.max(top + bubbleH + 20, duckY + d / 2 - sh / 2);
+  ops.push({ kind: 'rect', role: 'key', x: sx, y: sy, w: sw, h: sh, fill: BRAND.paper, stroke: BRAND.asphalt, line: 5, radius: 26 });
+  ops.push(text(temp, sy + 20, tSize, { x: sx + 16, w: sw - 32, weight: 800, color: BRAND.navy, align: 'center' }));
+  factLines.forEach((l, i) =>
+    ops.push(text(l, sy + 24 + tSize * 1.15 + i * 36, 28, { x: sx + 16, w: sw - 32, weight: 600, align: 'center' })),
   );
 
+  // What to wear: the layers big, the rest under them, then the one note.
+  y = duckY + d + 24;
+  y = lines(layers, y, 52, 62, { weight: 800, color: BRAND.navy, align: 'center' });
+  if (also) y = lines(also, y + 10, 34, 44, { weight: 600, align: 'center' });
+  if (note) {
+    y += 20;
+    ops.push({ kind: 'rect', role: 'key', x: x0, y, w: inner, h: noteH, fill: BRAND.paper, stroke: BRAND.asphalt, line: 3, radius: 16 });
+    ops.push({ kind: 'rect', role: 'key', x: x0, y, w: 12, h: noteH, fill: note.startsWith('Warning') ? BRAND.asphalt : BRAND.gold, radius: 6 });
+    noteLines.forEach((l, i) => ops.push(text(l, y + 13 + i * 38, 28, { x: x0 + 30, w: inner - 44, weight: 600 })));
+  }
+
+  meetLines.forEach((l, i) => ops.push(text(l, meetY + i * 40, 30, { align: 'center', weight: 600 })));
+  ops.push({ kind: 'rect', role: 'key', x: x0, y: pillY, w: inner, h: pillH, fill: BRAND.navy, radius: pillH / 2 });
+  welcome.forEach((l, i) => ops.push(text(l, pillY + 12 + i * 38, 28, { align: 'center', color: BRAND.paper, weight: 800 })));
+  return ops;
+}
+
+/** Empty height kept under the map for Instagram's Link sticker (tests). */
+export const STICKER_SPACE_MIN = 300;
+
+/** Page 2: the map. */
+export function mapPageLayout(s: StorySnapshot): Op[] {
+  const { ops, text, lines, frame } = page();
+  frame('Map © OpenStreetMap contributors · Protomaps');
+
+  let y = 250;
+  for (const l of ['Lost?', 'Find your Flock?']) {
+    ops.push(text(l, y, 96, { weight: 800, color: BRAND.navy, align: 'center' }));
+    y += 118;
+  }
+  y += 16;
+  ops.push(text(s.place.name, y, 48, { weight: 800, color: BRAND.navy, align: 'center' }));
+  y += 64;
+  y = lines(`${s.place.spot}, ${s.place.address}`, y, 32, 42, { weight: 500, align: 'center' });
+  y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, y + 10, 30, 40, {
+    weight: 700,
+    align: 'center',
+  });
+  y += 30;
+  const mx = (STORY.width - MAP_PICTURE.width) / 2;
+  ops.push({ kind: 'map', role: 'key', x: mx, y, w: MAP_PICTURE.width, h: MAP_PICTURE.height, radius: 22 });
+  ops.push({ kind: 'rect', role: 'key', x: mx, y, w: MAP_PICTURE.width, h: MAP_PICTURE.height, stroke: BRAND.asphalt, line: 5, radius: 22 });
+  // Below the map stays empty for the Link sticker.
   return ops;
 }
 
