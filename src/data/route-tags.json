@@ -1,6 +1,22 @@
 {
-  "shape-run": { "label": "Shape run", "tone": "green" },
-  "good-first-route": { "label": "Good first route", "tone": "blue" },
-  "waterfront": { "label": "Waterfront", "tone": "gold" },
-  "canal-path": { "label": "Canal path", "tone": "gold" }
+  "shape-run": {
+    "label": "Shape run",
+    "tone": "green"
+  },
+  "good-first-route": {
+    "label": "Good first route",
+    "tone": "blue"
+  },
+  "waterfront": {
+    "label": "Waterfront",
+    "tone": "blue"
+  },
+  "canal-path": {
+    "label": "Canal path",
+    "tone": "gold"
+  },
+  "testing": {
+    "label": "Testing",
+    "tone": "gold"
+  }
 }
