@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { routeShareUrl, sharedRouteId, withoutRouteParam } from './routeLink';
+import { matchSharedRoute, routeShareUrl, sharedRouteId, withoutRouteParam } from './routeLink';
 
 describe('shared route links', () => {
   it('names only the route, on the app’s own address', () => {
@@ -16,6 +16,26 @@ describe('shared route links', () => {
     expect(sharedRouteId('?route=')).toBeNull();
     expect(sharedRouteId('?route=%20')).toBeNull();
     expect(sharedRouteId('')).toBeNull();
+  });
+
+  it('finds the route when the share text got pasted onto the link', () => {
+    const ids = ['pi-day', '1st-bday-of-the-stooopidverse', 'sample-loop'];
+    // The link and its text, copied from a share sheet and pasted into the address bar as one line.
+    const pasted = 'https://anyonecanpacebeta.pages.dev/?route=1st-bday-of-the-stooopidverse1st bday of the Stooopid Run Crew (7.0 km) on AnyoneCanPace';
+    expect(matchSharedRoute(sharedRouteId(new URL(pasted).search)!, ids)).toBe('1st-bday-of-the-stooopidverse');
+    expect(matchSharedRoute('pi-day Pi Day (4.6 km) on AnyoneCanPace', ids)).toBe('pi-day');
+    // A stray end of sentence, or capitals.
+    expect(matchSharedRoute('pi-day).', ids)).toBe('pi-day');
+    expect(matchSharedRoute('Sample-Loop', ids)).toBe('sample-loop');
+    expect(matchSharedRoute('pi-day', ids)).toBe('pi-day');
+  });
+
+  it('doesn’t guess at other routes or typos', () => {
+    const ids = ['pi-day', 'sample-loop'];
+    expect(matchSharedRoute('pi-day-2', ids)).toBeNull(); // a different (removed) route, not Pi Day
+    expect(matchSharedRoute('pi-dayy', ids)).toBeNull();
+    expect(matchSharedRoute('pi-da', ids)).toBeNull();
+    expect(matchSharedRoute('gone-route', ids)).toBeNull();
   });
 
   it('removes only the route part of the address', () => {

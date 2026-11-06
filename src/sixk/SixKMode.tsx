@@ -1,7 +1,7 @@
 import { UpdateBanner } from '../components/UpdateBanner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadRoutePace, saveRoutePace } from '../lib/prefs';
-import { withoutRouteParam } from '../lib/routeLink';
+import { matchSharedRoute, withoutRouteParam } from '../lib/routeLink';
 import { loadRoute, manifest, type LoadedRoute } from './data';
 import { availableFilters, clampPace, PACE, visibleRoutes, type RouteFilter } from './describe';
 import { FollowView } from './FollowView';
@@ -19,7 +19,7 @@ interface Props {
   openRoute?: string | null;
 }
 
-const isKnownRoute = (id: string | null | undefined): id is string => !!id && manifest.routes.some((r) => r.id === id);
+const routeIds = manifest.routes.map((r) => r.id);
 
 /**
  * 6K Route Library mode: library → route page → follow view.
@@ -30,9 +30,11 @@ const isKnownRoute = (id: string | null | undefined): id is string => !!id && ma
  * route menu instead (ending a route always needs the menu).
  */
 export default function SixKMode({ onSwitchMode, openRoute }: Props) {
-  const [view, setView] = useState<View>(() => (isKnownRoute(openRoute) ? { name: 'route', id: openRoute } : { name: 'library' }));
+  // The route a shared link means (it may carry the share text glued on: see matchSharedRoute).
+  const [linkedRoute] = useState(() => (openRoute ? matchSharedRoute(openRoute, routeIds) : null));
+  const [view, setView] = useState<View>(() => (linkedRoute ? { name: 'route', id: linkedRoute } : { name: 'library' }));
   // A link to a route this version doesn't have (renamed, removed, or the app is older than the link).
-  const [missingRoute, setMissingRoute] = useState(() => !!openRoute && !isKnownRoute(openRoute));
+  const [missingRoute, setMissingRoute] = useState(() => !!openRoute && !linkedRoute);
   const [route, setRoute] = useState<LoadedRoute | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [menuRequest, setMenuRequest] = useState(0);
@@ -68,11 +70,11 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
     linkHandled.current = true;
     try {
       history.replaceState({ sixk: { name: 'library' } satisfies View }, '', withoutRouteParam(location.href));
-      if (isKnownRoute(openRoute)) history.pushState({ sixk: { name: 'route', id: openRoute } satisfies View }, '');
+      if (linkedRoute) history.pushState({ sixk: { name: 'route', id: linkedRoute } satisfies View }, '');
     } catch {
       // History unavailable (some embedded browsers): in-app buttons still work.
     }
-  }, [openRoute]);
+  }, [openRoute, linkedRoute]);
 
   const id = view.name === 'library' ? null : view.id;
   useEffect(() => {

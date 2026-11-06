@@ -195,6 +195,14 @@ describe('shared route links', () => {
     expect(await screen.findByRole('heading', { name: 'Route Library' })).toBeTruthy();
   });
 
+  it('a link with the share text pasted onto it still opens the route', async () => {
+    history.replaceState(null, '', '/?route=pi-dayPi%20Day%20(4.6%20km)%20on%20AnyoneCanPace');
+    render(<Root />);
+    expect(await screen.findByRole('heading', { name: 'Pi Day' }, { timeout: 3000 })).toBeTruthy();
+    expect(screen.queryByText(/The shared route isn’t in this version/)).toBeNull();
+    expect(location.search).toBe('');
+  });
+
   it('a link to a route this version doesn’t have opens the library with a note', async () => {
     history.replaceState(null, '', '/?route=gone-route');
     render(<Root />);
