@@ -424,7 +424,7 @@
 }
 
 .verify-note {
-  padding: 10px 12px;
+  padding: 0;
   border: var(--line) solid var(--asphalt);
   border-radius: 14px;
   background: var(--paper);
@@ -448,9 +448,48 @@
   color: var(--ok-green);
 }
 
+/* The status line is the tap target (≥ 44 px); the details open under it. */
 .verify-note__label {
-  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 12px;
   font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.verify-note__label::-webkit-details-marker {
+  display: none;
+}
+
+/* A chevron that points down when closed, up when open (decorative: the summary is announced as expandable). */
+.verify-note__more {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: -4px;
+  border-right: 2.5px solid currentColor;
+  border-bottom: 2.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 150ms ease;
+}
+
+.verify-note details[open] .verify-note__more {
+  margin-top: 4px;
+  transform: rotate(225deg);
+}
+
+.verify-note__body {
+  padding: 0 12px 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verify-note__more {
+    transition: none;
+  }
 }
 
 .verify-note__extra {

@@ -134,7 +134,10 @@ export function RoutePage({ route, onStart }: Props) {
   );
 }
 
-/** Before navigating: has anyone checked these directions? Shown as text, not just colour. */
+/**
+ * Before navigating: has anyone checked these directions? Shown as text, not just colour.
+ * Only the one-line status shows, so START ROUTE stays on screen on a phone; tap it for the details.
+ */
 function VerificationNote({ data }: { data: LoadedRoute['data'] }) {
   const v = data.verification ?? { status: 'unverified' as const };
   const { label, detail } = verificationText(v);
@@ -144,12 +147,19 @@ function VerificationNote({ data }: { data: LoadedRoute['data'] }) {
       aria-label={`Directions: ${label}`}
       role={v.status === 'unverified' ? 'note' : undefined}
     >
-      <p className="verify-note__label">
-        {v.status === 'unverified' ? '⚠ ' : '✓ '}
-        {label} directions
-      </p>
-      <p>{detail}</p>
-      {v.notes && <p className="verify-note__extra">{v.notes}</p>}
+      <details>
+        <summary className="verify-note__label">
+          <span>
+            {v.status === 'unverified' ? '⚠ ' : '✓ '}
+            {label} directions
+          </span>
+          <span className="verify-note__more" aria-hidden="true" />
+        </summary>
+        <div className="verify-note__body">
+          <p>{detail}</p>
+          {v.notes && <p className="verify-note__extra">{v.notes}</p>}
+        </div>
+      </details>
     </section>
   );
 }

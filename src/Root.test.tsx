@@ -227,6 +227,12 @@ describe('Route Library', () => {
     // It comes before the start button.
     const start = screen.getByRole('button', { name: 'START ROUTE' });
     expect(note.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Only the status line shows until it's tapped, so START ROUTE stays on a phone screen.
+    const details = note.querySelector('details')!;
+    expect(details.open).toBe(false);
+    expect(details.querySelector('summary')?.textContent).toBe('⚠ Unverified directions');
+    fireEvent.click(details.querySelector('summary')!);
+    expect(details.open).toBe(true);
   });
 
   it('lists routes with place, distance, time, terrain, tags and an outline', async () => {
