@@ -283,6 +283,8 @@ describe('Route Library', () => {
     await screen.findByRole('heading', { name: 'Route Library' });
 
     tap('Library settings');
+    // Opening starts on the title, not on the first pace (Safari would ring it as if picked).
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Library settings' }));
     // Paces are picked from a list, in min/km; no ± stepper.
     expect(screen.getByText(/minutes per km \(min\/km\)/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Faster|Slower/ })).toBeNull();

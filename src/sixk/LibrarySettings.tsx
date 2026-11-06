@@ -35,6 +35,7 @@ interface Props {
  */
 export function LibrarySettings({ open, onClose, routes, pace, onPace, sort, onSort, filter, onFilter, showTesting, onShowTesting }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -42,6 +43,9 @@ export function LibrarySettings({ open, onClose, routes, pace, onPace, sort, onS
     if (open && !dialog.open) {
       if (typeof dialog.showModal === 'function') dialog.showModal();
       else dialog.setAttribute('open', '');
+      // showModal focuses the first button (the 6:00 pace), and Safari rings it as if picked.
+      // Start on the title instead: screen readers read it, and no choice looks selected.
+      titleRef.current?.focus();
     } else if (!open && dialog.open) {
       if (typeof dialog.close === 'function') dialog.close();
       else dialog.removeAttribute('open');
@@ -63,7 +67,7 @@ export function LibrarySettings({ open, onClose, routes, pace, onPace, sort, onS
       }}
     >
       <div className="sheet__body">
-        <h2 id="library-settings-title" className="lib-settings__title">
+        <h2 id="library-settings-title" className="lib-settings__title" ref={titleRef} tabIndex={-1}>
           Library settings
         </h2>
 

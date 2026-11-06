@@ -132,6 +132,11 @@
   font-weight: 800;
 }
 
+/* Focused on open (so no choice looks picked); it isn't a control, so no ring. */
+.lib-settings__title:focus {
+  outline: none;
+}
+
 .lib-settings__group {
   display: flex;
   flex-direction: column;
