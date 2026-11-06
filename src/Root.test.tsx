@@ -137,6 +137,73 @@ describe('mode picker', () => {
   });
 });
 
+describe('shared route links', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/');
+    Reflect.deleteProperty(navigator, 'share');
+    Reflect.deleteProperty(navigator, 'clipboard');
+  });
+
+  it('SHARE ROUTE opens the share sheet with a link that names only the route', async () => {
+    const share = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+    render(<Root />);
+    tap(/^Route Library/);
+    await screen.findByRole('button', { name: /Sample Loop/ });
+    tap(/Sample Loop/);
+    const shareButton = await screen.findByRole('button', { name: 'Share route' });
+    await act(async () => fireEvent.click(shareButton));
+    expect(share).toHaveBeenCalledWith({
+      title: 'Sample Loop',
+      text: 'Sample Loop (6.4 km) on AnyoneCanPace',
+      url: `${location.origin}/?route=sample-loop`,
+    });
+
+    // Closing the share sheet is not an error.
+    share.mockRejectedValueOnce(new DOMException('cancelled', 'AbortError'));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Share route' })));
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('without a share sheet it copies the link, else shows it to copy by hand', async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<Root />);
+    tap(/^Route Library/);
+    await screen.findByRole('button', { name: /Pi Day/ });
+    tap(/Pi Day/);
+    const shareButton = await screen.findByRole('button', { name: 'Share route' });
+    await act(async () => fireEvent.click(shareButton));
+    const link = `${location.origin}/?route=pi-day`;
+    expect(writeText).toHaveBeenCalledWith(link);
+    expect(screen.getByText('Route link copied.')).toBeTruthy();
+
+    writeText.mockRejectedValueOnce(new Error('denied'));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Share route' })));
+    expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe(link);
+  });
+
+  it('opening a shared link shows that route; back goes to the library; the address is cleaned', async () => {
+    history.replaceState(null, '', '/?route=pi-day');
+    render(<Root />);
+    expect(await screen.findByRole('heading', { name: 'Pi Day' }, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'START ROUTE' })).toBeTruthy();
+    // SHARE sits with the stats, where the route's shape used to be.
+    expect(screen.getByRole('button', { name: 'Share route' }).closest('.route-stats')).toBeTruthy();
+    expect(location.search).toBe('');
+    act(() => history.back());
+    expect(await screen.findByRole('heading', { name: 'Route Library' })).toBeTruthy();
+  });
+
+  it('a link to a route this version doesn’t have opens the library with a note', async () => {
+    history.replaceState(null, '', '/?route=gone-route');
+    render(<Root />);
+    expect(await screen.findByRole('heading', { name: 'Route Library' })).toBeTruthy();
+    expect(screen.getByText(/The shared route isn’t in this version of the app/)).toBeTruthy();
+    expect(location.search).toBe('');
+  });
+});
+
 describe('Route Library', () => {
   const openLibrary = async () => {
     render(<Root />);

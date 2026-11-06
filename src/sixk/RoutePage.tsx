@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Lazy } from '../components/LoadBoundary';
+import { routeShareUrl } from '../lib/routeLink';
 import { formatKm, turnPhrase } from '../nav/banner';
 import { ElevationProfile } from './ElevationProfile';
 import advisoriesFile from '../data/advisories.json';
@@ -6,7 +8,6 @@ import { NoticeList } from '../advisories/NoticeList';
 import { activeNotices, collectNotices, routeNotices, type NoticeFile } from '../advisories/notices';
 import { localDate } from '../weather/runTime';
 import type { LoadedRoute } from './data';
-import { KIND_LABEL } from './Library';
 import { TurnIcon } from './TurnIcon';
 import { verificationText } from '../nav/verification';
 
@@ -20,29 +21,33 @@ interface Props {
 export function RoutePage({ route, onStart }: Props) {
   const { data, track } = route;
   const file = advisoriesFile as NoticeFile;
+  const sharing = useShareRoute(data);
   const notices = activeNotices(collectNotices(file.notices, routeNotices(data)), data.id, localDate(Date.now()));
   return (
     <article className="route-page" aria-label={data.name}>
       {data.description && <p className="route-page__description">{data.description}</p>}
 
-      <dl className="route-stats">
-        <div>
-          <dt>Distance</dt>
-          <dd>{formatKm(data.stats.distanceM)}</dd>
-        </div>
-        <div>
-          <dt>Climb</dt>
-          <dd>↑ {data.stats.gainM} m</dd>
-        </div>
-        <div>
-          <dt>Descent</dt>
-          <dd>↓ {data.stats.lossM} m</dd>
-        </div>
-        <div>
-          <dt>Shape</dt>
-          <dd>{KIND_LABEL[data.kind]}</dd>
-        </div>
-      </dl>
+      <div className="route-stats">
+        <dl className="route-stats__list">
+          <div>
+            <dt>Distance</dt>
+            <dd>{formatKm(data.stats.distanceM)}</dd>
+          </div>
+          <div>
+            <dt>Climb</dt>
+            <dd>↑ {data.stats.gainM} m</dd>
+          </div>
+          <div>
+            <dt>Descent</dt>
+            <dd>↓ {data.stats.lossM} m</dd>
+          </div>
+        </dl>
+        <button type="button" className="btn route-stats__share" aria-label="Share route" onClick={() => void sharing.share()}>
+          <ShareIcon />
+          SHARE
+        </button>
+      </div>
+      <ShareFallback state={sharing.state} url={sharing.url} />
 
       <div className="route-page__map">
         <Lazy
@@ -146,5 +151,66 @@ function VerificationNote({ data }: { data: LoadedRoute['data'] }) {
       <p>{detail}</p>
       {v.notes && <p className="verify-note__extra">{v.notes}</p>}
     </section>
+  );
+}
+
+/** This app's own address (live, beta or a local preview), for share links. */
+const appUrl = () => new URL(import.meta.env.BASE_URL, location.origin).href;
+
+/**
+ * Share route: the phone's share sheet when there is one, else copy the link,
+ * else show it to copy by hand. The link only names the route (src/lib/routeLink.ts).
+ */
+function useShareRoute(data: LoadedRoute['data']) {
+  const url = routeShareUrl(data.id, appUrl());
+  const [state, setState] = useState<ShareState>('idle');
+
+  async function share() {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: data.name, text: `${data.name} (${formatKm(data.stats.distanceM)}) on AnyoneCanPace`, url });
+        setState('idle');
+        return;
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return; // closed the share sheet
+        // Not allowed here (some desktop browsers): copy instead.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setState('copied');
+    } catch {
+      setState('failed');
+    }
+  }
+
+  return { url, state, share };
+}
+
+type ShareState = 'idle' | 'copied' | 'failed';
+
+/** Under the stats: "copied", or the link to copy by hand. The live region is always there so it's announced. */
+function ShareFallback({ state, url }: { state: ShareState; url: string }) {
+  return (
+    <div className="route-share">
+      <p className="route-share__message" aria-live="polite">
+        {state === 'copied' ? 'Route link copied.' : ''}
+      </p>
+      {state === 'failed' && (
+        <label className="route-share__manual">
+          Couldn’t copy. Press and hold to copy the link:
+          <input type="text" readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
+        </label>
+      )}
+    </div>
+  );
+}
+
+/** The usual "share" box-with-arrow; decorative, the button says SHARE. */
+function ShareIcon() {
+  return (
+    <svg className="route-stats__share-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

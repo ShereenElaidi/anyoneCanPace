@@ -1,6 +1,7 @@
 import { UpdateBanner } from '../components/UpdateBanner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadRoutePace, saveRoutePace } from '../lib/prefs';
+import { withoutRouteParam } from '../lib/routeLink';
 import { loadRoute, manifest, type LoadedRoute } from './data';
 import { clampPace, PACE, type RouteFilter } from './describe';
 import { FollowView } from './FollowView';
@@ -14,7 +15,11 @@ type View = { name: 'library' } | { name: 'route'; id: string } | { name: 'follo
 
 interface Props {
   onSwitchMode: () => void;
+  /** From a shared route link (`?route=<id>`): open on this route's page. */
+  openRoute?: string | null;
 }
+
+const isKnownRoute = (id: string | null | undefined): id is string => !!id && manifest.routes.some((r) => r.id === id);
 
 /**
  * 6K Route Library mode: library → route page → follow view.
@@ -24,8 +29,10 @@ interface Props {
  * goes back a screen instead of leaving the app. Mid-route, back opens the
  * route menu instead (ending a route always needs the menu).
  */
-export default function SixKMode({ onSwitchMode }: Props) {
-  const [view, setView] = useState<View>({ name: 'library' });
+export default function SixKMode({ onSwitchMode, openRoute }: Props) {
+  const [view, setView] = useState<View>(() => (isKnownRoute(openRoute) ? { name: 'route', id: openRoute } : { name: 'library' }));
+  // A link to a route this version doesn't have (renamed, removed, or the app is older than the link).
+  const [missingRoute, setMissingRoute] = useState(() => !!openRoute && !isKnownRoute(openRoute));
   const [route, setRoute] = useState<LoadedRoute | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [menuRequest, setMenuRequest] = useState(0);
@@ -42,6 +49,23 @@ export default function SixKMode({ onSwitchMode }: Props) {
   }, [view.name]);
   const viewRef = useRef(view);
   viewRef.current = view;
+  useEffect(() => {
+    if (view.name !== 'library') setMissingRoute(false);
+  }, [view.name]);
+
+  // Opened from a shared link: drop `?route=` from the address (so a reload doesn't reopen it)
+  // and put the library under the route page, so back goes to the library. Once, even in StrictMode.
+  const linkHandled = useRef(false);
+  useEffect(() => {
+    if (!openRoute || linkHandled.current) return;
+    linkHandled.current = true;
+    try {
+      history.replaceState({ sixk: { name: 'library' } satisfies View }, '', withoutRouteParam(location.href));
+      if (isKnownRoute(openRoute)) history.pushState({ sixk: { name: 'route', id: openRoute } satisfies View }, '');
+    } catch {
+      // History unavailable (some embedded browsers): in-app buttons still work.
+    }
+  }, [openRoute]);
 
   const id = view.name === 'library' ? null : view.id;
   useEffect(() => {
@@ -117,6 +141,11 @@ export default function SixKMode({ onSwitchMode }: Props) {
         <UpdateBanner />
         {view.name === 'library' && (
           <>
+            {missingRoute && (
+              <p className="lib-missing" role="status">
+                The shared route isn’t in this version of the app. It may have been renamed or removed: pick one below.
+              </p>
+            )}
             <Library onOpen={(routeId) => go({ name: 'route', id: routeId })} pace={pace} filter={filter} onFilter={setFilter} />
             <LibrarySettings
               open={settingsOpen}

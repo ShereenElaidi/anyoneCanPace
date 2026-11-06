@@ -5,6 +5,7 @@ import { Lazy, LoadFailed } from './components/LoadBoundary';
 import { ModePicker } from './components/ModePicker';
 import { AppUpdateContext } from './lib/appUpdate';
 import type { AppMode } from './lib/prefs';
+import { sharedRouteId } from './lib/routeLink';
 import { SW_OPTIONS, UPDATE_CHECK_MS } from './lib/swUpdate';
 
 // The route library (and its map library) and the dashboard load only when
@@ -29,7 +30,8 @@ function checkWhenBack(registration: ServiceWorkerRegistration | undefined) {
 }
 
 /**
- * Always opens on the mode picker ("What are we doing today?").
+ * Always opens on the mode picker ("What are we doing today?"), except a shared
+ * route link (`?route=<id>`, src/lib/routeLink.ts), which opens that route's page.
  * The app's one service worker registration lives here, so the home screen and
  * every mode share one "new version ready" state (see UpdateBanner).
  */
@@ -54,7 +56,9 @@ export default function Root() {
 }
 
 function Modes() {
-  const [mode, setMode] = useState<AppMode | null>(null);
+  // A shared route link opens the Route Library on that route, once (SixKMode cleans the address).
+  const [openRoute] = useState(() => sharedRouteId(location.search));
+  const [mode, setMode] = useState<AppMode | null>(() => (openRoute ? 'sixk' : null));
   const toPicker = () => setMode(null);
 
   if (mode === 'timer') return <App onSwitchMode={toPicker} />;
@@ -64,7 +68,7 @@ function Modes() {
       <Lazy
         key={mode}
         load={routes ? loadRoutes : loadDashboard}
-        props={{ onSwitchMode: toPicker }}
+        props={routes ? { onSwitchMode: toPicker, openRoute } : { onSwitchMode: toPicker }}
         loading={<p className="loading">{routes ? 'Loading routes…' : 'Loading the dashboard…'}</p>}
         failed={(retry) => (
           <div className="app">

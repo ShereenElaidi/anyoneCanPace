@@ -436,6 +436,18 @@
   background: #fdf0d9;
 }
 
+/* Checked by a person (at a desk or on the ground): the same green as the Shape run tag. The text says which. */
+.verify-note--desk-reviewed,
+.verify-note--field-verified {
+  border-color: #639922;
+  background: #eaf3de;
+}
+
+.verify-note--desk-reviewed .verify-note__label,
+.verify-note--field-verified .verify-note__label {
+  color: var(--ok-green);
+}
+
 .verify-note__label {
   margin-bottom: 2px;
   font-weight: 800;
@@ -472,7 +484,32 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+}
+
+/* The three stats take the first three columns; SHARE is the fourth, same size. */
+.route-stats__list {
+  grid-column: span 3;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
   margin: 0;
+}
+
+.route-stats__share {
+  min-height: 44px;
+  padding: 6px 4px;
+  flex-direction: column;
+  gap: 2px;
+  border-width: 2px;
+  border-radius: 12px;
+  background: var(--gold);
+  color: var(--asphalt);
+  font-size: clamp(0.75rem, 3.4vw, 0.95rem);
+}
+
+.route-stats__share-icon {
+  width: 1.3em;
+  height: 1.3em;
 }
 
 .route-stats div {
@@ -901,4 +938,40 @@
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+}
+
+/* ---------- Share route ---------- */
+
+.route-share {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: -8px; /* sits right under the stats, not a full gap below */
+}
+
+.route-share__message {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.route-share__manual {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+.route-share__manual input {
+  min-height: 44px;
+  font: inherit;
+}
+
+.lib-missing {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: 14px;
+  background: var(--paper);
+  font-size: 0.88rem;
 }

@@ -4,7 +4,7 @@
 
 Tools for volunteer pacers leading beginner-friendly group runs. Part of the **AnyoneCanRun (ACR)** initiative by **Les Stooopids**.
 
-The app always opens on **"What are we doing today?"**, a mode picker:
+The app always opens on **"What are we doing today?"**, a mode picker (a route link shared with **SHARE ROUTE** on a route page opens straight on that route):
 
 - **Stooopid Sunday Dashboard**: what to wear for the Sunday run and where we meet, any other run time on request, and the Sunday story.
 - **ACR Run/Walk Timer**: open the URL on your phone, tap **START PACING**, and the app alternates RUN and WALK until you stop it. Adjust intervals mid-run without interrupting the group.

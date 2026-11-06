@@ -1,7 +1,7 @@
 # AnyoneCanPace
 
 Mobile-first PWA for volunteer pacers (AnyoneCanRun by Les Stooopids). React 19 + TypeScript + Vite 8 + plain CSS + vite-plugin-pwa. No backend, accounts, analytics or tracking.
-The app always opens on the mode picker (`src/Root.tsx`, no mode is remembered), in this order: **Stooopid Sunday Dashboard** (`src/dashboard/`, lazy-loaded; Sunday run first, then "Running another time?", then the story), **ACR Run/Walk Timer** (`App.tsx`), **Route Library** (`src/sixk/`, lazy-loaded).
+The app always opens on the mode picker (`src/Root.tsx`, no mode is remembered; the one exception is a shared route link `?route=<id>` from SHARE ROUTE on a route page, `src/lib/routeLink.ts`, which opens that route's page, then drops `?route=` from the address), in this order: **Stooopid Sunday Dashboard** (`src/dashboard/`, lazy-loaded; Sunday run first, then "Running another time?", then the story), **ACR Run/Walk Timer** (`App.tsx`), **Route Library** (`src/sixk/`, lazy-loaded).
 Live: https://anyonecanpace.pages.dev/ · Beta: https://anyonecanpacebeta.pages.dev/ (both Cloudflare Pages; GitHub Pages is off so no address leads to the owner's personal github.io site) · Full details, limitations and the **V2 To-Do List** are in README.md.
 
 ## Commands
