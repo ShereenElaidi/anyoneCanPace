@@ -6,7 +6,7 @@
  *   --reset-turns  replace the turns with fresh proposals (street names and
  *                  notes are carried over to proposals at the same place)
  *
- * Hand-edited fields (name, place, tags, notes, advisories, startStreet, verification) in
+ * Hand-edited fields (name, place, description, tags, notes, advisories, startStreet, verification) in
  * an existing processed file are always kept. Hand-edited turns are kept only
  * while the track geometry is unchanged: if the GPX changed, their distances
  * no longer fit, so the build stops and asks for --reset-turns. Changing the
@@ -42,6 +42,7 @@ import {
   resample,
   simplify,
 } from './lib/process-route.ts';
+import { formatJson } from './lib/json.ts';
 import { analyseTurns, turnReviewMarkdown, type Street, type TurnAnalysis } from './lib/turns.ts';
 import { decideTurns, type TurnDecision } from './lib/turn-review.ts';
 
@@ -50,6 +51,8 @@ interface RouteConfig {
   gpx: string;
   name: string;
   source?: RouteSource;
+  /** Recorded on a run rather than drawn on a map (set by the dev route editor): its turns need a closer look. */
+  recorded?: boolean;
 }
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -67,15 +70,6 @@ const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 *
 
 function readJson<T>(path: string): T | null {
   return existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as T) : null;
-}
-
-/** Pretty JSON, but short number arrays stay on one line. */
-function formatJson(value: unknown): string {
-  return (
-    JSON.stringify(value, null, 2).replace(/\[\s+(-?[\d.]+(?:,\s+-?[\d.]+)*)\s+\]/g, (_, inner: string) =>
-      `[${inner.split(/,\s+/).join(', ')}]`,
-    ) + '\n'
-  );
 }
 
 // ---------- Elevation (NRCan CDEM, bare earth) ----------
@@ -297,6 +291,7 @@ async function buildRoute(config: RouteConfig) {
     startStreet:
       keep && !decision.geometryChanged && existing!.startStreet !== undefined ? existing!.startStreet : analysis.startStreet,
     ...(keep && existing!.place !== undefined ? { place: existing!.place } : {}),
+    ...(keep && existing!.description !== undefined ? { description: existing!.description } : {}),
     ...(keep && existing!.tags !== undefined ? { tags: existing!.tags } : {}),
     bbox: box.map((v) => round(v, 6)) as RouteData['bbox'],
     profile: ele.profile,
@@ -352,6 +347,9 @@ function writeReview(
     '',
     '## Turns',
     '',
+    config.recorded
+      ? '**Recorded run:** this GPX was recorded on a run, not drawn on a map. GPS wobble can look like turns, so check every turn closely.\n'
+      : '',
     turnReviewMarkdown(analysis),
     '## Elevation',
     '',
