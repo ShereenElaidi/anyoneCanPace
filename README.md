@@ -389,6 +389,8 @@ GitHub Pages is already off in both repositories (Pages deleted; Actions disable
 
 ### Updates
 
+**Which build is this?** The home screen footer shows "Build 2026-11-06 · 3bf6256": the build date and the short commit. A crew member (or a bug report) can read it to say exactly which version is running, and compare it with the latest deployment. `vite.config.ts` fills it from `CF_PAGES_COMMIT_SHA`, `GITHUB_SHA` or local git.
+
 The app never reloads itself mid-session. When a new version has been downloaded, a gold **A new version of the app is ready · UPDATE** banner appears at the top of every screen (home, Sunday dashboard, timer, Route Library), but never while a timer session is running or paused or a route is being followed; it comes back when that ends. An installed app left open checks for a new version when it starts and whenever you come back to it (at most once a minute) (preview the banner in dev with `?update-banner`). Closing and reopening the app also picks up the new version.
 
 ## Installing on a phone (optional)

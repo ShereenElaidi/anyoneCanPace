@@ -230,6 +230,15 @@ body:has(.app--paper) {
   color: var(--navy);
 }
 
+/* Which build is running; small and quiet, but selectable so it can be copied into a bug report. */
+.footer__build {
+  margin: 2px 0 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  user-select: text;
+}
+
 /* ---------- Timer panel ---------- */
 
 .panel {

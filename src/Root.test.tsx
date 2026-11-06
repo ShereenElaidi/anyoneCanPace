@@ -83,6 +83,12 @@ describe('mode picker', () => {
     expect(screen.getByRole('button', { name: /Stooopid Sunday Dashboard/ })).toHaveProperty('disabled', false);
   });
 
+  it('shows which build is running in the footer (build date, then the commit when known)', () => {
+    render(<Root />);
+    expect(__BUILD_ID__).toMatch(/^\d{4}-\d{2}-\d{2}( · [0-9a-f]{7})?$/);
+    expect(document.querySelector('.footer__build')?.textContent).toBe(`Build ${__BUILD_ID__}`);
+  });
+
   it('picking the timer opens the unchanged timer; reopening the app shows the picker again', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
     const { unmount } = render(<Root />);

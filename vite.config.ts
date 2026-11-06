@@ -36,6 +36,24 @@ function pagesBase(): string {
 const base = pagesBase();
 
 /**
+ * Shown in the home screen footer ("2026-11-06 · 3bf6256") so a crew member,
+ * and a bug report, can say exactly which build is running. The commit comes
+ * from the host's build environment (Cloudflare, GitHub Actions) or local git.
+ */
+function buildId(): string {
+  let sha = process.env.CF_PAGES_COMMIT_SHA ?? process.env.GITHUB_SHA;
+  if (!sha) {
+    try {
+      sha = execSync('git rev-parse HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    } catch {
+      // No git: show the date alone.
+    }
+  }
+  const date = new Date().toISOString().slice(0, 10);
+  return sha ? `${date} · ${sha.slice(0, 7)}` : date;
+}
+
+/**
  * Beta channel: the same code deployed from a separate "…-beta" repository
  * (its own path, so its service worker never touches the live app). It is
  * labelled "Beta" in the app, the home-screen name and the tab title.
@@ -57,7 +75,7 @@ const allowedHosts = ['.trycloudflare.com', '.ngrok-free.app', '.ngrok.app'];
 
 export default defineConfig({
   base,
-  define: { __BETA__: JSON.stringify(isBeta) },
+  define: { __BETA__: JSON.stringify(isBeta), __BUILD_ID__: JSON.stringify(buildId()) },
   plugins: [
     react(),
     // Dev server only: the ?meeting-map page saves the story's map picture.

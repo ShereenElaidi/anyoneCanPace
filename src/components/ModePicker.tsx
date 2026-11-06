@@ -63,6 +63,7 @@ export function ModePicker({ onPick }: Props) {
 
       <footer className="footer">
         <p>ANYONE CAN RUN. ANYONE CAN PACE.</p>
+        <p className="footer__build">Build {__BUILD_ID__}</p>
       </footer>
     </div>
   );
