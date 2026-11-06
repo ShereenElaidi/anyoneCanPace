@@ -5,10 +5,12 @@
  * get their own panels in later steps.
  */
 import { useEffect, useState } from 'react';
-import type { RouteData } from '../../nav/types';
+import type { RouteData, Turn } from '../../nav/types';
 import { DESCRIPTION_MAX, validateDescription } from '../../sixk/describe';
 import { api, ApiError } from './client';
-import { NAME_MAX, PLACE_MAX, type RouteEdits } from './edits';
+import { NAME_MAX, PLACE_MAX, validateTurns, type RouteEdits } from './edits';
+import { TurnEditor } from './TurnEditor';
+import { normalizeTurns } from './turnEdit';
 import { BuildLog, Errors, km, setLeaveGuard, StatusBadge } from './shared';
 import { TagForm } from './TagForm';
 import type { BuildResult, RouteDetail, TagList } from './types';
@@ -20,6 +22,7 @@ interface Form {
   tags: string[];
   notes: string;
   startStreet: string;
+  turns: Turn[];
 }
 
 const toForm = (d: RouteData): Form => ({
@@ -29,6 +32,7 @@ const toForm = (d: RouteData): Form => ({
   tags: d.tags ?? [],
   notes: d.notes.join('\n'),
   startStreet: d.startStreet ?? '',
+  turns: d.turns,
 });
 
 /** Only the fields that changed, in the shape the server expects. */
@@ -45,6 +49,8 @@ function changes(form: Form, d: RouteData): RouteEdits {
     .filter(Boolean);
   if (JSON.stringify(notes) !== JSON.stringify(d.notes)) edits.notes = notes;
   if (form.startStreet.trim() !== before.startStreet) edits.startStreet = form.startStreet.trim();
+  const turns = normalizeTurns(form.turns);
+  if (JSON.stringify(turns) !== JSON.stringify(d.turns)) edits.turns = turns;
   return edits;
 }
 
@@ -101,6 +107,8 @@ export function RouteDetailsView({ id }: { id: string }) {
 
   const reviewed = data.verification.status !== 'unverified';
   const descriptionProblem = form.description.trim() ? validateDescription(form.description.trim())[0] : undefined;
+  const turnProblem = validateTurns(normalizeTurns(form.turns), data.stats.distanceM)[0];
+  const directionsChanged = 'turns' in edits || 'startStreet' in edits;
   const set = (patch: Partial<Form>) => {
     setForm({ ...form, ...patch });
     setNotice('');
@@ -115,7 +123,7 @@ export function RouteDetailsView({ id }: { id: string }) {
       setBuild(r.build);
       setNotice(
         r.verificationReset
-          ? 'Saved. The start street changed, so this route is unverified again until someone checks it.'
+          ? 'Saved. The turns or start street changed, so this route is unverified again until someone checks it.'
           : 'Saved, and the library list is rebuilt.',
       );
       await load();
@@ -209,10 +217,27 @@ export function RouteDetailsView({ id }: { id: string }) {
         {detail.review?.startStreet !== undefined && detail.review.startStreet !== form.startStreet && (
           <p className="re-hint">The build suggests “{detail.review.startStreet || '(none)'}”.</p>
         )}
-        {reviewed && form.startStreet.trim() !== (data.startStreet ?? '') && (
-          <p className="re-problem">Changing the start street makes this route unverified again until someone checks it.</p>
-        )}
       </div>
+
+      {detail.track ? (
+        <TurnEditor
+          data={data}
+          track={detail.track}
+          candidates={detail.review?.turns ?? []}
+          recorded={!!detail.config.recorded}
+          turns={form.turns}
+          onChange={(turns) => set({ turns })}
+        />
+      ) : (
+        <p className="re-problem">The track file is missing, so turns can’t be edited. Rebuild the route.</p>
+      )}
+
+      {reviewed && directionsChanged && (
+        <p className="re-problem" role="status">
+          This route is {data.verification.status}. Saving changed turns or start street makes it unverified again until someone
+          checks it.
+        </p>
+      )}
 
       <Errors errors={errors} />
       {notice && (
@@ -221,7 +246,7 @@ export function RouteDetailsView({ id }: { id: string }) {
         </p>
       )}
       <div className="re-row re-sticky">
-        <button type="button" className="btn btn--primary" disabled={!dirty || busy || !!descriptionProblem} onClick={save}>
+        <button type="button" className="btn btn--primary" disabled={!dirty || busy || !!descriptionProblem || !!turnProblem} onClick={save}>
           {busy ? 'SAVING…' : dirty ? 'SAVE' : 'NO CHANGES'}
         </button>
         {dirty && (

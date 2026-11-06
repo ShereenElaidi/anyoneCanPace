@@ -51,6 +51,8 @@ interface RouteConfig {
   gpx: string;
   name: string;
   source?: RouteSource;
+  /** Recorded on a run rather than drawn on a map (set by the dev route editor): its turns need a closer look. */
+  recorded?: boolean;
 }
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -345,6 +347,9 @@ function writeReview(
     '',
     '## Turns',
     '',
+    config.recorded
+      ? '**Recorded run:** this GPX was recorded on a run, not drawn on a map. GPS wobble can look like turns, so check every turn closely.\n'
+      : '',
     turnReviewMarkdown(analysis),
     '## Elevation',
     '',
