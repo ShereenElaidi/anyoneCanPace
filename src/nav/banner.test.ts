@@ -80,6 +80,23 @@ describe('banner text', () => {
     expect(b.rotateDeg).toBeCloseTo(0, 0);
   });
 
+  it('off route: the distance is to the closest route still ahead, not to where you left', () => {
+    // Left the route 100 m in, then ran on beside it: now 60 m south of the eastbound leg,
+    // 600 m past the corner (1600 m along), well beyond the next kilometre from where you left.
+    const fix = { ...offsetPoint(offsetPoint(corner, 90, 600), 180, 60), accuracyM: 5, at: 0 };
+    const state: NavState = { ...at(100), offRoute: true, lastFix: fix };
+    expect(describeBanner(route, state).primary).toBe('Off route: 60 m');
+    expect(describeBanner(route, { ...state, rogue: true }).secondary).toBe('The route is 60 m to the north.');
+  });
+
+  it('off route: never points into the finish stretch early', () => {
+    // Beside the last 10 % (1900 m along) with only 100 m covered: the finish doesn't count yet,
+    // so the target is the 90 % point (1800 m along), 100 m back to the west.
+    const fix = { ...offsetPoint(offsetPoint(corner, 90, 900), 180, 20), accuracyM: 5, at: 0 };
+    const state: NavState = { ...at(100), offRoute: true, lastFix: fix };
+    expect(describeBanner(route, state).primary).toBe('Off route: 100 m');
+  });
+
   it('finished', () => {
     let state = at(1900);
     state = update(route, state, { ...end, accuracyM: 5, at: 1000 }).state;
