@@ -2,7 +2,7 @@
 
 Mobile-first PWA for volunteer pacers (AnyoneCanRun by Les Stooopids). React 19 + TypeScript + Vite 8 + plain CSS + vite-plugin-pwa. No backend, accounts, analytics or tracking.
 The app always opens on the mode picker (`src/Root.tsx`, no mode is remembered), in this order: **Stooopid Sunday Dashboard** (`src/dashboard/`, lazy-loaded; Sunday run first, then "Running another time?", then the story), **ACR Run/Walk Timer** (`App.tsx`), **Route Library** (`src/sixk/`, lazy-loaded).
-Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitations and the **V2 To-Do List** are in README.md.
+Live: https://anyonecanpace.pages.dev/ · Beta: https://anyonecanpacebeta.pages.dev/ (both Cloudflare Pages; GitHub Pages is off so no address leads to the owner's personal github.io site) · Full details, limitations and the **V2 To-Do List** are in README.md.
 
 ## Commands
 - Node and npm live in `~/.local/bin`. If `npm` is "not found", use `~/.local/bin/npm` or `source ~/.zshrc`.
@@ -61,12 +61,12 @@ Live: https://shereenelaidi.github.io/anyoneCanPace/ · Full details, limitation
 - The duck is the route position marker (no progress ring there) and always sits at the GPS fix, off route too; off route the camera keeps it centred and zooms out (down to zoom 14, `sixk/map/camera.ts`) to also show the route point at current progress; BACK TO DUCK always re-centres on it. Banner text always states the direction; icons and colours are extras.
 
 ## Paths and deploy
-- GitHub Pages project site. `vite.config.ts` derives `base` (`/anyoneCanPace/`) from `GITHUB_REPOSITORY` or the git remote. In `index.html` reference public files as `/file.png`, never `%BASE_URL%` (Vite adds the base itself).
-- Pushing to `main` runs `.github/workflows/deploy.yml`: typecheck, test, build, deploy. Pull requests run `.github/workflows/ci.yml` (typecheck, test, build, `npm audit --audit-level=high`), which never deploys. Actions are pinned to verified commit SHAs (comment = release). Repo is public (Pages on free plan).
+- Cloudflare Pages serves the app from the root of its own domain: `vite.config.ts` gives `base` `/` when `CF_PAGES` or `BASE_PATH=/` is set (`BASE_PATH=/pace/` builds for a sub-path; with neither, the base comes from `GITHUB_REPOSITORY` or the git remote, e.g. `/anyoneCanPace/`). `public/_headers` sets cache headers. In `index.html` reference public files as `/file.png`, never `%BASE_URL%` (Vite adds the base itself).
+- Cloudflare builds `main` (live project `anyonecanpace`) and the beta repo's `main` (project `anyonecanpace-beta`, `BETA=1`) with `npm run build`; its env vars are `NODE_VERSION=26` and `BASE_PATH=/`. The build includes the typecheck but not the tests: run all three locally and rely on CI for pull requests. `.github/workflows/deploy.yml` (GitHub Pages) is disabled on the main repo and GitHub Pages and Actions are off on the beta repo; remove `deploy.yml` when convenient. Pull requests run `.github/workflows/ci.yml` (typecheck, test, build, `npm audit --audit-level=high`), which never deploys. Actions are pinned to verified commit SHAs (comment = release). Repo is public.
 - Feature work happens on branches. Never merge into `main` or open PRs unless asked.
 - Pushing workflow-file changes needs gh's `workflow` scope (`gh auth refresh -s workflow`).
 - **Ask before pushing.** Committing locally is fine.
-- Beta channel: remote `beta` = github.com/ShereenElaidi/anyoneCanPace-beta (Pages at `/anyoneCanPace-beta/`). Same code; a base path containing "beta" sets `__BETA__` (BETA tag, "AnyoneCanPace Beta" name/title). Pushing a branch to `beta`'s `main` deploys it there without touching the live app. Still ask before each push.
+- Beta channel: remote `beta` = github.com/ShereenElaidi/anyoneCanPace-beta (deploys to `anyonecanpacebeta.pages.dev` through Cloudflare). Same code; `BETA=1` or a base path containing "beta" sets `__BETA__` (BETA tag, "AnyoneCanPace Beta" name/title). Pushing a branch to `beta`'s `main` makes Cloudflare deploy it there without touching the live app. Still ask before each push.
 
 ## Brand
 Crew Navy `#1B3F72` (RUN), Track Blue `#378ADD` (WALK), Duck Gold `#EF9F27` (progress, primary button), Pavement `#F5F0E8` (background), Asphalt `#2C2C2A` (text, outlines). White on Track Blue only passes contrast for large text, so keep text there ≥ 19 px bold.

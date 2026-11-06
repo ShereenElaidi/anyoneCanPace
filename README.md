@@ -12,7 +12,7 @@ The app always opens on **"What are we doing today?"**, a mode picker:
 
 The app doesn't remember the last mode, so it always starts here. Your timer intervals and other settings are still remembered. To change modes, use **Settings → Switch mode** in the timer (two taps while a session is running), or **MODES** in the route library and dashboard.
 
-**Live site (once deployed):** https://shereenelaidi.github.io/anyoneCanPace/
+**Live site:** https://anyonecanpace.pages.dev/ · **Beta (testing):** https://anyonecanpacebeta.pages.dev/ (Cloudflare Pages; see "Deploying")
 
 ---
 
@@ -318,7 +318,7 @@ npm run dev        # http://localhost:5173/anyoneCanPace/
 | `npm run test:watch` | Tests in watch mode |
 | `npm run typecheck` | TypeScript checks |
 | `npm run build` | Type-check, build the production site into `dist/`, and check the first-load bundle |
-| `npm run preview` | Serve `dist/` at the GitHub Pages path for testing |
+| `npm run preview` | Serve `dist/` as the production build, for testing |
 | `npm run routes` | Rebuild processed routes from `routes/*.gpx` |
 | `npm run map` | Re-cut the street map extract |
 | `npm run dev:https` | Dev server over HTTPS on your Wi-Fi (for GPS on a phone) |
@@ -341,44 +341,50 @@ Browsers only give GPS to secure (https) pages. A phone loading `http://<laptop-
 
 Service workers only register in `npm run preview` (or `preview:https`), not in dev. Wake lock and installing also need HTTPS.
 
-## Deploying to GitHub Pages
+## Deploying
 
-Deployment is automatic: `.github/workflows/deploy.yml` type-checks, tests, builds and deploys on every push to `main`. You can also run it by hand from the **Actions** tab.
+The app is hosted on **Cloudflare Pages** (see below), which builds and deploys on every push to `main`. GitHub Pages was used first and is now off: a GitHub Pages project site lives under `<owner>.github.io`, so its address led to the owner's personal site. `.github/workflows/deploy.yml` is its old deploy workflow; it is disabled and can be deleted.
 
-**Pull requests** run `.github/workflows/ci.yml`: type check, tests, production build (with the bundle check) and `npm audit --audit-level=high`. It never deploys. Both workflows use Node from `.nvmrc` and pin each GitHub Action to a verified release commit (the comment says which release); bump the SHA and comment together. Pushing workflow changes needs gh's `workflow` scope.
+<details><summary>The old GitHub Pages setup (no longer used)</summary>
 
-**Dependency audit (Nov 2026).** `npm audit` reports 4 moderate and 2 low findings, all in the PWA build chain (`vite-plugin-pwa` → `workbox-build` → `glob`/`minimatch`, and `@rollup/plugin-node-resolve` → `deepmerge`). They run only on the developer's machine or CI while generating the service worker, on the project's own config and files; none of this code ships to phones. The only automatic "fix" downgrades `vite-plugin-pwa` to 1.1.0, so it isn't applied: `glob`'s fix is three majors away from the range `workbox-build` declares, and `deepmerge` has no fixed release. Re-check when `vite-plugin-pwa` or `workbox-build` release updates. CI fails on any high or critical finding.
+`.github/workflows/deploy.yml` type-checked, tested, built and deployed on every push to `main`.
 
 **One-time setup:** in the repository, go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
 
 The site is served at `https://<owner>.github.io/<repo>/`. `vite.config.ts` reads the repository name (from `GITHUB_REPOSITORY` in Actions, or `git remote get-url origin` locally) and sets Vite's `base`, the manifest's `start_url`/`scope` and the service worker scope to match. A `<owner>.github.io` repository is served from `/` instead. You can override this with `BASE_PATH=/something/`.
 
-### Hosting on Cloudflare Pages (alternative to GitHub Pages)
+**Note:** GitHub Pages on a private repository needs a paid GitHub plan (Pro, Team or Enterprise). On a free account, make the repository public to use Pages.
+
+</details>
+
+**Pull requests** run `.github/workflows/ci.yml`: type check, tests, production build (with the bundle check) and `npm audit --audit-level=high`. It never deploys. Both workflows use Node from `.nvmrc` and pin each GitHub Action to a verified release commit (the comment says which release); bump the SHA and comment together. Pushing workflow changes needs gh's `workflow` scope.
+
+**Dependency audit (Nov 2026).** `npm audit` reports 4 moderate and 2 low findings, all in the PWA build chain (`vite-plugin-pwa` → `workbox-build` → `glob`/`minimatch`, and `@rollup/plugin-node-resolve` → `deepmerge`). They run only on the developer's machine or CI while generating the service worker, on the project's own config and files; none of this code ships to phones. The only automatic "fix" downgrades `vite-plugin-pwa` to 1.1.0, so it isn't applied: `glob`'s fix is three majors away from the range `workbox-build` declares, and `deepmerge` has no fixed release. Re-check when `vite-plugin-pwa` or `workbox-build` release updates. CI fails on any high or critical finding.
+
+### Hosting on Cloudflare Pages
 
 Why: a GitHub Pages project site lives under `<owner>.github.io`, so its address leads to the owner's personal site. Cloudflare Pages gives a neutral address (`<project>.pages.dev`), needs no visitor login, allows commercial use, and the free plan is enough.
 
 The build is the same. Differences are handled in `vite.config.ts` and `public/_headers`:
 - `CF_PAGES` (set by Cloudflare) makes `base` `/`. Anywhere else, `BASE_PATH=/pace/` builds for a sub-path.
 - `BETA=1` labels a build as Beta when the path can't say so.
-- `public/_headers` stops `sw.js`, the manifest and `index.html` being cached (so phones see updates), and caches hashed `/assets/*` for a year. GitHub Pages ignores this file.
+- `public/_headers` stops `sw.js`, the manifest and `index.html` being cached (so phones see updates), and caches hashed `/assets/*` for a year. GitHub Pages ignored this file.
 
 **Setup (dashboard, one project per site):**
-1. Cloudflare → Workers & Pages → Create → Pages → connect the GitHub repository.
+1. Cloudflare → Workers & Pages → Create application → **Continue to Pages** (the small "legacy Pages" link; the main flow creates a Worker, whose address includes the account's workers.dev name) → connect the GitHub repository.
 2. Build command `npm run build`, output directory `dist`.
-3. Environment variable `NODE_VERSION` = the version in `.nvmrc` (check the build log that it is used).
+3. Environment variables: `NODE_VERSION` = the version in `.nvmrc` (check the build log that it is used) and `BASE_PATH` = `/` (so the base is the root even where Cloudflare's clone has a git remote).
 4. Live project: production branch `main`. Beta project: connect the beta repository and also set `BETA` = `1`.
 5. Later, a custom domain or the community's subdomain (`pace.<their-domain>` as a CNAME to the project) is added under the project's Custom domains. No rebuild is needed.
 
 **Installed apps are tied to their address.** Moving from one address to another means people reinstall and lose their saved pace and the offline map copy, so settle the final address before many people install.
 
-After the new address works, turn GitHub Pages off in the old repositories (Settings → Pages) and remove `.github/workflows/deploy.yml`; the old address stops working then.
-
-**Note:** GitHub Pages on a private repository needs a paid GitHub plan (Pro, Team or Enterprise). On a free account, make the repository public to use Pages.
+GitHub Pages is already off in both repositories (Pages deleted; Actions disabled on the beta repo, only `deploy.yml` disabled on the main repo so CI keeps running), so the old `github.io` addresses return 404. To undo: re-enable the workflow and Pages with the **GitHub Actions** source.
 
 ### Checking the live site
 
-1. Open **Actions** and wait for "Deploy to GitHub Pages" to finish (green tick).
-2. Open https://shereenelaidi.github.io/anyoneCanPace/ and check the timer starts.
+1. In Cloudflare, open the project's **Deployments** and wait for the latest one to succeed.
+2. Open https://anyonecanpace.pages.dev/ and check the timer starts.
 3. Reload once, then turn on airplane mode and reload again. The app should still open.
 
 ### Updates
@@ -414,12 +420,12 @@ Three openly licensed fonts were compared: **JetBrains Mono**, **Space Mono** an
 
 ## Beta channel (testing on a phone before release)
 
-The live app at `/anyoneCanPace/` only changes when `main` is pushed. Unreleased work can be tried on a phone from a separate **beta** repository, [ShereenElaidi/anyoneCanPace-beta](https://github.com/ShereenElaidi/anyoneCanPace-beta), served at **https://shereenelaidi.github.io/anyoneCanPace-beta/**.
+The live app only changes when `main` is pushed. Unreleased work can be tried on a phone from a separate **beta** repository, [ShereenElaidi/anyoneCanPace-beta](https://github.com/ShereenElaidi/anyoneCanPace-beta), served by Cloudflare Pages at **https://anyonecanpacebeta.pages.dev/**.
 
-- It is the same code. A repository name containing "beta" makes the build say **Beta**: the BETA tag on the picker, "AnyoneCanPace Beta" as the tab title and home-screen name, and "ACP Beta" as the short name.
-- It has its own path, so its service worker, cached files and update prompts never touch the live app. A beta nested inside the live path (`/anyoneCanPace/beta/`) would be caught by the live app's service worker, which is why it's a separate repository.
-- Both apps are on the same `github.io` site, so on one phone they share local storage: timer intervals and the forecast. The live app ignores the keys it doesn't know.
-- To update the beta from a feature branch (this deploys it via its own copy of the workflow):
+- It is the same code. The beta project sets `BETA=1` (a base path containing "beta" also works), which makes the build say **Beta**: the BETA tag on the picker, "AnyoneCanPace Beta" as the tab title and home-screen name, and "ACP Beta" as the short name.
+- It has its own address (origin), so its service worker, cached files, saved settings and update prompts never touch the live app. A beta nested inside the live path would be caught by the live app's service worker, which is why it's a separate project.
+- The two apps are on different origins, so on one phone they share nothing: each has its own timer intervals, forecast and saved map.
+- To update the beta from a feature branch (Cloudflare builds it from the beta repo's `main`):
 
   ```bash
   git push beta feature/dressed-duck-advisories:main
