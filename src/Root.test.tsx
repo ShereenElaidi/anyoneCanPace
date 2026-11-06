@@ -283,10 +283,23 @@ describe('Route Library', () => {
     await screen.findByRole('heading', { name: 'Route Library' });
 
     tap('Library settings');
+    // Paces are picked from a list, in min/km; no ± stepper.
+    expect(screen.getByText(/minutes per km \(min\/km\)/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Faster|Slower/ })).toBeNull();
     tap('6 minutes per km');
     expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~38 min');
-    tap('Faster: 15 seconds less per km');
-    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~37 min');
+    tap('6 minutes 45 seconds per km');
+    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~43 min');
+
+    // Sort: A–Z by default, then shortest first or least climbing first.
+    const order = () => [...document.querySelectorAll('.route-list .route-card__name')].map((n) => n.textContent);
+    expect(screen.getByRole('button', { name: 'A–Z' }).getAttribute('aria-pressed')).toBe('true');
+    const az = order();
+    expect(az).toEqual([...az].sort((a, b) => a!.localeCompare(b!, 'en', { sensitivity: 'base', numeric: true })));
+    tap('Shortest first');
+    expect(order()[0]).toBe('Pi Day');
+    tap('Least climbing first');
+    expect(screen.getByRole('button', { name: 'Least climbing first' }).getAttribute('aria-pressed')).toBe('true');
 
     // Only filters that match a shown route are offered: "10 km+" is only Canal Test, a testing route.
     for (const name of ['All', 'Shape runs', 'Under 5 km', 'Flat', 'Waterfront']) {
@@ -316,7 +329,10 @@ describe('Route Library', () => {
     expect(screen.getByRole('button', { name: /Sample Loop/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /1st bday/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Canal Test/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~37 min');
+    expect(screen.getByRole('button', { name: /Sample Loop/ }).textContent).toContain('~43 min');
+    // The sort order is remembered too.
+    tap('Library settings');
+    expect(screen.getByRole('button', { name: 'Least climbing first' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('testing routes are hidden until "Testing routes" is turned on in the menu', async () => {

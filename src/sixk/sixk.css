@@ -161,50 +161,6 @@
   color: var(--asphalt);
 }
 
-.pace-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px;
-  border: var(--line) solid var(--asphalt);
-  border-radius: 16px;
-  background: var(--paper);
-}
-
-.pace-stepper__btn {
-  width: 52px;
-  height: 52px;
-  border: var(--line) solid var(--asphalt);
-  border-radius: 50%;
-  background: var(--gold);
-  color: var(--asphalt);
-  font: inherit;
-  font-size: 1.6rem;
-  font-weight: 800;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: 0 3px 0 var(--asphalt);
-  touch-action: manipulation;
-}
-
-.pace-stepper__btn:active {
-  transform: translateY(3px);
-  box-shadow: none;
-}
-
-.pace-stepper__value {
-  color: var(--navy);
-  font-size: 1.9rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.pace-stepper__value small {
-  margin-left: 4px;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
 .chips {
   display: flex;
   flex-wrap: wrap;

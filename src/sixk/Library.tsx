@@ -4,7 +4,7 @@ import { formatKm } from '../nav/banner';
 import type { RouteKind, RouteSummary } from '../nav/types';
 import { verificationText } from '../nav/verification';
 import { manifest } from './data';
-import { estimateTime, FILTERS, KIND_WORD, matchesFilter, ROUTE_TAGS, terrainText, visibleRoutes, type RouteFilter } from './describe';
+import { estimateTime, FILTERS, KIND_WORD, matchesFilter, ROUTE_TAGS, sortRoutes, terrainText, visibleRoutes, type RouteFilter, type RouteSort } from './describe';
 import { mapStatusText, saveMap, shouldAutoSave, useOfflineMap, type MapStatus } from './map/offlineMap';
 
 export const KIND_LABEL: Record<RouteKind, string> = {
@@ -17,6 +17,8 @@ interface Props {
   onOpen: (id: string) => void;
   /** Seconds per km, for the time estimates. */
   pace: number;
+  /** Order of the list (from Library settings). */
+  sort: RouteSort;
   filter: RouteFilter;
   onFilter: (f: RouteFilter) => void;
   /** Also list routes tagged "Testing" (off by default). */
@@ -24,12 +26,15 @@ interface Props {
   onShowTesting: (show: boolean) => void;
 }
 
-export function Library({ onOpen, pace, filter, onFilter, showTesting, onShowTesting }: Props) {
+export function Library({ onOpen, pace, sort, filter, onFilter, showTesting, onShowTesting }: Props) {
   const status = useOfflineMap();
   useMapAutoSave(status);
   // Saved and current: a quiet line at the bottom. Anything else needs attention, at the top.
   const mapFine = status.state === 'saved' && !status.outdated;
-  const routes = visibleRoutes(manifest.routes, showTesting).filter((r) => matchesFilter(r, filter));
+  const routes = sortRoutes(
+    visibleRoutes(manifest.routes, showTesting).filter((r) => matchesFilter(r, filter)),
+    sort,
+  );
   const filterLabel = FILTERS.find((f) => f.id === filter)?.label ?? '';
 
   return (

@@ -1,9 +1,9 @@
 import { UpdateBanner } from '../components/UpdateBanner';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadRoutePace, saveRoutePace } from '../lib/prefs';
+import { loadRoutePace, loadRouteSort, saveRoutePace, saveRouteSort } from '../lib/prefs';
 import { matchSharedRoute, withoutRouteParam, withRouteParam } from '../lib/routeLink';
 import { loadRoute, manifest, type LoadedRoute } from './data';
-import { availableFilters, clampPace, PACE, visibleRoutes, type RouteFilter } from './describe';
+import { availableFilters, isRouteSort, nearestPace, PACE_DEFAULT, SORT_DEFAULT, visibleRoutes, type RouteFilter, type RouteSort } from './describe';
 import { FollowView } from './FollowView';
 import { Library } from './Library';
 import { GearIcon } from '../components/GearIcon';
@@ -44,9 +44,14 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
   const [route, setRoute] = useState<LoadedRoute | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [menuRequest, setMenuRequest] = useState(0);
-  // Library settings. The pace is saved; the filter lasts for this visit only.
+  // Library settings. The pace and sort order are saved; the filter lasts for this visit only.
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [pace, setPace] = useState(() => loadRoutePace(clampPace) ?? PACE.default);
+  const [pace, setPace] = useState(() => loadRoutePace(nearestPace) ?? PACE_DEFAULT);
+  const [sort, setSort] = useState<RouteSort>(() => loadRouteSort(isRouteSort) ?? SORT_DEFAULT);
+  const changeSort = useCallback((s: RouteSort) => {
+    setSort(s);
+    saveRouteSort(s);
+  }, []);
   const [filter, setFilter] = useState<RouteFilter>('all');
   // Routes tagged "Testing" stay hidden unless turned on, also for this visit only.
   const [showTesting, setShowTesting] = useState(false);
@@ -168,6 +173,7 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
             <Library
               onOpen={(routeId) => go({ name: 'route', id: routeId })}
               pace={pace}
+              sort={sort}
               filter={filter}
               onFilter={setFilter}
               showTesting={showTesting}
@@ -179,6 +185,8 @@ export default function SixKMode({ onSwitchMode, openRoute }: Props) {
               routes={manifest.routes}
               pace={pace}
               onPace={changePace}
+              sort={sort}
+              onSort={changeSort}
               filter={filter}
               onFilter={setFilter}
               showTesting={showTesting}

@@ -2,14 +2,14 @@ import { useEffect, useRef } from 'react';
 import type { RouteSummary } from '../nav/types';
 import {
   availableFilters,
-  clampPace,
   estimateTime,
   formatPace,
-  PACE,
   PACE_PRESETS,
+  SORTS,
   spokenPace,
   isTestingRoute,
   type RouteFilter,
+  type RouteSort,
   visibleRoutes,
 } from './describe';
 
@@ -19,6 +19,9 @@ interface Props {
   routes: RouteSummary[];
   pace: number;
   onPace: (secondsPerKm: number) => void;
+  /** Order of the list (saved). */
+  sort: RouteSort;
+  onSort: (s: RouteSort) => void;
   filter: RouteFilter;
   onFilter: (f: RouteFilter) => void;
   /** Routes tagged "Testing": off by default, for this visit only. */
@@ -26,8 +29,11 @@ interface Props {
   onShowTesting: (show: boolean) => void;
 }
 
-/** Route Library settings: the pace behind the time estimates (saved) and which routes to show (this visit only). */
-export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, onFilter, showTesting, onShowTesting }: Props) {
+/**
+ * Route Library settings: the pace behind the time estimates and the list's order
+ * (both saved), and which routes to show (this visit only).
+ */
+export function LibrarySettings({ open, onClose, routes, pace, onPace, sort, onSort, filter, onFilter, showTesting, onShowTesting }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -64,34 +70,9 @@ export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, o
         <section className="lib-settings__group" aria-labelledby="pace-label">
           <p id="pace-label" className="lib-settings__label">
             Your pace for time estimates
-            <span className="lib-settings__sub">Saved on this phone</span>
+            <span className="lib-settings__sub">In minutes per km (min/km). Saved on this phone.</span>
           </p>
-          <div className="pace-stepper">
-            <button
-              type="button"
-              className="pace-stepper__btn"
-              aria-label="Faster: 15 seconds less per km"
-              onClick={() => onPace(clampPace(pace - PACE.step))}
-            >
-              −
-            </button>
-            <p className="pace-stepper__value" aria-live="polite">
-              <span className="visually-hidden">{spokenPace(pace)}</span>
-              <span aria-hidden="true">
-                {formatPace(pace)}
-                <small>/km</small>
-              </span>
-            </p>
-            <button
-              type="button"
-              className="pace-stepper__btn"
-              aria-label="Slower: 15 seconds more per km"
-              onClick={() => onPace(clampPace(pace + PACE.step))}
-            >
-              +
-            </button>
-          </div>
-          <div className="chips" role="group" aria-label="Common paces">
+          <div className="chips" role="group" aria-labelledby="pace-label">
             {PACE_PRESETS.map((p) => (
               <button
                 key={p}
@@ -114,6 +95,20 @@ export function LibrarySettings({ open, onClose, routes, pace, onPace, filter, o
               </>
             )}
           </p>
+        </section>
+
+        <section className="lib-settings__group" aria-labelledby="sort-label">
+          <p id="sort-label" className="lib-settings__label">
+            Sort routes
+            <span className="lib-settings__sub">Saved on this phone</span>
+          </p>
+          <div className="chips" role="group" aria-labelledby="sort-label">
+            {SORTS.map((s) => (
+              <button key={s.id} type="button" className="chip" aria-pressed={sort === s.id} onClick={() => onSort(s.id)}>
+                {s.label}
+              </button>
+            ))}
+          </div>
         </section>
 
         <section className="lib-settings__group" aria-labelledby="show-label">

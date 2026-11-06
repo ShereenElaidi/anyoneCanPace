@@ -1,6 +1,6 @@
 /**
  * Words for the Route Library: how a route feels, how long it takes at your
- * pace, its tags and the "Show routes" filters. Pure (no DOM, no storage).
+ * pace, its tags, the "Show routes" filters and the sort order. Pure (no DOM, no storage).
  */
 import type { RouteKind, RouteStats, RouteSummary } from '../nav/types';
 import routeTagsJson from '../data/route-tags.json';
@@ -115,12 +115,16 @@ export function terrainText(s: RouteStats): string {
 
 // ---------- Pace and time ----------
 
-/** Seconds per km. */
-export const PACE = { default: 450, min: 240, max: 720, step: 15 } as const;
+/** The paces to pick from, in seconds per km: 6:00, 6:45, 7:30, 8:30 and 10:00 min/km. */
 export const PACE_PRESETS = [360, 405, 450, 510, 600] as const;
+export const PACE_DEFAULT = 450;
 
-export const clampPace = (s: number) =>
-  Math.min(PACE.max, Math.max(PACE.min, Math.round(s / PACE.step) * PACE.step));
+/**
+ * The listed pace closest to `s` (seconds per km); the slower one on a tie.
+ * A pace saved before the list was fixed (the old ± steps, e.g. 7:15) becomes the nearest one.
+ */
+export const nearestPace = (s: number): number =>
+  PACE_PRESETS.reduce<number>((best, p) => (Math.abs(p - s) <= Math.abs(best - s) ? p : best), PACE_PRESETS[0]);
 
 /** 450 → "7:30". */
 export function formatPace(secondsPerKm: number): string {
@@ -191,3 +195,25 @@ export const visibleRoutes = <R extends RouteSummary>(routes: R[], showTesting: 
 /** The filters worth offering: "All", plus each one that matches at least one (visible) route. */
 export const availableFilters = (routes: RouteSummary[]) =>
   FILTERS.filter((f) => f.id === 'all' || routes.some((r) => matchesFilter(r, f.id)));
+
+// ---------- Sort ----------
+
+export type RouteSort = 'name' | 'distance' | 'gain';
+
+export const SORTS: { id: RouteSort; label: string }[] = [
+  { id: 'name', label: 'A–Z' },
+  { id: 'distance', label: 'Shortest first' },
+  { id: 'gain', label: 'Least climbing first' },
+];
+
+export const SORT_DEFAULT: RouteSort = 'name';
+
+export const isRouteSort = (v: unknown): v is RouteSort => SORTS.some((s) => s.id === v);
+
+const byName = (a: RouteSummary, b: RouteSummary) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base', numeric: true });
+
+/** A sorted copy: by name, by distance (shortest first) or by elevation gain (least first); ties by name. */
+export function sortRoutes<R extends RouteSummary>(routes: readonly R[], sort: RouteSort): R[] {
+  const key = sort === 'distance' ? (r: R) => r.stats.distanceM : sort === 'gain' ? (r: R) => r.stats.gainM : null;
+  return [...routes].sort((a, b) => (key ? key(a) - key(b) : 0) || byName(a, b));
+}

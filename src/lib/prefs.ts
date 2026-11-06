@@ -45,7 +45,7 @@ const PACE_KEY = 'anyonecanpace:route-pace:v1';
 
 /**
  * The pace (seconds per km) the Route Library uses for time estimates, or null
- * if none is saved. Validated with the caller's clamp. The library's filter is
+ * if none is saved. Validated with the caller's `clamp`. The library's filter is
  * deliberately not saved: next visit always shows every route.
  */
 export function loadRoutePace(clamp: (s: number) => number): number | null {
@@ -62,5 +62,27 @@ export function saveRoutePace(secondsPerKm: number): void {
     localStorage.setItem(PACE_KEY, String(secondsPerKm));
   } catch {
     // Storage blocked: the pace still applies for this visit.
+  }
+}
+
+// ---------- Route Library sort ----------
+
+const SORT_KEY = 'anyonecanpace:route-sort:v1';
+
+/** The Route Library's saved sort order, if it's one the caller knows; else null. */
+export function loadRouteSort<T extends string>(isValid: (v: unknown) => v is T): T | null {
+  try {
+    const v = localStorage.getItem(SORT_KEY);
+    return isValid(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveRouteSort(sort: string): void {
+  try {
+    localStorage.setItem(SORT_KEY, sort);
+  } catch {
+    // Storage blocked: the order still applies for this visit.
   }
 }

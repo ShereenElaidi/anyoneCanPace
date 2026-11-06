@@ -3,7 +3,8 @@ import manifestJson from '../data/routes/manifest.json';
 import type { RouteData, RouteManifest, RouteStats, RouteSummary } from '../nav/types';
 import {
   availableFilters,
-  clampPace,
+  nearestPace,
+  sortRoutes,
   estimateTime,
   formatPace,
   matchesFilter,
@@ -47,10 +48,23 @@ describe('pace and time', () => {
     expect(spokenPace(360)).toBe('6 minutes per km');
   });
 
-  it('clamps pace to 4:00–12:00 in 15 s steps', () => {
-    expect(clampPace(100)).toBe(240);
-    expect(clampPace(5000)).toBe(720);
-    expect(clampPace(452)).toBe(450);
+  it('keeps a saved pace to one of the listed ones (old ± step values snap to the nearest)', () => {
+    expect(nearestPace(450)).toBe(450);
+    expect(nearestPace(435)).toBe(450); // 7:15 → 7:30
+    expect(nearestPace(480)).toBe(510); // 8:00, halfway → the slower 8:30
+    expect(nearestPace(100)).toBe(360);
+    expect(nearestPace(5000)).toBe(600);
+  });
+
+  it('sorts by name, distance or climbing, ties by name, without changing the input', () => {
+    const r = (name: string, distanceM: number, gainM: number) =>
+      ({ id: name, name, kind: 'loop', stats: { distanceM, gainM, lossM: gainM, minEleM: 0, maxEleM: 0 } }) as RouteSummary;
+    const list = [r('pi Day', 4600, 40), r('Canal', 12400, 10), r('1st bday', 7000, 40), r('Apple', 4600, 90)];
+    const names = (rs: RouteSummary[]) => rs.map((x) => x.name);
+    expect(names(sortRoutes(list, 'name'))).toEqual(['1st bday', 'Apple', 'Canal', 'pi Day']);
+    expect(names(sortRoutes(list, 'distance'))).toEqual(['Apple', 'pi Day', '1st bday', 'Canal']);
+    expect(names(sortRoutes(list, 'gain'))).toEqual(['Canal', '1st bday', 'pi Day', 'Apple']);
+    expect(names(list)).toEqual(['pi Day', 'Canal', '1st bday', 'Apple']);
   });
 
   it('estimates time at a pace, with a spoken form', () => {
