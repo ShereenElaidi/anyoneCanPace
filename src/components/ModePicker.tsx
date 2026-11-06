@@ -17,13 +17,13 @@ export function ModePicker({ onPick }: Props) {
     <div className="app picker">
       <header className="picker__hero">
         <div className="picker__sky">
-          {/* Read as "AnyoneCanPace V2" (plus "BETA"); drawn as ANYONE CAN / PACE V2 with a sticker. */}
-          <h1 className="picker__title" aria-label={__BETA__ ? 'AnyoneCanPace V2 BETA' : 'AnyoneCanPace V2'}>
+          {/* Read as "AnyoneCanPace 2.0" (plus "BETA"); drawn as ANYONE CAN / PACE 2.0 with a sticker. */}
+          <h1 className="picker__title" aria-label={__BETA__ ? 'AnyoneCanPace 2.0 BETA' : 'AnyoneCanPace 2.0'}>
             <span className="picker__t1" aria-hidden="true">
               Anyone Can
             </span>
             <span className="picker__t2" aria-hidden="true">
-              Pace<span className="picker__v2">V2</span>
+              Pace<span className="picker__version">2.0</span>
               {__BETA__ && <span className="beta-tag picker__beta">BETA</span>}
             </span>
           </h1>

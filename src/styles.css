@@ -624,8 +624,8 @@ button {
     -2px 2px 0 var(--asphalt);
 }
 
-/* "V2" rides high after PACE, like a superscript, in the same outlined gold. */
-.picker__v2 {
+/* "2.0" rides high after PACE, like a superscript, in the same outlined gold. */
+.picker__version {
   position: relative;
   top: -0.95em;
   margin-left: 0.1em;
@@ -637,11 +637,12 @@ button {
     -1.5px 1.5px 0 var(--asphalt);
 }
 
-/* BETA slapped on next to PACE like a sticker (below the V2). */
+/* BETA slapped on like a sticker, under the 2.0 and hanging off the corner,
+   so it fits even on a 320px-wide phone. */
 .picker__beta {
   position: absolute;
-  top: 24%;
-  left: calc(100% + 14px);
+  top: 60%;
+  left: calc(100% - 22px);
   margin-left: 0;
   padding: 2px 10px;
   font-size: 0.85rem;
