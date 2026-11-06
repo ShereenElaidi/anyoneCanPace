@@ -42,6 +42,7 @@ import {
   resample,
   simplify,
 } from './lib/process-route.ts';
+import { formatJson } from './lib/json.ts';
 import { analyseTurns, turnReviewMarkdown, type Street, type TurnAnalysis } from './lib/turns.ts';
 import { decideTurns, type TurnDecision } from './lib/turn-review.ts';
 
@@ -67,15 +68,6 @@ const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 *
 
 function readJson<T>(path: string): T | null {
   return existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as T) : null;
-}
-
-/** Pretty JSON, but short number arrays stay on one line. */
-function formatJson(value: unknown): string {
-  return (
-    JSON.stringify(value, null, 2).replace(/\[\s+(-?[\d.]+(?:,\s+-?[\d.]+)*)\s+\]/g, (_, inner: string) =>
-      `[${inner.split(/,\s+/).join(', ')}]`,
-    ) + '\n'
-  );
 }
 
 // ---------- Elevation (NRCan CDEM, bare earth) ----------

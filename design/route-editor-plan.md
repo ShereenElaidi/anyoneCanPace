@@ -49,7 +49,7 @@ browser (?edit, dev only)  ──fetch──▶  Vite dev-server plugin (apply: 
 |---|---|
 | `scripts/lib/json.ts` | `formatJson` moved out of `build-routes.ts` so the plugin writes the same format (keeps diffs clean) |
 | `scripts/lib/sanitize-gpx.ts` | Pure: GPX string → minimal GPX. Tested with a watch export (time, HR, extensions) |
-| `scripts/lib/route-edits.ts` | Pure: slug from name, merge of editable fields, validation, turn-change → unverified. Tested |
+| `src/dev/routeEditor/edits.ts` | Pure: slug from name, merge of editable fields, validation, turn-change → unverified. Tested. In `src/`, not `scripts/lib/`, because it reuses app validators (`describe.ts`, `verification.ts`, `notices.ts`) that only resolve through Vite/Vitest, not plain Node |
 | `scripts/route-editor-plugin.ts` | Middleware. Handlers take the repo root as a parameter, so tests run against a temp folder |
 | `src/dev/routeEditor/` | `RouteEditor.tsx` (list + add), `RouteForm.tsx` (details), `TurnEditor.tsx` (list + map), `VerificationPanel.tsx`, `editor.css` |
 | `src/main.tsx` | One more dev-only branch next to `?sim` |
@@ -126,13 +126,13 @@ A route is spread over several tracked files, and other code refers to some rout
 
 **Not touched:** pacers' phones keep nothing per route (only the library pace), so nothing breaks for them. The offline map isn't re-cut; a smaller map is a separate `npm run map` if you want one.
 
-**Code:** `DELETE /__route-editor/routes/:id` in the plugin, with the same loopback guard, and a pure `planRouteDeletion(id, files, config)` in `scripts/lib/route-edits.ts` that returns the file list and the blockers. Tests run against a temp folder, including "blocked by a reference" and "blocked by uncommitted changes".
+**Code:** `DELETE /__route-editor/routes/:id` in the plugin, with the same loopback guard, and a pure `planRouteDeletion(id, files, config)` in `src/dev/routeEditor/edits.ts` that returns the file list and the blockers. Tests run against a temp folder, including "blocked by a reference" and "blocked by uncommitted changes".
 
 ## Build order
 
 0. **Route description:** type, build keeps it, route page shows it, validation and tests (see above).
 0b. **Tags as data:** `ROUTE_TAGS` moved to `src/data/route-tags.json`, plus `validateTagList` and its test. No visible change.
-1. **Groundwork, no behaviour change:** `json.ts`, `sanitize-gpx.ts`, `route-edits.ts` + tests. `npm run routes -- --offline` must produce byte-identical files.
+1. **Groundwork, no behaviour change:** `json.ts`, `sanitize-gpx.ts`, `edits.ts` + tests. `npm run routes -- --offline` must produce byte-identical files.
 2. **Dev-server plugin:** list, upload, save, build. Loopback/Origin guard. Tests against a temp folder.
 3. **Editor page:** route list, Add route (GPX drop, name, id, source preset), Details form, build log.
 4. **Turn editor:** turn list with the review candidates ("needs review" flags from `routes/review/<id>.json`), map, edit/delete/add.
