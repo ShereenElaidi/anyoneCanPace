@@ -62,7 +62,7 @@ afterEach(() => {
 
 describe('Sunday story', () => {
   it('too early in the week: says when the forecast will reach Sunday', async () => {
-    vi.setSystemTime(est(4, 9, 12));
+    vi.setSystemTime(est(3, 21, 12)); // Tuesday
     fetchMock = vi.fn(async () => respond(fixture));
     vi.stubGlobal('fetch', fetchMock);
     await openDashboard();

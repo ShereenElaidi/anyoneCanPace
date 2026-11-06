@@ -64,9 +64,10 @@ describe('Stooopid Sunday Dashboard', () => {
     // Default run time: the next 10 a.m., picked in the hour strip.
     expect(screen.getByRole('radiogroup', { name: 'Run starts' })).toBeTruthy();
     expect(checkedRunTime()).toBe('Today 10 a.m.');
-    // The forecast doesn't reach Sunday yet, so "Running another time?" starts open.
+    // The recorded forecast (2 days) doesn't reach Sunday, so "Running another time?" starts open.
     expect(screen.getByRole('button', { name: /^Running another time\?/ }).getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain('Sunday’s outfit shows up Wednesday.');
+    // It's Wednesday: a full 5-day download would reach Sunday, so this one is short.
+    expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain('Sunday’s outfit isn’t in the saved forecast yet. REFRESH to get it.');
     const wear = screen.getByRole('region', { name: 'What to wear then' });
     expect(wear.querySelector('.wear__headline')?.textContent).toMatch(/\.$/);
     // Feels-like on the sticker; air temperature (it decides the clothes), sky, rain and wind on one line.
@@ -95,10 +96,39 @@ describe('Stooopid Sunday Dashboard', () => {
   });
 
   it('a fresh saved forecast is used without a new request', async () => {
-    localStorage.setItem('anyonecanpace:weather:v1', JSON.stringify(parseGem(fixture, est(4, 9))));
+    // Tuesday evening: no download reaches Sunday yet, so a short saved one is fine.
+    vi.setSystemTime(est(3, 21, 12));
+    localStorage.setItem('anyonecanpace:weather:v1', JSON.stringify(parseGem(fixture, est(3, 21))));
     await openDashboard();
-    expect(screen.getByText('Updated 9:00 a.m.')).toBeTruthy();
+    expect(screen.getByText('Updated 9:00 p.m.')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain('Sunday’s outfit shows up Wednesday.');
+    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain('The story works from Wednesday.');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('a fresh saved forecast that stops before Sunday is downloaded again once a new one reaches it', async () => {
+    // Thursday: a fresh 5-day forecast reaches Sunday; the saved one (an older, shorter download) doesn't.
+    vi.setSystemTime(est(5, 9, 12));
+    localStorage.setItem('anyonecanpace:weather:v1', JSON.stringify(parseGem(fixture, est(5, 9))));
+    await openDashboard();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('after the day it should show up, a missing Sunday outfit asks for REFRESH instead of naming a past day', async () => {
+    vi.setSystemTime(est(5, 9, 12));
+    localStorage.setItem('anyonecanpace:weather:v1', JSON.stringify(parseGem(fixture, est(5, 9))));
+    setOnline(false);
+    await openDashboard();
+    const run = screen.getByRole('region', { name: 'Sunday run' }).textContent;
+    expect(run).toContain('Sunday’s outfit isn’t in the saved forecast yet. REFRESH to get it.');
+    expect(run).not.toContain('Wednesday');
+    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain(
+      'REFRESH to get Sunday’s forecast for the story.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' }));
+    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain(
+      'The saved forecast doesn’t reach Sunday, November 8. REFRESH, then try again.',
+    );
   });
 
   it('offline: falls back to the last known forecast and says when it is from', async () => {
@@ -184,7 +214,7 @@ describe('Stooopid Sunday Dashboard', () => {
     const story = screen.getByRole('region', { name: 'Post the Sunday story' });
     const another = screen.getByRole('region', { name: /^Running another time\?/ });
     expect(another.compareDocumentPosition(story) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(story.textContent).toContain('The story works from Wednesday.');
+    expect(story.textContent).toContain('REFRESH to get Sunday’s forecast for the story.');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'COPY MAP LINK' })));
     expect(writeText).toHaveBeenCalledWith(link);
     expect(story.textContent).toContain('Map link copied.');

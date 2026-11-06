@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { EVENT, mapsLink, nextRun, type RunTimes } from '../event/event';
-import { FORECAST_DAYS, MONTREAL, type Forecast } from '../weather/forecast';
+import { FORECAST_DAYS, freshForecastReaches, MONTREAL, type Forecast } from '../weather/forecast';
 import { makeSnapshot, type StorySnapshot } from '../story/snapshot';
 import { clockTime } from './format';
 
@@ -12,6 +12,16 @@ const weekdayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: MONTREAL.timeZon
 
 /** The weekday a fresh forecast first reaches the run ("Wednesday"). */
 export const forecastReachesFrom = (run: RunTimes) => weekdayFmt.format(run.startAt - (FORECAST_DAYS - 1) * 86_400_000);
+
+/**
+ * Why the run has no outfit yet. Before a fresh forecast reaches it: the day it will.
+ * After: the saved copy is short (offline, a failed download, an older app), so REFRESH.
+ */
+export function outfitLaterText(run: RunTimes, now: number): string {
+  return freshForecastReaches(run.startAt, now)
+    ? `${EVENT.weekday}’s outfit isn’t in the saved forecast yet. REFRESH to get it.`
+    : `${EVENT.weekday}’s outfit shows up ${forecastReachesFrom(run)}.`;
+}
 
 /**
  * The weekly run (src/data/event.json): the day and start time, what to wear
@@ -67,7 +77,9 @@ export function SundayStory({ now, forecast }: { now: number; forecast: Forecast
       setStory(r.snapshot);
     } else {
       setStoryProblem(
-        `The forecast doesn’t reach ${dateFmt.format(r.run.startAt)} yet. It covers ${FORECAST_DAYS} days: try from ${forecastReachesFrom(r.run)}.`,
+        freshForecastReaches(r.run.startAt, Date.now())
+          ? `The saved forecast doesn’t reach ${dateFmt.format(r.run.startAt)}. REFRESH, then try again.`
+          : `The forecast doesn’t reach ${dateFmt.format(r.run.startAt)} yet. It covers ${FORECAST_DAYS} days: try from ${forecastReachesFrom(r.run)}.`,
       );
     }
   }
@@ -83,7 +95,11 @@ export function SundayStory({ now, forecast }: { now: number; forecast: Forecast
 
   const message =
     storyProblem || (copy === 'copied' ? 'Map link copied. Paste it into a Link sticker.' : '') ||
-    (!covered && forecast ? `The story works from ${forecastReachesFrom(run)}.` : '');
+    (!covered && forecast
+      ? freshForecastReaches(run.startAt, now)
+        ? `REFRESH to get ${EVENT.weekday}’s forecast for the story.`
+        : `The story works from ${forecastReachesFrom(run)}.`
+      : '');
 
   return (
     <section className="dash-story" aria-labelledby="post-story-title">
