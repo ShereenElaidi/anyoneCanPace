@@ -1,6 +1,6 @@
 # Dressed-duck art
 
-The Daily Dashboard draws the mascot dressed for the weather:
+The Stooopid Sunday Dashboard draws the mascot dressed for the weather:
 `duck-base.webp` (the mascot from `design/duck-mascot.webp`, 512 × 512) with
 one transparent layer per outfit item stacked on top.
 

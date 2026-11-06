@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { SW_OPTIONS } from '../lib/swUpdate';
-import { hourAt, sunFor, weatherText } from '../weather/forecast';
+import { EVENT, nextRun } from '../event/event';
+import { hourAt, sunFor } from '../weather/forecast';
 import { whatToWear } from '../weather/outfit';
 import {
   defaultRunTime,
@@ -19,8 +20,8 @@ import { lastCheckedText, NoticeList } from '../advisories/NoticeList';
 import { activeNotices, collectNotices, type NoticeFile } from '../advisories/notices';
 import { ROUTE_NOTICES } from '../advisories/routeAdvisories';
 import type { RouteManifest } from '../nav/types';
-import { DressedDuck } from './duck/DressedDuck';
-import { SundayRun } from './SundayRun';
+import { OutfitView } from './OutfitView';
+import { forecastReachesFrom, SundayRun, SundayStory } from './SundayRun';
 import { useForecast } from './useForecast';
 import './dashboard.css';
 
@@ -39,8 +40,9 @@ interface Props {
 }
 
 /**
- * Daily Dashboard: what to wear for the run, with the dressed duck up front.
- * Weather numbers and tips sit behind "Weather details and tips". Loaded on demand.
+ * Stooopid Sunday Dashboard: the Sunday run first (what to wear, where we
+ * meet), then "Running another time?" for any hour in the next few days, then
+ * the Sunday story for whoever posts it. Loaded on demand.
  */
 export default function DashboardMode({ onSwitchMode }: Props) {
   useRegisterSW(SW_OPTIONS);
@@ -53,13 +55,24 @@ export default function DashboardMode({ onSwitchMode }: Props) {
     return () => window.clearInterval(id);
   }, []);
 
+  const run = nextRun(now);
   const choices = useMemo(() => (forecast ? runTimeChoices(forecast, now) : []), [forecast, now]);
-  const fallback = forecast ? defaultRunTime(forecast, now) : null;
+  // "Another time" defaults to the next 10 a.m. that isn't the group run's day: that one has its own card.
+  const fallback = forecast ? defaultRunTime(forecast, now, run.date) : null;
   const runAt = picked !== null && choices.includes(picked) ? picked : fallback;
   const input = forecast && runAt !== null ? outfitInputFor(forecast, runAt) : null;
   const outfit = input ? whatToWear(input) : null;
   const hour = forecast && runAt !== null ? hourAt(forecast, runAt) : null;
   const sun = forecast && runAt !== null ? sunFor(forecast, runAt) : null;
+
+  // The group run: its outfit once the forecast reaches it.
+  const runInput = forecast ? outfitInputFor(forecast, run.startAt) : null;
+  const runOutfit = runInput ? whatToWear(runInput) : null;
+  const runHour = forecast ? hourAt(forecast, run.startAt) : null;
+
+  // Closed while the group run has its outfit; open (with the picker) until then. Never remembered.
+  const [anotherOpen, setAnotherOpen] = useState<boolean | null>(null);
+  const showAnother = anotherOpen ?? !runOutfit;
 
   // Central advisories and each route's own, merged the same way the route pages do.
   const notices = activeNotices(collectNotices(advisories.notices, ROUTE_NOTICES), null, localDate(now));
@@ -69,12 +82,46 @@ export default function DashboardMode({ onSwitchMode }: Props) {
     !updatedAt || state === 'offline' || state === 'failed' || now - updatedAt > OLD_FORECAST_MS;
   const status = <StatusLine updatedAt={updatedAt} state={state} now={now} onRefresh={() => void refresh()} />;
 
+  const checkOutside = (
+    <div className="dash-card dash-card--empty" role="status">
+      <p className="dash-card__big">Check outside</p>
+      <p>
+        {forecast
+          ? 'The saved forecast doesn’t cover the coming hours. Connect to the internet to update it.'
+          : `No forecast yet${state === 'offline' ? ' and you’re offline' : ''}. Look at the sky and feel the air before you dress.`}
+      </p>
+    </div>
+  );
+
+  let runSlot: ReactNode;
+  if (runOutfit && runHour) {
+    runSlot = (
+      <OutfitView
+        label={`What to wear on ${EVENT.weekday}`}
+        detailsTitle={`Weather for ${lowerDay(runTimeLabel(runHour.at, now))}`}
+        outfit={runOutfit}
+        hour={runHour}
+        sun={forecast && sunFor(forecast, run.startAt)}
+      />
+    );
+  } else if (!forecast && state === 'loading') {
+    runSlot = <p className="loading">Getting the forecast…</p>;
+  } else if (!forecast || !outfit) {
+    runSlot = checkOutside;
+  } else {
+    runSlot = (
+      <p className="dash-run__later">
+        {EVENT.weekday}’s outfit shows up {forecastReachesFrom(run)}.
+      </p>
+    );
+  }
+
   return (
     <div className="app dash">
       <header className="header">
         <div>
           <p className="brand brand--small">AnyoneCanPace</p>
-          <h1 className="dash__title">Daily Dashboard</h1>
+          <h1 className="dash__title">Stooopid Sunday Dashboard</h1>
         </div>
         <button type="button" className="btn btn--secondary btn--small" onClick={onSwitchMode}>
           MODES
@@ -93,104 +140,53 @@ export default function DashboardMode({ onSwitchMode }: Props) {
           </section>
         )}
 
+        <SundayRun now={now}>{runSlot}</SundayRun>
+
         {choices.length > 0 && runAt !== null && (
-          <RunTimePicker choices={choices} runAt={runAt} now={now} onPick={setPicked} />
-        )}
-
-        {!forecast && state !== 'loading' && (
-          <section className="dash-card dash-card--empty" role="status">
-            <p className="dash-card__big">Check outside</p>
-            <p>No forecast yet{state === 'offline' ? ' and you’re offline' : ''}. Look at the sky and feel the air before you dress.</p>
-          </section>
-        )}
-        {!forecast && state === 'loading' && <p className="loading">Getting today’s forecast…</p>}
-
-        {forecast && !outfit && (
-          <section className="dash-card dash-card--empty" role="status">
-            <p className="dash-card__big">Check outside</p>
-            <p>The saved forecast doesn’t cover the coming hours. Connect to the internet to update it.</p>
-          </section>
-        )}
-
-        {outfit && hour && runAt !== null && (
-          <>
-            <section className="dash-hero" aria-labelledby="wear-title">
-              <h2 id="wear-title" className="visually-hidden">
-                What to wear
-              </h2>
-              <div className="duck-slot">
-                {/* Decorative: the text below carries the meaning. */}
-                <DressedDuck items={outfit.drawn} weather={outfit.effect} />
-                <p className="duck-feels">
-                  <span>Feels like</span> <strong>{degrees(hour.feelsC)}</strong>
-                </p>
-              </div>
-              <p className="wear__headline">{outfit.headline}</p>
-              <ul className="wear__items">
-                {outfit.wear.map((item) => (
-                  <li key={item.id}>{item.label}</li>
-                ))}
-              </ul>
-              {outfit.optional.length > 0 && (
-                <ul className="wear__optional">
-                  {outfit.optional.map((o) => (
-                    <li key={o.id}>{o.text}</li>
-                  ))}
-                </ul>
-              )}
-              {outfit.advisories.length > 0 && (
-                <ul className="wear__advice">
-                  {outfit.advisories.map((a) => (
-                    <li key={a.text} className={`wear__advice--${a.level}`}>
-                      {a.level === 'warning' && <strong>Warning: </strong>}
-                      {a.text}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {outfit.bring.length > 0 && (
-                <>
-                  <h3 className="dash-details__h3">Bring</h3>
-                  <ul className="wear__notes">
-                    {outfit.bring.map((b) => (
-                      <li key={b}>{b}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </section>
-            <details className="dash-details">
-              <summary>Weather details</summary>
-              <h3 className="dash-details__h3">Weather for {lowerDay(runTimeLabel(runAt, now))}</h3>
-              <ul className="weather__facts">
-                <li>
-                  {weatherText(hour.code)}, air {degrees(hour.tempC)}, feels like {degrees(hour.feelsC)}
-                </li>
-                <li>
-                  {hour.precipProb !== null ? `${Math.round(hour.precipProb)} % chance of rain or snow` : 'Chance of rain unknown'}
-                  {hour.precipMm ? ` (${hour.precipMm.toFixed(1)} mm)` : ''}
-                </li>
-                <li>
-                  {hour.windKmh !== null
-                    ? `Wind ${Math.round(hour.windKmh)} km/h${hour.gustKmh !== null ? `, gusts ${Math.round(hour.gustKmh)} km/h` : ''}`
-                    : 'Wind unknown'}
-                </li>
-                {outfit.windChillC !== null && <li>Wind chill {degrees(outfit.windChillC)}</li>}
-                {outfit.humidex !== null && outfit.humidex >= 25 && <li>Humidex {Math.round(outfit.humidex)}</li>}
-                {sun && (
-                  <li>
-                    Sunrise {clockTime(sun.sunrise)} · sunset {clockTime(sun.sunset)}
-                  </li>
+          <section className="dash-another" aria-labelledby="another-title">
+            <h2 className="dash-another__head">
+              <button
+                type="button"
+                id="another-title"
+                className="dash-another__toggle"
+                aria-expanded={showAnother}
+                aria-controls="another-body"
+                onClick={() => setAnotherOpen(!showAnother)}
+              >
+                <span className="dash-another__title">Running another time?</span>
+                <span className="dash-another__sign" aria-hidden="true">
+                  {showAnother ? '−' : '+'}
+                </span>
+                {!showAnother && outfit && hour && (
+                  <span className="dash-another__preview">
+                    {runTimeLabel(runAt, now)} · {degrees(hour.tempC)} · {outfit.headline}
+                  </span>
                 )}
-              </ul>
-              <p className="dash-details__small">
-                Clothes follow the air temperature; wind, rain and snow adjust them. Made for an easy 45–60 min run.
-              </p>
-            </details>
-          </>
+              </button>
+            </h2>
+            {showAnother && (
+              <div id="another-body">
+                <RunTimePicker choices={choices} runAt={runAt} now={now} onPick={setPicked} />
+                {outfit && hour ? (
+                  <div className="dash-hero">
+                    <OutfitView
+                      label="What to wear then"
+                      detailsTitle={`Weather for ${lowerDay(runTimeLabel(runAt, now))}`}
+                      outfit={outfit}
+                      hour={hour}
+                      sun={sun}
+                    />
+                  </div>
+                ) : (
+                  checkOutside
+                )}
+              </div>
+            )}
+          </section>
         )}
 
-        <SundayRun now={now} forecast={forecast} />
+        <SundayStory now={now} forecast={forecast} />
+
         {notices.length === 0 && (
           <p className="dash-clear">
             <span aria-hidden="true">✓ </span>No route advisories. <span className="dash-clear__checked">{lastCheckedText(advisories.lastChecked)}</span>

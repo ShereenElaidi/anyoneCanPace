@@ -6,7 +6,7 @@ Tools for volunteer pacers leading beginner-friendly group runs. Part of the **A
 
 The app always opens on **"What are we doing today?"**, a mode picker:
 
-- **Daily Dashboard**: the weather at your run time and what to wear for it.
+- **Stooopid Sunday Dashboard**: what to wear for the Sunday run and where we meet, any other run time on request, and the Sunday story.
 - **ACR Run/Walk Timer**: open the URL on your phone, tap **START PACING**, and the app alternates RUN and WALK until you stop it. Adjust intervals mid-run without interrupting the group.
 - **Route Library**: pick a route (they range from about 4.6 to 12.4 km) and follow it on a street map, with the duck marking your place, a direction banner and turn cues.
 
@@ -148,10 +148,10 @@ Process for a new or changed route:
   - After re-cutting, bump `MAP_VERSION` in `src/sixk/map/offlineMap.ts` so phones fetch the new file.
 - **Offline**: the map file is not cached piece by piece. The first time you open the route library (online, and not in data-saver mode), the whole file is saved to the phone's Cache Storage, and the map then reads from that copy. The library shows the status honestly ("Map saved for offline use on …", "Saving… 40 %", "not saved") with a **SAVE MAP FOR OFFLINE** button. The map shows "Online map (not saved for offline)" while it is streaming from the network.
 
-## Daily Dashboard
+## Stooopid Sunday Dashboard
 
-- **Layout: the answer first.** The dressed duck, with a "feels like" sticker, the outfit headline, the item chips, any "Run cold?" options, weather and ground notes, and what to bring fill the hero card. Weather numbers are folded under **Weather details**. A fresh "Updated …" line and REFRESH sit at the bottom; an offline, failed or old forecast moves that line to the top. With no advisories there's one "No route advisories. Last checked …" line; active ones show as a card at the top.
-- **Weather at run time.** Pick when the run starts from a strip of hour chips (6 a.m. to 9 p.m., three days; radio buttons, so arrow keys and screen readers work). The default is the next **10 a.m.** (`DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The details show conditions, air and feels-like temperature, the chance of rain or snow, wind and gusts, wind chill or humidex when they matter, and sunrise and sunset.
+- **Layout: Sunday first.** The top card is the Sunday run: the date and start time, then the dressed duck, the outfit headline (the layers), an "Also:" line for the rest (gloves, hat, reflective gear…), one weather line (air temperature first because it decides the clothes, then feels-like, sky, chance of rain, wind), any "Run cold?" options, weather and ground notes and what to bring, then where we meet with OPEN MAP. Weather numbers are folded under **Weather details**. Until the forecast reaches Sunday the card says which day the outfit shows up instead. **Running another time?** comes next: closed, it's one line ("Today 10 a.m. · 14 °C · Tee, shorts."); open, it has the hour strip and a full outfit card. It starts closed once Sunday has an outfit and open before then, and the choice is never remembered. **Post the Sunday story** (MAKE STORY, COPY MAP LINK) is below, for whoever posts it. A fresh "Updated …" line and REFRESH sit at the bottom; an offline, failed or old forecast moves that line to the top. With no advisories there's one "No route advisories. Last checked …" line; active ones show as a card at the top.
+- **Weather at run time.** Pick when the run starts from a strip of hour chips (6 a.m. to 9 p.m., three days; radio buttons, so arrow keys and screen readers work). The default is the next **10 a.m.** that isn't on the Sunday run's day (`DEFAULT_RUN_HOUR` in `src/weather/runTime.ts`). The details show conditions, air and feels-like temperature, the chance of rain or snow, wind and gusts, wind chill or humidex when they matter, and sunrise and sunset.
 - **The duck dresses for it.** The mascot wears the running outfit's visible pieces: legs, the outermost top, hands, head, neck, and a vest and headlamp in the dark, with rain or snow falling behind it (off for reduced motion). Inner layers (thermal top, insulated jacket), "Run cold?" options, things to bring and footwear are text only. It's decoration, hidden from screen readers; the text carries the meaning. To swap a piece, see `src/assets/duck-outfit/README.md`.
 
 **What to wear** (full rules and where each number came from: `design/weather-v1-spec.md`). An easy 45–60 min community run, the same for the 6K and ACR run/walk. One runner's calibration, kept in tables at the top of `src/weather/outfit.ts` (`CUTOFFS`, `ACCESSORIES`, `HEAT`, `WIND`, `WET`, `GROUND`, `FROSTBITE`, `WAITING`).
@@ -175,9 +175,9 @@ Process for a new or changed route:
 - **Bring:** a warm layer for the 10–20 min wait at 0 °C and below, or up to 5 °C when wet or windy; dry clothes for after when it's that cold or cool and wet.
 - **Warnings:** frostbite at wind chill −27 or colder (stated neutrally: organisers decide), heat advice at humidex 30 and stronger at 35, reflective vest and headlamp in the dark.
 
-**Sunday run.** A card on the dashboard says when and where the weekly run meets (next Sunday, meet 10:00, start 10:15, Café Tranquille's entrance). **COPY MAP LINK** copies a Google Maps link to the exact spot for Instagram's Link sticker (if the phone won't copy, the link is shown to copy by hand); **OPEN MAP** opens it. Edit `src/data/event.json` to change the day, times or place (a test checks it), then re-make the story's map picture with `?meeting-map` (below).
+**Sunday run.** The dashboard's top card says when and where the weekly run meets (next Sunday, meet 10:00, start 10:15, Café Tranquille's entrance). **COPY MAP LINK** (in Post the Sunday story) copies a Google Maps link to the exact spot for Instagram's Link sticker (if the phone won't copy, the link is shown to copy by hand); **OPEN MAP** opens it. Edit `src/data/event.json` to change the day, times or place (a test checks it), then re-make the story's map picture with `?meeting-map` (below).
 
-**Sunday story.** On the Sunday run card, **MAKE STORY** (from Wednesday, when the 5-day forecast reaches Sunday; more than 3 days ahead it's labelled an early forecast to check again on Saturday) draws a 1080 × 1920 Instagram story: SEE YOU SUNDAY!, the date and times, the dressed duck and the forecast for the start hour, what to wear (the website's own labels), the most important note (a warning, else what to bring), the meeting-point map, a welcome for newcomers, and a small forecast time and credits. It's drawn in the phone with the Canvas API from one snapshot taken at the tap: the preview, **SHARE** (the phone's share sheet: Instagram, Save Image…) and **SAVE IMAGE** all use that same picture, and a forecast refresh doesn't change it until **REMAKE**. Pressing and holding the preview also saves it. Post it by hand and add the map with a Link sticker (COPY MAP LINK). Layout: `src/story/layout.ts` (pure; tests check every scenario fits Instagram's safe area with no clipped or overlapping text), drawing: `src/story/render.ts`, loaded only when used.
+**Sunday story.** Under Post the Sunday story, **MAKE STORY** (from Wednesday, when the 5-day forecast reaches Sunday; more than 3 days ahead it's labelled an early forecast to check again on Saturday) draws a 1080 × 1920 Instagram story: SEE YOU SUNDAY!, the date and times, the dressed duck and the forecast for the start hour, what to wear (the website's own labels), the most important note (a warning, else what to bring), the meeting-point map, a welcome for newcomers, and a small forecast time and credits. It's drawn in the phone with the Canvas API from one snapshot taken at the tap: the preview, **SHARE** (the phone's share sheet: Instagram, Save Image…) and **SAVE IMAGE** all use that same picture, and a forecast refresh doesn't change it until **REMAKE**. Pressing and holding the preview also saves it. Post it by hand and add the map with a Link sticker (COPY MAP LINK). Layout: `src/story/layout.ts` (pure; tests check every scenario fits Instagram's safe area with no clipped or overlapping text), drawing: `src/story/render.ts`, loaded only when used.
 
 **Review pages (dev only).** `npm run dev`, then `/anyoneCanPace/?duck-sheet`: every outfit scenario (`src/weather/scenarios.ts`, the 16 approved ones badged) on the dressed duck, a playground, and a print layout for reviewing with other runners. `/anyoneCanPace/?meeting-map`: draws the meeting point on the app's offline map with a pin, street names and the OpenStreetMap credit; **SAVE TO REPO** writes `src/assets/story/meeting-map.webp`. Neither page is in production builds.
 
@@ -229,7 +229,7 @@ A daily GitHub Action could build a "possible closures" file from this, with the
 
 - No backend, accounts, cookies, analytics or tracking.
 - **Your GPS position stays on your phone.** It is held in memory for the current route only. It is never stored, logged or sent anywhere, and the map tiles come from the app's own files, not a map service.
-- **The only request the app makes to another site** is the Daily Dashboard's weather request to `api.open-meteo.com`, for **fixed central-Montréal coordinates, never your location**. The request goes straight from your phone to Open-Meteo, so like any web request it shows them ordinary connection details (your IP address, browser and time of the request); your GPS position is never part of it. GPS positions stay on the phone, in memory, for the current route only. It is made only when you open the dashboard and the saved forecast is more than 30 minutes old (or you tap REFRESH). Everything else is the app's own files. Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
+- **The only request the app makes to another site** is the Sunday dashboard's weather request to `api.open-meteo.com`, for **fixed central-Montréal coordinates, never your location**. The request goes straight from your phone to Open-Meteo, so like any web request it shows them ordinary connection details (your IP address, browser and time of the request); your GPS position is never part of it. GPS positions stay on the phone, in memory, for the current route only. It is made only when you open the dashboard and the saved forecast is more than 30 minutes old (or you tap REFRESH). Everything else is the app's own files. Elevation and street-name lookups happen only when a developer runs `npm run routes`, never in the app.
 - After one visit, the timer, routes, stats and map work offline. Anything that can go stale shows when it was saved.
 - Saved on the device: timer settings, the offline map and the last weather forecast.
 
@@ -246,7 +246,7 @@ The Route Library adds **MapLibre GL JS** and the **PMTiles** reader. They are l
 |---|---|---|
 | Entry JS (picker + timer) | 235 kB | 74 kB |
 | Route Library chunk (lazy) | 39 kB + 8 kB CSS | 13 kB |
-| Daily Dashboard chunk (lazy) | 31 kB + 5 kB CSS | 17 kB |
+| Sunday dashboard chunk (lazy) | 31 kB + 5 kB CSS | 17 kB |
 | MapLibre + PMTiles chunk (lazy) | 1,088 kB + 71 kB CSS | 298 kB |
 | MapLibre worker (lazy) | 519 kB | |
 | **Service worker precache, total** | **52 files, about 2.8 MB** | |
@@ -264,7 +264,7 @@ src/
   sixk/                   Route Library: library, route page, follow view, hooks, styles
   sixk/map/               MapLibre map, brand style, offline map file (lazy)
   weather/                Pure: GEM request/parsing, outfit rules, run time, cache
-  dashboard/              Daily Dashboard UI, useForecast, dressed duck (dashboard/duck/) (lazy)
+  dashboard/              Stooopid Sunday Dashboard UI, OutfitView, useForecast, dressed duck (dashboard/duck/) (lazy)
   advisories/             Pure notice filtering/validation and the shared NoticeList
   assets/duck-outfit/     Duck base drawing + one SVG per outfit item (drafts; see its README)
   data/advisories.json    Hand-edited notices (changed by pull request)
@@ -435,7 +435,7 @@ Automated tests cover the timer logic and UI flows. These need a real phone on a
 - [ ] **Readable without the duck:** cover the duck with your thumb. The advice still makes complete sense.
 - [ ] **A notice:** add a test notice for a route in `src/data/advisories.json` with tomorrow as `start`. It doesn't show today, shows tomorrow, and disappears the day after its `end`.
 
-### Daily Dashboard: field check
+### Stooopid Sunday Dashboard: field check
 
 - [ ] **First open online:** "Updated <time>" and an outfit appear within a few seconds. The run time defaults to the next 10 a.m.
 - [ ] **Run time:** it defaults to the next 10 a.m. Pick tonight and tomorrow morning: the outfit changes (reflective vest when it's dark).
