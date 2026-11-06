@@ -75,7 +75,7 @@ export interface RouteData {
   place?: string;
   /** Hand-written: a short paragraph on what the route is like, for the route page only (not the manifest). */
   description?: string;
-  /** Hand-written tag ids from ROUTE_TAGS (src/sixk/describe.ts), e.g. "waterfront". */
+  /** Hand-written tag ids from src/data/route-tags.json (ROUTE_TAGS in src/sixk/describe.ts), e.g. "waterfront". */
   tags?: string[];
   /** [west, south, east, north]. */
   bbox: [number, number, number, number];

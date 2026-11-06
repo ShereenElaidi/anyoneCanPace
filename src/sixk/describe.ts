@@ -3,22 +3,62 @@
  * pace, its tags and the "Show routes" filters. Pure (no DOM, no storage).
  */
 import type { RouteKind, RouteStats, RouteSummary } from '../nav/types';
+import routeTagsJson from '../data/route-tags.json';
 
 // ---------- Tags ----------
 
-export type TagTone = 'gold' | 'green' | 'blue';
+/** Chip colours a tag can use; each is styled (and contrast-checked) as `.tag--<tone>` in sixk.css. */
+export const TAG_TONES = ['gold', 'green', 'blue'] as const;
+export type TagTone = (typeof TAG_TONES)[number];
+
+export interface TagDef {
+  label: string;
+  tone: TagTone;
+}
 
 /**
  * Tags a route can carry (`tags` in src/data/routes/<id>.json, hand-edited).
- * Ids, not labels, so a typo can't silently break a filter: a test checks
- * every route file against this list.
+ * The list itself is data, `src/data/route-tags.json`, so the dev route editor
+ * can add tags. Ids, not labels, so a typo can't silently break a filter: a
+ * test checks every route file, and the list, with the validators below.
  */
-export const ROUTE_TAGS: Record<string, { label: string; tone: TagTone }> = {
-  'shape-run': { label: 'Shape run', tone: 'green' },
-  'good-first-route': { label: 'Good first route', tone: 'blue' },
-  waterfront: { label: 'Waterfront', tone: 'gold' },
-  'canal-path': { label: 'Canal path', tone: 'gold' },
-};
+export const ROUTE_TAGS = routeTagsJson as Record<string, TagDef>;
+
+/** Tags the "Show routes" filters depend on (`matchesFilter`): they can't be removed from the list. */
+export const FILTER_TAGS = ['shape-run', 'waterfront'] as const;
+
+export const TAG_LABEL_MAX = 24;
+const TAG_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** Problems with the tag list itself ([] if it's fine). */
+export function validateTagList(list: unknown): string[] {
+  if (typeof list !== 'object' || list === null || Array.isArray(list)) return ['the tag list must be an object of id → { label, tone }'];
+  const errors: string[] = [];
+  const labels = new Map<string, string>();
+  for (const [id, def] of Object.entries(list as Record<string, unknown>)) {
+    if (!TAG_ID.test(id)) errors.push(`tag id "${id}" must be lowercase words joined by hyphens`);
+    if (typeof def !== 'object' || def === null) {
+      errors.push(`tag "${id}" must be { label, tone }`);
+      continue;
+    }
+    const { label, tone, ...rest } = def as Record<string, unknown>;
+    for (const k of Object.keys(rest)) errors.push(`tag "${id}" has an unknown field "${k}"`);
+    if (typeof label !== 'string' || label.trim() === '' || label !== label.trim()) {
+      errors.push(`tag "${id}" needs a label without spaces at the start or end`);
+    } else {
+      if (label.length > TAG_LABEL_MAX) errors.push(`tag "${id}" label is ${label.length} characters (at most ${TAG_LABEL_MAX})`);
+      const key = label.toLowerCase();
+      const other = labels.get(key);
+      if (other) errors.push(`tags "${other}" and "${id}" have the same label "${label}"`);
+      else labels.set(key, id);
+    }
+    if (!TAG_TONES.includes(tone as TagTone)) errors.push(`tag "${id}" has unknown tone "${String(tone)}" (known: ${TAG_TONES.join(', ')})`);
+  }
+  for (const id of FILTER_TAGS) {
+    if (!(id in (list as object))) errors.push(`tag "${id}" is used by a "Show routes" filter and can't be removed`);
+  }
+  return errors;
+}
 
 // ---------- Description ----------
 
@@ -128,6 +168,7 @@ export function matchesFilter(r: RouteSummary, f: RouteFilter): boolean {
       return true;
     case 'shape-run':
     case 'waterfront':
+      // Both are in FILTER_TAGS, so validateTagList keeps them in the tag list.
       return !!r.tags?.includes(f);
     case 'short':
       return r.stats.distanceM < 5000;

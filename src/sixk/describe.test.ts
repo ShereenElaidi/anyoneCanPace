@@ -11,7 +11,10 @@ import {
   terrainText,
   DESCRIPTION_MAX,
   validateDescription,
+  validateTagList,
   validateTags,
+  ROUTE_TAGS,
+  TAG_LABEL_MAX,
 } from './describe';
 
 const stats = (distanceM: number, gainM: number): RouteStats => ({ distanceM, gainM, lossM: gainM, minEleM: 0, maxEleM: gainM });
@@ -94,6 +97,40 @@ describe('description', () => {
     expect(validateDescription(' Flat. ')[0]).toMatch(/spaces/);
     expect(validateDescription('x'.repeat(DESCRIPTION_MAX + 1))[0]).toMatch(/at most 280/);
     expect(validateDescription(42)).toEqual(['description must be text']);
+  });
+});
+
+describe('tag list', () => {
+  it('the shipped tag list is valid, in the order the library shows', () => {
+    expect(validateTagList(ROUTE_TAGS)).toEqual([]);
+    expect(Object.keys(ROUTE_TAGS)).toEqual(['shape-run', 'good-first-route', 'waterfront', 'canal-path']);
+  });
+
+  const base = { 'shape-run': { label: 'Shape run', tone: 'green' }, waterfront: { label: 'Waterfront', tone: 'gold' } };
+
+  it('accepts a new tag with a known tone', () => {
+    expect(validateTagList({ ...base, 'hill-repeats': { label: 'Hill repeats', tone: 'blue' } })).toEqual([]);
+  });
+
+  it('rejects bad ids, labels and tones', () => {
+    expect(validateTagList({ ...base, 'Hill Repeats': { label: 'Hill repeats', tone: 'blue' } })[0]).toMatch(/lowercase words/);
+    expect(validateTagList({ ...base, hills: { label: ' Hills', tone: 'blue' } })[0]).toMatch(/spaces/);
+    expect(validateTagList({ ...base, hills: { label: 'x'.repeat(TAG_LABEL_MAX + 1), tone: 'blue' } })[0]).toMatch(/at most 24/);
+    expect(validateTagList({ ...base, hills: { label: 'Hills', tone: 'red' } })[0]).toMatch(/unknown tone "red"/);
+    expect(validateTagList({ ...base, hills: { label: 'Hills', tone: 'blue', colour: '#f00' } })[0]).toMatch(/unknown field "colour"/);
+    expect(validateTagList([])).toHaveLength(1);
+  });
+
+  it('rejects two tags with the same label, ignoring case', () => {
+    expect(validateTagList({ ...base, 'water-front': { label: 'waterfront', tone: 'gold' } })).toEqual([
+      'tags "waterfront" and "water-front" have the same label "waterfront"',
+    ]);
+  });
+
+  it('keeps the tags the filters depend on', () => {
+    expect(validateTagList({ waterfront: base.waterfront })).toEqual([
+      'tag "shape-run" is used by a "Show routes" filter and can\'t be removed',
+    ]);
   });
 });
 
