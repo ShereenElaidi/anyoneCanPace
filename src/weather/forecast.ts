@@ -8,6 +8,12 @@
 
 export const MONTREAL = { lat: 45.5017, lon: -73.5673, timeZone: 'America/Toronto' } as const;
 
+/**
+ * Days of forecast fetched (today included). Five so the Sunday story can be made from
+ * Wednesday; the dashboard's hour picker still only shows 3 days (PICKER_DAYS).
+ */
+export const FORECAST_DAYS = 5;
+
 const HOURLY = [
   'temperature_2m',
   'apparent_temperature',
@@ -32,8 +38,8 @@ export function forecastUrl(): string {
     daily: 'sunrise,sunset',
     timezone: MONTREAL.timeZone,
     timeformat: 'unixtime',
-    // Friday evening already reaches Sunday's run; yesterday is for the refreeze check.
-    forecast_days: '3',
+    // Yesterday is for the refreeze check.
+    forecast_days: String(FORECAST_DAYS),
     past_days: '1',
   });
   return `https://api.open-meteo.com/v1/gem?${q}`;

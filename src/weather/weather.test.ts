@@ -18,7 +18,7 @@ describe('weather request', () => {
     expect(url.searchParams.get('timeformat')).toBe('unixtime');
     expect(url.searchParams.get('hourly')).toContain('apparent_temperature');
     expect(url.searchParams.get('hourly')).toContain('dew_point_2m');
-    expect(url.searchParams.get('forecast_days')).toBe('3');
+    expect(url.searchParams.get('forecast_days')).toBe('5');
     expect(url.searchParams.get('past_days')).toBe('1');
     // Cloud cover was only for the UV estimate, which is gone.
     expect(url.searchParams.get('hourly')).not.toContain('cloud_cover');

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { EVENT, mapsLink, nextRun } from '../event/event';
-import { MONTREAL, type Forecast } from '../weather/forecast';
+import { FORECAST_DAYS, MONTREAL, type Forecast } from '../weather/forecast';
 import { makeSnapshot, type StorySnapshot } from '../story/snapshot';
 import { clockTime } from './format';
 
@@ -8,6 +8,7 @@ import { clockTime } from './format';
 const StoryDialog = lazy(() => import('../story/StoryDialog'));
 
 const dateFmt = new Intl.DateTimeFormat('en-CA', { timeZone: MONTREAL.timeZone, weekday: 'long', month: 'long', day: 'numeric' });
+const weekdayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: MONTREAL.timeZone, weekday: 'long' });
 
 /**
  * When and where the weekly run meets (src/data/event.json), the map link to
@@ -32,7 +33,8 @@ export function SundayRun({ now, forecast }: { now: number; forecast: Forecast |
       setStoryProblem('');
       setStory(r.snapshot);
     } else {
-      setStoryProblem(`The forecast doesn’t reach ${dateFmt.format(r.run.startAt)} yet. It covers about 3 days: try from Friday.`);
+      const from = weekdayFmt.format(r.run.startAt - (FORECAST_DAYS - 1) * 86_400_000);
+      setStoryProblem(`The forecast doesn’t reach ${dateFmt.format(r.run.startAt)} yet. It covers ${FORECAST_DAYS} days: try from ${from}.`);
     }
   }
 

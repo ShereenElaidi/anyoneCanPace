@@ -17,7 +17,7 @@ unchanged). Changes to the request:
 
 | Change | Why |
 |---|---|
-| `forecast_days` 2 → 3 | Friday evening can already see Sunday 10:00. **[assumed]** |
+| `forecast_days` 2 → 5 | The Sunday story can be made from Wednesday. The dashboard's hour picker still shows 3 days. A story made more than 3 days ahead says it's an early forecast. **[approved]** |
 | add `past_days=1` | Refreeze warning needs yesterday's precipitation and temperatures. **[assumed]** |
 | add `dew_point_2m` | Humidex for heat advice (Environment Canada's index, familiar to Montrealers). **[assumed]** |
 
