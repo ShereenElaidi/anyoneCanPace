@@ -67,7 +67,7 @@ describe('Sunday story', () => {
     vi.stubGlobal('fetch', fetchMock);
     await openDashboard();
     fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' }));
-    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain(
+    expect(screen.getByRole('region', { name: 'Generate Insta Story Pic' }).textContent).toContain(
       'The forecast doesn’t reach Sunday, November 8 yet. It covers 5 days: try from Wednesday.',
     );
     expect(drawn).toHaveLength(0);

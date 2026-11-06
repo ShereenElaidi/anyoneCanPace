@@ -20,7 +20,7 @@ import { activeNotices, collectNotices, type NoticeFile } from '../advisories/no
 import { ROUTE_NOTICES } from '../advisories/routeAdvisories';
 import type { RouteManifest } from '../nav/types';
 import { OutfitView } from './OutfitView';
-import { outfitLaterText, SundayRun, SundayStory } from './SundayRun';
+import { outfitLaterText, SundayLocation, SundayRun, SundayStory } from './SundayRun';
 import { useForecast } from './useForecast';
 import './dashboard.css';
 
@@ -186,6 +186,7 @@ export default function DashboardMode({ onSwitchMode }: Props) {
         )}
 
         <SundayStory now={now} forecast={forecast} />
+        <SundayLocation />
 
         {notices.length === 0 && (
           <p className="dash-clear">

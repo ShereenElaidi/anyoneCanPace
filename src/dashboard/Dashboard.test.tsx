@@ -102,7 +102,7 @@ describe('Stooopid Sunday Dashboard', () => {
     await openDashboard();
     expect(screen.getByText('Updated 9:00 p.m.')).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Sunday run' }).textContent).toContain('Sunday’s outfit shows up Wednesday.');
-    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain('The story works from Wednesday.');
+    expect(screen.getByRole('region', { name: 'Generate Insta Story Pic' }).textContent).toContain('The story works from Wednesday.');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -122,11 +122,11 @@ describe('Stooopid Sunday Dashboard', () => {
     const run = screen.getByRole('region', { name: 'Sunday run' }).textContent;
     expect(run).toContain('Sunday’s outfit isn’t in the saved forecast yet. REFRESH to get it.');
     expect(run).not.toContain('Wednesday');
-    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain(
+    expect(screen.getByRole('region', { name: 'Generate Insta Story Pic' }).textContent).toContain(
       'REFRESH to get Sunday’s forecast for the story.',
     );
     fireEvent.click(screen.getByRole('button', { name: 'MAKE STORY' }));
-    expect(screen.getByRole('region', { name: 'Post the Sunday story' }).textContent).toContain(
+    expect(screen.getByRole('region', { name: 'Generate Insta Story Pic' }).textContent).toContain(
       'The saved forecast doesn’t reach Sunday, November 8. REFRESH, then try again.',
     );
   });
@@ -205,19 +205,20 @@ describe('Stooopid Sunday Dashboard', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     await openDashboard();
     const run = screen.getByRole('region', { name: 'Sunday run' });
-    expect(run.textContent).toContain('Sunday, November 8 · start 10:15 a.m.');
-    expect(run.textContent).toContain('Meet 10:00 a.m. at Café Tranquille: at the café entrance, 1442 Rue Clark');
+    expect(run.textContent).toContain('Next Stooopid Sunday:');
+    expect(run.textContent?.replace(/\u00a0/g, ' ')).toContain('November 8, 10 a.m. · Weather:');
+    expect(run.textContent).not.toContain('Rue Clark');
     const link = 'https://www.google.com/maps/search/?api=1&query=45.50935,-73.56488';
     expect(screen.getByRole('link', { name: 'OPEN MAP' }).getAttribute('href')).toBe(link);
 
-    // MAKE STORY and the map link sit in their own section, after "Running another time?".
-    const story = screen.getByRole('region', { name: 'Post the Sunday story' });
+    // MAKE STORY and the map links sit in their own sections, after "Running another time?".
+    const story = screen.getByRole('region', { name: 'Generate Insta Story Pic' });
     const another = screen.getByRole('region', { name: /^Running another time\?/ });
     expect(another.compareDocumentPosition(story) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(story.textContent).toContain('REFRESH to get Sunday’s forecast for the story.');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'COPY MAP LINK' })));
     expect(writeText).toHaveBeenCalledWith(link);
-    expect(story.textContent).toContain('Map link copied.');
+    expect(screen.getByRole('region', { name: 'Location Deets' }).textContent).toContain('Map link copied.');
 
     // No clipboard (or it refuses): show the link to copy by hand.
     writeText.mockRejectedValueOnce(new Error('denied'));
@@ -243,7 +244,7 @@ describe('Stooopid Sunday Dashboard', () => {
     const sunday = screen.getByRole('region', { name: 'What to wear on Sunday' });
     expect(run.contains(sunday)).toBe(true);
     expect(sunday.querySelector('.wear__headline')?.textContent).toMatch(/\.$/);
-    expect(screen.queryByRole('region', { name: 'Post the Sunday story' })?.textContent).not.toContain('works from');
+    expect(screen.queryByRole('region', { name: 'Generate Insta Story Pic' })?.textContent).not.toContain('works from');
 
     // Closed: one line with the time, air temperature and outfit; no picker yet.
     const toggle = screen.getByRole('button', { name: /^Running another time\?/ });

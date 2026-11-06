@@ -441,7 +441,24 @@
 }
 
 .dash-run--main .dash-run__when {
-  margin-bottom: 10px;
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.dash-run__date {
+  display: block;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.dash-run__meet-time {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-wrap: balance;
 }
 
 .dash-run__later {
@@ -449,12 +466,6 @@
   border: 2px dashed var(--asphalt);
   border-radius: 12px;
   font-weight: 700;
-}
-
-.dash-run__meet {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 2px dashed var(--asphalt);
 }
 
 /* ---------- Running another time? ---------- */
