@@ -24,6 +24,7 @@ const DIR_LABEL: Record<TurnDir, string> = {
   'sharp-right': 'Sharp right',
   'u-turn': 'U-turn',
   straight: 'Straight on',
+  landmark: 'Landmark (street = its name)',
 };
 
 const kmText = (m: number) => `${(m / 1000).toFixed(2)} km`;

@@ -557,6 +557,7 @@ const DIR_WORD: Record<TurnDir, string> = {
   'sharp-right': 'Sharp right',
   'u-turn': 'U-turn',
   straight: 'Straight',
+  landmark: 'Landmark',
 };
 
 const km = (m: number) => (m / 1000).toFixed(2);

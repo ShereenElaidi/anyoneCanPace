@@ -1,8 +1,8 @@
 {
   "id": "1st-bday-of-the-stooopidverse",
   "note": "Automated suggestions for manual review. Nothing here has been verified.",
-  "startStreet": "",
-  "startNote": "No named street runs along the first 60 m; check where the route starts.",
+  "startStreet": "Rue Clark",
+  "startNote": "",
   "turns": [
     {
       "atM": 213,
@@ -16,10 +16,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "73° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "73° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Clark",
+      "streetAfter": "Rue Ontario Ouest"
     },
     {
       "atM": 1320,
@@ -33,10 +33,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-79° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "-79° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Ontario Est",
+      "streetAfter": "Rue Atateken"
     },
     {
       "atM": 1554,
@@ -50,10 +50,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-112° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "-112° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Atateken",
+      "streetAfter": "Rue Sherbrooke Est"
     },
     {
       "atM": 1783,
@@ -67,10 +67,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-74° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "-74° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Sherbrooke Est",
+      "streetAfter": "Rue Saint-Christophe"
     },
     {
       "atM": 1833,
@@ -84,10 +84,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-180° change of direction; no street name found after the turn",
+      "reason": "-180° change of direction; same street before and after: a bend in the road or a turn that stays on it",
       "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "streetBefore": "Rue Saint-Christophe",
+      "streetAfter": "Rue Saint-Christophe"
     },
     {
       "atM": 1883,
@@ -113,10 +113,10 @@
       ],
       "deviationM": 15.5,
       "decision": "consolidated",
-      "reason": "4 heading changes within 86 m make one -106° manoeuvre; the route stays within 15 m of a single turn; no street name found after the turn",
+      "reason": "4 heading changes within 86 m make one -106° manoeuvre; the route stays within 15 m of a single turn",
       "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "streetBefore": "Rue Saint-Christophe",
+      "streetAfter": "Rue Sherbrooke Est"
     },
     {
       "atM": 2032,
@@ -130,10 +130,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "106° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "106° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Sherbrooke Est",
+      "streetAfter": "Rue Saint-Hubert"
     },
     {
       "atM": 3804,
@@ -151,10 +151,10 @@
       ],
       "deviationM": 4.9,
       "decision": "consolidated",
-      "reason": "2 heading changes within 12 m make one -93° manoeuvre; the route stays within 5 m of a single turn; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "2 heading changes within 12 m make one -93° manoeuvre; the route stays within 5 m of a single turn",
+      "needsReview": false,
+      "streetBefore": "Rue Resther",
+      "streetAfter": "Rue Gilford"
     },
     {
       "atM": 4071,
@@ -178,8 +178,8 @@
       "decision": "rejected",
       "reason": "3 heading changes within 38 m cancel out (net -30°); the route stays within 10 m of the straight line, so this is a jog (crossing, lane or sidewalk change), not a turn",
       "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "streetBefore": "Rue Gilford",
+      "streetAfter": "Rue Gilford"
     },
     {
       "atM": 4300,
@@ -193,10 +193,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-45° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "-45° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Gilford",
+      "streetAfter": "Avenue Henri-Julien"
     },
     {
       "atM": 4397,
@@ -210,10 +210,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-86° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "-86° change of direction",
+      "needsReview": false,
+      "streetBefore": "Avenue Henri-Julien",
+      "streetAfter": "Avenue du Mont-Royal Est"
     },
     {
       "atM": 4518,
@@ -227,10 +227,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "90° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "90° change of direction",
+      "needsReview": false,
+      "streetBefore": "Avenue du Mont-Royal Est",
+      "streetAfter": "Rue Saint-Denis"
     },
     {
       "atM": 5483,
@@ -250,8 +250,8 @@
       "decision": "rejected",
       "reason": "2 heading changes within 11 m cancel out (net 2°); the route stays within 10 m of the straight line, so this is a jog (crossing, lane or sidewalk change), not a turn",
       "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "streetBefore": "Rue Saint-Denis",
+      "streetAfter": "Rue Saint-Denis"
     },
     {
       "atM": 5951,
@@ -265,10 +265,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "74° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "74° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Saint-Denis",
+      "streetAfter": "Rue Sherbrooke Est"
     },
     {
       "atM": 6517,
@@ -282,10 +282,10 @@
       ],
       "deviationM": 0,
       "decision": "retained",
-      "reason": "-73° change of direction; no street name found after the turn",
-      "needsReview": true,
-      "streetBefore": "",
-      "streetAfter": ""
+      "reason": "-73° change of direction",
+      "needsReview": false,
+      "streetBefore": "Rue Sherbrooke Ouest",
+      "streetAfter": "Rue Clark"
     }
   ],
   "elevation": {
@@ -299,13 +299,13 @@
     "thresholdM": 3,
     "summary": {
       "gainM": 31,
-      "lossM": 30,
+      "lossM": 31,
       "minEleM": 29,
       "maxEleM": 57
     },
     "raw": {
       "gainM": 34,
-      "lossM": 33
+      "lossM": 34
     },
     "missingM": 0,
     "spikes": [],
@@ -4367,10 +4367,148 @@
         "final": 30.1
       },
       {
-        "d": 6756.6498479256,
+        "d": 6760,
         "raw": 30,
         "despiked": 30,
         "final": 30
+      },
+      {
+        "d": 6770,
+        "raw": 30,
+        "despiked": 30,
+        "final": 30
+      },
+      {
+        "d": 6780,
+        "raw": 30,
+        "despiked": 30,
+        "final": 30
+      },
+      {
+        "d": 6790,
+        "raw": 30,
+        "despiked": 30,
+        "final": 30
+      },
+      {
+        "d": 6800,
+        "raw": 30,
+        "despiked": 30,
+        "final": 30
+      },
+      {
+        "d": 6810,
+        "raw": 30,
+        "despiked": 30,
+        "final": 30
+      },
+      {
+        "d": 6820,
+        "raw": 30,
+        "despiked": 30,
+        "final": 29.8
+      },
+      {
+        "d": 6830,
+        "raw": 30,
+        "despiked": 29.8,
+        "final": 29.6
+      },
+      {
+        "d": 6840,
+        "raw": 29,
+        "despiked": 29.4,
+        "final": 29.4
+      },
+      {
+        "d": 6850,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29.2
+      },
+      {
+        "d": 6860,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29.1
+      },
+      {
+        "d": 6870,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6880,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6890,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6900,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6910,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6920,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6930,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6940,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6950,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6960,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6970,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6980,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
+      },
+      {
+        "d": 6983.848818507262,
+        "raw": 29,
+        "despiked": 29,
+        "final": 29
       }
     ]
   }

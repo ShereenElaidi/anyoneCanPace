@@ -31,7 +31,7 @@ const KEY_ORDER: (keyof RouteData)[] = [
 ];
 
 export const TURN_DIRS = [
-  'left', 'right', 'slight-left', 'slight-right', 'sharp-left', 'sharp-right', 'u-turn', 'straight',
+  'left', 'right', 'slight-left', 'slight-right', 'sharp-left', 'sharp-right', 'u-turn', 'straight', 'landmark',
 ] as const satisfies readonly TurnDir[];
 // Fails to compile if TurnDir gains a direction that isn't listed above.
 const _allDirs: Exclude<TurnDir, (typeof TURN_DIRS)[number]> extends never ? true : never = true;

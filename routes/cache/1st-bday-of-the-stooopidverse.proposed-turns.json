@@ -2,66 +2,66 @@
   {
     "atM": 213,
     "dir": "right",
-    "street": ""
+    "street": "Rue Ontario Ouest"
   },
   {
     "atM": 1320,
     "dir": "left",
-    "street": ""
+    "street": "Rue Atateken"
   },
   {
     "atM": 1554,
     "dir": "left",
-    "street": ""
+    "street": "Rue Sherbrooke Est"
   },
   {
     "atM": 1783,
     "dir": "left",
-    "street": ""
+    "street": "Rue Saint-Christophe"
   },
   {
     "atM": 1833,
     "dir": "u-turn",
-    "street": ""
+    "street": "Rue Saint-Christophe"
   },
   {
     "atM": 1883,
     "dir": "left",
-    "street": ""
+    "street": "Rue Sherbrooke Est"
   },
   {
     "atM": 2032,
     "dir": "right",
-    "street": ""
+    "street": "Rue Saint-Hubert"
   },
   {
     "atM": 3804,
     "dir": "left",
-    "street": ""
+    "street": "Rue Gilford"
   },
   {
     "atM": 4300,
     "dir": "slight-left",
-    "street": ""
+    "street": "Avenue Henri-Julien"
   },
   {
     "atM": 4397,
     "dir": "left",
-    "street": ""
+    "street": "Avenue du Mont-Royal Est"
   },
   {
     "atM": 4518,
     "dir": "right",
-    "street": ""
+    "street": "Rue Saint-Denis"
   },
   {
     "atM": 5951,
     "dir": "right",
-    "street": ""
+    "street": "Rue Sherbrooke Est"
   },
   {
     "atM": 6517,
     "dir": "left",
-    "street": ""
+    "street": "Rue Clark"
   }
 ]

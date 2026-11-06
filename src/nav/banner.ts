@@ -29,6 +29,7 @@ const VERB: Record<TurnDir, string> = {
   'sharp-right': 'Sharp right',
   'u-turn': 'U-turn',
   straight: 'Straight on',
+  landmark: 'Landmark',
 };
 
 /** "150 m", "45 m", "1.2 km". */
@@ -45,8 +46,15 @@ export function formatKm(m: number): string {
 }
 
 export function turnPhrase(turn: Turn): string {
+  if (turn.dir === 'landmark') return turn.street || VERB.landmark;
   const verb = VERB[turn.dir];
   return turn.street ? `${verb} on ${turn.street}` : verb;
+}
+
+/** What is said when the turn is here: "Left now on Rue X", or just the landmark's name. */
+export function turnNowPhrase(turn: Turn): string {
+  if (turn.dir === 'landmark') return turnPhrase(turn);
+  return `${VERB[turn.dir]} now${turn.street ? ` on ${turn.street}` : ''}`;
 }
 
 export function statsLine(route: PreparedRoute, state: NavState): string {
@@ -182,7 +190,7 @@ export function describe(route: PreparedRoute, state: NavState, startStreet?: st
   if (d <= TURN_NOW_M) {
     return {
       icon: turn.dir,
-      primary: `${VERB[turn.dir]} now${turn.street ? ` on ${turn.street}` : ''}`,
+      primary: turnNowPhrase(turn),
       secondary: turn.note,
       tone: 'now',
     };

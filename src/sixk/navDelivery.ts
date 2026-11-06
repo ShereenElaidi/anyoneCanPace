@@ -11,8 +11,12 @@
  */
 import { formatDistance, turnPhrase } from '../nav/banner';
 import type { PreparedRoute } from '../nav/route';
+import type { Turn } from '../nav/types';
 import type { NavEvent } from '../nav/tracker';
 import { navCueFor, type NavCue } from '../lib/cues';
+
+/** "Left on Rue A now", or a landmark's name alone. */
+const spokenNow = (t: Turn) => (t.dir === 'landmark' ? turnPhrase(t) : `${turnPhrase(t)} now`);
 
 /** A following turn this close after a "now" turn is folded into the same announcement. */
 export const COMPOSE_NEXT_TURN_M = 150;
@@ -63,9 +67,9 @@ export function planDelivery(route: PreparedRoute, events: NavEvent[]): Delivery
           const gap = nextTurn ? nextTurn.atM - turn.atM : Infinity;
           if (next && nextTurn && gap <= COMPOSE_NEXT_TURN_M) {
             folded.add(next.turnIndex);
-            said.push(`${turnPhrase(turn)} now, then ${lowerFirst(turnPhrase(nextTurn))} in ${spokenDistance(gap)}.`);
+            said.push(`${spokenNow(turn)}, then ${lowerFirst(turnPhrase(nextTurn))} in ${spokenDistance(gap)}.`);
           } else {
-            said.push(`${turnPhrase(turn)} now.`);
+            said.push(`${spokenNow(turn)}.`);
           }
           offer(navCueFor(turn.dir), e.at, PRIORITY.now);
         } else {

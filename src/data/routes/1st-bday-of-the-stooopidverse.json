@@ -1,18 +1,18 @@
 {
   "id": "1st-bday-of-the-stooopidverse",
-  "name": "1st bday of the StooopidVerse",
-  "kind": "point-to-point",
+  "name": "1st bday of the Stooopid Run Crew",
+  "kind": "loop",
   "stats": {
-    "distanceM": 6757,
+    "distanceM": 6984,
     "gainM": 31,
-    "lossM": 30,
+    "lossM": 31,
     "minEleM": 29,
     "maxEleM": 57
   },
   "track": "1st-bday-of-the-stooopidverse.geojson",
   "startStreet": "Rue Clark",
   "place": "Stooopid HQ",
-  "description": "1st bday of the Stooopid Run Crew's run route!",
+  "description": "1st bday of Stooopidity. Of the StooopidVerse.",
   "tags": [
     "shape-run"
   ],
@@ -154,78 +154,67 @@
     [6650, 35.2],
     [6700, 31.8],
     [6750, 30.1],
-    [6757, 30]
+    [6800, 30],
+    [6850, 29.2],
+    [6900, 29],
+    [6950, 29],
+    [6984, 29]
   ],
   "turns": [
     {
       "atM": 213,
       "dir": "right",
-      "street": ""
+      "street": "Rue Ontario Ouest"
     },
     {
       "atM": 1320,
       "dir": "left",
-      "street": ""
+      "street": "Rue Atateken"
     },
     {
       "atM": 1554,
       "dir": "left",
-      "street": ""
+      "street": "Rue Sherbrooke Est"
     },
     {
       "atM": 1783,
-      "dir": "left",
-      "street": ""
-    },
-    {
-      "atM": 1833,
-      "dir": "u-turn",
-      "street": ""
-    },
-    {
-      "atM": 1883,
-      "dir": "left",
-      "street": ""
+      "dir": "landmark",
+      "street": "Stooopid Slide!!"
     },
     {
       "atM": 2032,
       "dir": "right",
-      "street": ""
+      "street": "Rue Saint-Hubert"
     },
     {
       "atM": 3804,
       "dir": "left",
-      "street": ""
-    },
-    {
-      "atM": 4071,
-      "dir": "straight",
-      "street": ""
+      "street": "Rue Gilford"
     },
     {
       "atM": 4300,
       "dir": "slight-left",
-      "street": ""
+      "street": "Avenue Henri-Julien"
     },
     {
       "atM": 4397,
       "dir": "left",
-      "street": ""
+      "street": "Avenue du Mont-Royal Est"
     },
     {
       "atM": 4518,
       "dir": "right",
-      "street": ""
+      "street": "Rue Saint-Denis"
     },
     {
       "atM": 5951,
       "dir": "right",
-      "street": ""
+      "street": "Rue Sherbrooke Est"
     },
     {
       "atM": 6517,
       "dir": "left",
-      "street": ""
+      "street": "Rue Clark"
     }
   ],
   "notes": [],
@@ -236,9 +225,7 @@
     "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors · drawn by RN, LD"
   },
   "verification": {
-    "status": "desk-reviewed",
-    "reviewer": "SE",
-    "date": "2026-11-06"
+    "status": "unverified"
   },
-  "geometry": "8017bde22402c46c"
+  "geometry": "6c17b62ebd85018f"
 }

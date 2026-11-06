@@ -24,7 +24,9 @@ export type TurnDir =
   | 'sharp-left'
   | 'sharp-right'
   | 'u-turn'
-  | 'straight';
+  | 'straight'
+  /** Not a manoeuvre: a named stop (e.g. a crew landmark). `street` holds its name and is announced as is. */
+  | 'landmark';
 
 export type RouteKind = 'loop' | 'out-and-back' | 'point-to-point';
 
