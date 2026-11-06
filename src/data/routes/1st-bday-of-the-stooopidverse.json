@@ -187,9 +187,19 @@
       "street": "Rue Saint-Hubert"
     },
     {
+      "atM": 3410,
+      "dir": "straight",
+      "street": ""
+    },
+    {
       "atM": 3804,
       "dir": "left",
       "street": "Rue Gilford"
+    },
+    {
+      "atM": 4070,
+      "dir": "straight",
+      "street": ""
     },
     {
       "atM": 4300,
@@ -225,7 +235,9 @@
     "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors · drawn by RN, LD"
   },
   "verification": {
-    "status": "unverified"
+    "status": "desk-reviewed",
+    "reviewer": "SE",
+    "date": "2026-11-06"
   },
   "geometry": "6c17b62ebd85018f"
 }
