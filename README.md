@@ -69,6 +69,8 @@ The app doesn't remember the last mode, so it always starts here. Your timer int
 
 Source GPX files live in `routes/` and are committed. The app ships only the processed files in `src/data/routes/`, never the raw GPX.
 
+**The easy way: the route editor.** Run `npm run dev` and open `/anyoneCanPace/?edit`. It does everything below through forms, writes the same files, and you review and commit them as usual (see "Route editor" below). The steps here are what it does, and how to do it by hand.
+
 1. Put the GPX in `routes/` and add an entry to `routes/routes.config.json` (id, file, name, source credit).
 2. Run `npm run routes`. For each route, the script (`scripts/build-routes.ts`):
    - removes the routing tool's tiny dead-end spurs and duplicate points (a real out-and-back turnaround is kept)
@@ -120,6 +122,20 @@ All routes so far were drawn with [On The Go Map](https://onthegomap.com) on Ope
 
 (Climb is the bare-earth CDEM figure the app shows, from `src/data/routes/<id>.json`; the review report also lists the raw and surface-model numbers. Sample Loop and Canal Test are **field-verified** (run as a crew following the app, 2026-11-05); Pi Day is **unverified**.)
 
+### Route editor (dev only)
+
+A page for adding and editing routes without touching JSON: `npm run dev`, then http://localhost:5173/anyoneCanPace/?edit. It is only part of the dev server: `src/main.tsx` loads it when `import.meta.env.DEV`, its file API is a Vite plugin with `apply: 'serve'`, and `scripts/check-bundle.ts` fails the build if any of it reaches `dist/`. Code: `src/dev/routeEditor/` (pure rules in `edits.ts`, `turnEdit.ts`, `review.ts`, `deletion.ts`; the server in `server/`).
+
+- **Add a route:** drop a GPX, name it (the id is made from the name), pick the source (On The Go Map, Strava, Garmin or other, with an optional "drawn by" credit given only with that person's OK), say whether it was drawn on a map or recorded on a run, and confirm the start and finish are public places. The GPX is **cleaned before it's saved**: only latitude, longitude and elevation are kept, and timestamps, heart rate, device data, waypoints and the file's own names are dropped (`scripts/lib/sanitize-gpx.ts`), because the repository is public. Then `npm run routes` runs. A recorded run is marked `"recorded": true` in `routes.config.json`, and its review report and turn list say to check every turn closely (GPS wobble looks like turns).
+- **Details:** name, place, description, tags (and new tags, in the existing colours only), notes, start street. Only changed fields are sent; the server checks them with the same rules as the tests and rebuilds offline to refresh the manifest. A save whose rebuild fails is undone.
+- **Turns:** a map with the route and numbered turns next to the turn list. Click the route to add a turn (where the route passes a spot more than once, it asks which pass); edit distance, direction, street and note; delete. Each turn shows what the build said about it, flagged ones in red, and build suggestions with no turn nearby are listed with ADD.
+- **Advisories** for the route, with km range, dates and a source link.
+- **Review:** marking a route desk-reviewed or field-verified needs a reviewer, a date and ticking what was actually checked. It is saved on its own, never with other edits, so it's always a review of the saved turns. The editor then shows the line to add to the reviewed list in `src/nav/verification.test.ts`; it never edits that test, so `npm test` fails until a person adds it. Changing turns or the start street sets a reviewed route back to `unverified`.
+- **Delete** (at the bottom of a route's page): lists every file that would go, and is blocked while code or data still names the route (tests, the simulator, advisories), so the three shipped routes can't be deleted from here. Type the route's name to confirm. Nothing is destroyed: the files and a copy of the config move to `.cache/route-editor-trash/<id>-<time>/` (ignored by git).
+- **Map coverage:** a route partly or fully outside `public/maps/montreal.pmtiles` gets a warning to run `npm run map` and bump `MAP_VERSION`.
+
+Only this computer can use it. The API answers only loopback addresses with a `localhost` host name (so not other devices when `dev:https` listens on the network, and not tunnels), only with the editor's own request header, and writes only from the editor page itself. One save or build runs at a time.
+
 ### Reviewing and releasing a route
 
 Every route carries a `verification` record in `src/data/routes/<id>.json`, shown in the route list and on the route page before START ROUTE:
@@ -132,7 +148,7 @@ Every route carries a `verification` record in `src/data/routes/<id>.json`, show
 
 A test (`src/nav/verification.test.ts`) rejects a reviewed status without a reviewer and date, dates in the future, and unknown fields. It also fails if a route claims a review that the test's list doesn't expect, so marking a route reviewed is a deliberate, visible change in a pull request. Never set a status for checks that didn't happen.
 
-Process for a new or changed route:
+Process for a new or changed route (the route editor, `?edit` on `npm run dev`, does steps 1 and 2 through forms):
 1. **Build:** add or update the GPX, run `npm run routes` (with `--reset-turns` if the geometry changed). The route is `unverified`.
 2. **Desk review:** open `routes/review/<id>.md`. For every turn marked "yes" (and the start street), compare with a map and street imagery; fix `dir`, `street`, `note` and `startStreet` in the route file. Check the climb looks plausible. Check advisories' km ranges if the geometry changed. Try it at a desk with the simulator (`/?sim=<id>` on `npm run dev`). Then set `"verification": { "status": "desk-reviewed", "reviewer": "<name>", "date": "YYYY-MM-DD" }` and add the id to the reviewed list in `verification.test.ts`.
 3. **Field check:** on the beta, follow the route on a phone on foot (see the field-testing checklist). Note every wrong, late or missing cue, fix the file, and repeat until a clean pass. Then set `field-verified` with who and when.

@@ -1,5 +1,7 @@
 # Route editor (dev only): plan
 
+**Status (2026-11-05): built, steps 0–6, on `feature/route-editor`. User docs: README "Route editor". This file is the design record; where building changed the plan, the section says so.**
+
 A page at `/anyoneCanPace/?edit` on `npm run dev` for adding routes and editing what is written by hand today: name, place, tags, notes, turns, advisories and verification. It writes the same files that are hand-edited now, and you review and commit them as usual. It never ships to users, and nothing about how routes are built or checked changes.
 
 ## What it replaces
