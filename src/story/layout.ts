@@ -8,7 +8,7 @@
  * 1. the poster: the dressed duck big, the weather on a sticker beside it,
  *    what to wear, the most important note and a welcome;
  * 2. the map: "Lost? Find your Flock?", where and when, the meeting-point
- *    map, and empty space for Instagram's Link sticker.
+ *    map, the photo of the spot, and empty space for Instagram's Link sticker.
  *
  * Instagram draws its own header over the top of a story and the reply bar
  * over the bottom, so key content stays between SAFE.top and SAFE.bottom.
@@ -23,8 +23,14 @@ export const STORY = { width: 1080, height: 1920 } as const;
 export const SAFE = { top: 220, bottom: 1700, side: 60 } as const;
 /** The meeting-map picture's own size (src/assets/story/meeting-map.webp). */
 export const MAP_PICTURE = { width: 960, height: 520 } as const;
+/** The meeting-point photo's shape (src/assets/story/meeting-photo.webp, 1280 × 720). */
+export const PHOTO = { width: 960, height: 540 } as const;
+/** The map and photo shrink together to fit the page, never below this (tests). */
+export const MIN_PICTURE_SCALE = 0.8;
 /** The duck's circle on the poster: as big as the outfit text leaves room for. */
 export const DUCK = { max: 600, min: 380 } as const;
+/** The welcome pill's text size: big when the duck still gets DUCK.max, else small. */
+export const WELCOME = { big: 32, small: 28 } as const;
 
 const MONO_EM = 0.6;
 /** Comic Neue isn't monospaced; this bounds its widest common letters. */
@@ -53,7 +59,9 @@ export type Op =
   | { kind: 'effect'; role: Role; x: number; y: number; w: number; h: number; radius: number; effect: 'rain' | 'snow' }
   /** A filled outline, e.g. the speech bubble's tail. */
   | { kind: 'poly'; role: Role; points: [number, number][]; fill: string; stroke?: string; line?: number }
-  | { kind: 'map'; role: Role; x: number; y: number; w: number; h: number; radius: number };
+  | { kind: 'map'; role: Role; x: number; y: number; w: number; h: number; radius: number }
+  /** The photo of the meeting point (src/assets/story/meeting-photo.webp). */
+  | { kind: 'photo'; role: Role; x: number; y: number; w: number; h: number; radius: number };
 
 export const textWidth = (text: string, size: number, font: Font = 'mono') =>
   [...text].length * size * (font === 'mono' ? MONO_EM : COMIC_EM);
@@ -128,7 +136,7 @@ function page() {
     ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1718, w: W, h: 12, fill: BRAND.gold });
     ops.push({ kind: 'rect', role: 'decor', x: 0, y: 1730, w: W, h: STORY.height - 1730, fill: BRAND.navy });
     // Under the reply bar is fine: nice to have, not needed.
-    ops.push(text('LES STOOOPIDS · ANYONECANPACE', 1760, 30, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 800 }));
+    ops.push(text('Stooopid Run Crew', 1760, 30, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 800 }));
     wrap(credits, 18, inner).forEach((l, i) =>
       ops.push(text(l, 1810 + i * 26, 18, { role: 'footer', align: 'center', color: BRAND.pavement, weight: 500 })),
     );
@@ -153,12 +161,9 @@ export function storyLayout(s: StorySnapshot): Op[] {
   const heroTop = y + 20;
 
   // From the bottom up: the welcome, the pointer to the map page, then the outfit words.
-  const welcome = ["New here? You're welcome!", 'Run/walk friendly · Nobody left behind.'];
-  const pillH = welcome.length * 38 + 20;
-  const pillY = SAFE.bottom - pillH;
+  const welcome = ["New here? You're welcome!", 'Run/walk friendly · No experience required.'];
   const meet = `Meet at ${s.place.name}: map on the next page`;
   const meetLines = wrap(meet, 30, inner);
-  const meetY = pillY - 24 - meetLines.length * 40;
 
   const layers = layersText(s.outfit);
   const layerLines = wrap(layers, 52, inner).length;
@@ -170,9 +175,16 @@ export function storyLayout(s: StorySnapshot): Op[] {
   const noteH = note ? noteLines.length * 38 + 26 : 0;
   const wearH = layerLines * 62 + (also ? 10 + alsoLines * 44 : 0) + (note ? 20 + noteH : 0);
 
-  // The duck takes what's left (the speech bubble sits above it).
+  // The duck takes what's left (the speech bubble sits above it). The welcome is
+  // bigger when that still leaves the duck its full size, for balance.
   const bubbleH = 72;
-  const room = meetY - 30 - wearH - 24 - (heroTop + bubbleH);
+  const pillFor = (size: number) => welcome.length * (size + 10) + 22;
+  const roomFor = (size: number) => SAFE.bottom - pillFor(size) - 24 - meetLines.length * 40 - 30 - wearH - 24 - (heroTop + bubbleH);
+  const welcomeSize = roomFor(WELCOME.big) >= DUCK.max ? WELCOME.big : WELCOME.small;
+  const pillH = pillFor(welcomeSize);
+  const pillY = SAFE.bottom - pillH;
+  const meetY = pillY - 24 - meetLines.length * 40;
+  const room = roomFor(welcomeSize);
   const d = Math.max(DUCK.min, Math.min(DUCK.max, room));
   // Short outfits leave room to spare: half above the duck, half below the words.
   const top = heroTop + Math.max(0, room - d) / 2;
@@ -182,7 +194,7 @@ export function storyLayout(s: StorySnapshot): Op[] {
   const pad = d * 0.07;
   ops.push({ kind: 'duck', role: 'key', x: x0 + pad, y: duckY + pad, w: d - 2 * pad, h: d - 2 * pad });
 
-  // "Dress like me!" in a comic speech bubble, its tail pointing down at the duck's head.
+  // "Dress like me!" in a comic speech bubble, its tail pointing down at the duck's head, tagged (Beta).
   const bubble = 'Dress like me!';
   const bw = textWidth(bubble, 46, 'comic') + 40;
   const bx = x0 + d * 0.42;
@@ -199,6 +211,12 @@ export function storyLayout(s: StorySnapshot): Op[] {
     stroke: BRAND.asphalt,
     line: 5,
   });
+  // "(Beta)" on a small gold tag at the bubble's corner, in the app's own font.
+  const beta = '(Beta)';
+  const tw = textWidth(beta, 26) + 24;
+  const tx = bx + bw - tw + 18;
+  ops.push({ kind: 'rect', role: 'key', x: tx, y: top - 30, w: tw, h: 40, fill: BRAND.gold, stroke: BRAND.asphalt, line: 4, radius: 20 });
+  ops.push(text(beta, top - 23, 26, { x: tx + 12, w: tw - 24, weight: 800 }));
   // Covers the stroke where the tail joins the bubble.
   ops.push({ kind: 'rect', role: 'decor', x: bx + 47, y: top + bubbleH - 17, w: 34, h: 8, fill: BRAND.paper });
   // Centred: Comic Neue is narrower than the width allowed for it.
@@ -234,36 +252,50 @@ export function storyLayout(s: StorySnapshot): Op[] {
 
   meetLines.forEach((l, i) => ops.push(text(l, meetY + i * 40, 30, { align: 'center', weight: 600 })));
   ops.push({ kind: 'rect', role: 'key', x: x0, y: pillY, w: inner, h: pillH, fill: BRAND.navy, radius: pillH / 2 });
-  welcome.forEach((l, i) => ops.push(text(l, pillY + 12 + i * 38, 28, { align: 'center', color: BRAND.paper, weight: 800 })));
+  welcome.forEach((l, i) =>
+    // Kept clear of the pill's rounded ends.
+    ops.push(text(l, pillY + 12 + i * (welcomeSize + 10), welcomeSize, { x: x0 + 40, w: inner - 80, align: 'center', color: BRAND.paper, weight: 800 })),
+  );
   return ops;
 }
 
-/** Empty height kept under the map for Instagram's Link sticker (tests). */
-export const STICKER_SPACE_MIN = 300;
+/** Empty height kept at the bottom of the map page for Instagram's Link sticker (tests). */
+export const STICKER_SPACE_MIN = 120;
 
-/** Page 2: the map. */
+/** Page 2: where to find us, as a map and a photo. */
 export function mapPageLayout(s: StorySnapshot): Op[] {
   const { ops, text, lines, frame } = page();
   frame('Map © OpenStreetMap contributors · Protomaps');
 
-  let y = 250;
-  for (const l of ['Lost?', 'Find your Flock?']) {
-    ops.push(text(l, y, 96, { weight: 800, color: BRAND.navy, align: 'center' }));
-    y += 118;
-  }
-  y += 16;
-  ops.push(text(s.place.name, y, 48, { weight: 800, color: BRAND.navy, align: 'center' }));
-  y += 64;
-  y = lines(`${s.place.spot}, ${s.place.address}`, y, 32, 42, { weight: 500, align: 'center' });
-  y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, y + 10, 30, 40, {
+  ops.push(text('Lost? Find your Flock?', 240, 72, { weight: 800, color: BRAND.navy, align: 'center' }));
+  let y = 348;
+  ops.push(text(s.place.name, y, 44, { weight: 800, color: BRAND.navy, align: 'center' }));
+  y = lines(`${s.place.spot}, ${s.place.address}`, y + 60, 30, 38, { weight: 500, align: 'center' });
+  y = lines(`${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`, y + 8, 28, 36, {
     weight: 700,
     align: 'center',
   });
-  y += 30;
-  const mx = (STORY.width - MAP_PICTURE.width) / 2;
-  ops.push({ kind: 'map', role: 'key', x: mx, y, w: MAP_PICTURE.width, h: MAP_PICTURE.height, radius: 22 });
-  ops.push({ kind: 'rect', role: 'key', x: mx, y, w: MAP_PICTURE.width, h: MAP_PICTURE.height, stroke: BRAND.asphalt, line: 5, radius: 22 });
-  // Below the map stays empty for the Link sticker.
+  y += 24;
+
+  // The map, then the photo, the same width, as big as fits above the sticker space.
+  const gap = 24;
+  const k = Math.min(1, (SAFE.bottom - STICKER_SPACE_MIN - y - gap) / (MAP_PICTURE.height + PHOTO.height));
+  const w = MAP_PICTURE.width * k;
+  const x = (STORY.width - w) / 2;
+  const mh = MAP_PICTURE.height * k;
+  ops.push({ kind: 'map', role: 'key', x, y, w, h: mh, radius: 22 });
+  ops.push({ kind: 'rect', role: 'key', x, y, w, h: mh, stroke: BRAND.asphalt, line: 5, radius: 22 });
+  y += mh + gap;
+  const ph = PHOTO.height * k;
+  ops.push({ kind: 'photo', role: 'key', x, y, w, h: ph, radius: 22 });
+  ops.push({ kind: 'rect', role: 'key', x, y, w, h: ph, stroke: BRAND.asphalt, line: 5, radius: 22 });
+  // Labelled like the map's place name: a white tag with a dark outline, in a corner.
+  const label = 'View from Rue St. Catherine.';
+  const lw = textWidth(label, 28) + 28;
+  const ly = y + ph - 18 - 46;
+  ops.push({ kind: 'rect', role: 'key', x: x + 18, y: ly, w: lw, h: 46, fill: BRAND.paper, stroke: BRAND.asphalt, line: 4, radius: 14 });
+  ops.push(text(label, ly + 9, 28, { x: x + 32, w: lw - 28, weight: 700, color: BRAND.navy }));
+  // Below the photo stays empty for the Link sticker.
   return ops;
 }
 

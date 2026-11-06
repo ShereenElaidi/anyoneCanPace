@@ -10,6 +10,8 @@ import {
   DUCK,
   MAP_PICTURE,
   mapPageLayout,
+  MIN_PICTURE_SCALE,
+  PHOTO,
   SAFE,
   STICKER_SPACE_MIN,
   STORY,
@@ -17,6 +19,7 @@ import {
   storyNote,
   storyPages,
   textWidth,
+  WELCOME,
   wrap,
   type Op,
 } from './layout';
@@ -123,22 +126,35 @@ describe('page 1, the poster: every scenario fits a 1080 × 1920 story', () => {
     expect(all).toContain('SEE YOU SUNDAY!');
     expect(all).toContain('Sunday, November 8 · meet 10:00, run 10:15');
     expect(all).toContain('Dress like me!');
+    expect(all).toContain('(Beta)');
     // Every item the website lists, in words (layers, then "Also: …").
     for (const item of s.outfit.wear) expect(all.toLowerCase()).toContain(item.label.toLowerCase());
     expect(all).toContain('Also: mittens, toque, neck warmer.');
     expect(all).toMatch(/Warning: Wind chill/);
     expect(all).toContain('Meet at Café Tranquille: map on the next page');
     expect(all).toContain("New here? You're welcome!");
+    expect(all).toContain('Run/walk friendly · No experience required.');
     expect(all).toMatch(/Forecast from Sat/);
-    // Brand only in the footer (under Instagram's reply bar), not at the top.
-    const brand = texts(storyLayout(s)).find((o) => o.text.includes('STOOOPIDS'));
-    expect(brand?.role).toBe('footer');
+    // The crew's name only in the footer (under Instagram's reply bar), not at the top.
+    const brand = texts(storyLayout(s)).filter((o) => /Stooopid|STOOOPID|AnyoneCanPace|ANYONECANPACE/.test(o.text));
+    expect(brand.map((o) => [o.text, o.role])).toEqual([['Stooopid Run Crew', 'footer']]);
   });
 
   it('the bubble is in the comic font; the duck is drawn once from the snapshot’s outfit', () => {
     const ops = storyLayout(snap(SCENARIOS[0].input));
     expect(texts(ops).find((o) => o.text === 'Dress like me!')?.font).toBe('comic');
     expect(ops.filter((o) => o.kind === 'duck')).toHaveLength(1);
+  });
+
+  it('the welcome is bigger only when the duck still gets its full size', () => {
+    const sizes = SCENARIOS.map((sc) => {
+      const ops = storyLayout(snap(sc.input));
+      const welcome = texts(ops).find((o) => o.text.startsWith('New here?'))!.size;
+      const duck = ops.find((o) => o.kind === 'rect' && o.radius !== undefined && o.w === o.h && o.radius === o.w / 2)!;
+      if (welcome === WELCOME.big) expect(duck.kind === 'rect' && duck.w, sc.id).toBe(DUCK.max);
+      return welcome;
+    });
+    expect(sizes).toContain(WELCOME.big);
   });
 
   it('the note is the most serious advisory, else what to bring', () => {
@@ -152,16 +168,26 @@ describe('page 2, the map', () => {
   const s = snap(SCENARIOS[0].input);
   const ops = mapPageLayout(s);
 
-  it('fits, with the map at full size and room under it for the Link sticker', () => {
+  it('fits: the map, then the photo under it, big enough to read, with room left for the Link sticker', () => {
     expectFits(ops);
-    const map = ops.find((o) => o.kind === 'map')!;
-    expect(map.kind === 'map' && map.w).toBe(MAP_PICTURE.width);
-    expect(map.kind === 'map' && SAFE.bottom - (map.y + map.h)).toBeGreaterThanOrEqual(STICKER_SPACE_MIN);
+    const map = ops.find((o) => o.kind === 'map') as Extract<Op, { kind: 'map' }>;
+    const photo = ops.find((o) => o.kind === 'photo') as Extract<Op, { kind: 'photo' }>;
+    expect(map.w / MAP_PICTURE.width).toBeGreaterThanOrEqual(MIN_PICTURE_SCALE);
+    expect(photo.w).toBe(map.w);
+    expect(photo.h / photo.w).toBeCloseTo(PHOTO.height / PHOTO.width);
+    expect(photo.y).toBeGreaterThan(map.y + map.h);
+    expect(SAFE.bottom - (photo.y + photo.h)).toBeGreaterThanOrEqual(STICKER_SPACE_MIN - 0.01);
+    // The photo's label sits inside the photo, like the map's place label.
+    const label = texts(ops).find((o) => o.text === 'View from Rue St. Catherine.')!;
+    expect(label.x).toBeGreaterThan(photo.x);
+    expect(label.y).toBeGreaterThan(photo.y);
+    expect(label.y + label.size * 1.2).toBeLessThan(photo.y + photo.h);
   });
 
   it('says where and when', () => {
     const all = flat(ops);
     expect(all).toContain('Lost? Find your Flock?');
+    expect(all).toContain('View from Rue St. Catherine.');
     expect(all).toContain('Café Tranquille');
     expect(all).toContain('At the café entrance, 1442 Rue Clark');
     expect(all).toContain('Sunday, November 8 · meet 10:00, run 10:15');

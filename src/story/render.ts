@@ -11,6 +11,7 @@
  */
 import comicUrl from '../assets/fonts/comic-neue-latin-700-normal.woff2';
 import mapUrl from '../assets/story/meeting-map.webp';
+import photoUrl from '../assets/story/meeting-photo.webp';
 import { duckImages } from '../dashboard/duck/art';
 import { BRAND } from '../sixk/map/mapStyle';
 import { STORY, storyPages, type Op } from './layout';
@@ -85,15 +86,16 @@ function drawEffect(g: CanvasRenderingContext2D, o: Extract<Op, { kind: 'effect'
 
 /** The story's pages as PNGs, in posting order. Throws if a font or picture can't load. */
 export async function renderStory(s: StorySnapshot): Promise<Blob[]> {
-  const [, map, ...duck] = await Promise.all([
+  const [, map, photo, ...duck] = await Promise.all([
     loadFonts(),
     loadImage(mapUrl),
+    loadImage(photoUrl),
     ...duckImages(s.outfit.drawn).map((d) => loadImage(d.url)),
   ]);
-  return Promise.all(storyPages(s).map((ops) => draw(ops, map, duck)));
+  return Promise.all(storyPages(s).map((ops) => draw(ops, { map, photo }, duck)));
 }
 
-function draw(ops: Op[], map: HTMLImageElement, duck: HTMLImageElement[]): Promise<Blob> {
+function draw(ops: Op[], pictures: { map: HTMLImageElement; photo: HTMLImageElement }, duck: HTMLImageElement[]): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = STORY.width;
   canvas.height = STORY.height;
@@ -141,10 +143,11 @@ function draw(ops: Op[], map: HTMLImageElement, duck: HTMLImageElement[]): Promi
         for (const img of duck) g.drawImage(img, o.x, o.y, o.w, o.h);
         break;
       case 'map':
+      case 'photo':
         g.save();
         roundRect(g, o.x, o.y, o.w, o.h, o.radius);
         g.clip();
-        g.drawImage(map, o.x, o.y, o.w, o.h);
+        g.drawImage(pictures[o.kind], o.x, o.y, o.w, o.h);
         g.restore();
         break;
     }
