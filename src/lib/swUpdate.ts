@@ -42,5 +42,5 @@ export const SW_OPTIONS = {
   },
 };
 
-/** A waiting new version is looked for again when the app comes back after this long. */
-export const UPDATE_CHECK_MS = 30 * 60_000;
+/** A new version is looked for when the app comes back into view, at most this often (one small request for sw.js). */
+export const UPDATE_CHECK_MS = 60_000;

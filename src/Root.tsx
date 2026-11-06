@@ -13,12 +13,14 @@ const loadRoutes = () => import('./sixk/SixKMode');
 const loadDashboard = () => import('./dashboard/DashboardMode');
 
 /**
- * Looks again for a new version when the app comes back into view after a
- * while: an installed app is often resumed for days without a fresh load.
+ * Looks for a new version when the app starts and whenever it comes back into
+ * view (at most once a minute): an installed Android app is often resumed for
+ * days without a fresh load, so the browser never checks on its own.
  */
 function checkWhenBack(registration: ServiceWorkerRegistration | undefined) {
   if (!registration) return;
   let lastCheck = Date.now();
+  void registration.update().catch(() => {}); // offline: try again next time
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' || Date.now() - lastCheck < UPDATE_CHECK_MS) return;
     lastCheck = Date.now();
