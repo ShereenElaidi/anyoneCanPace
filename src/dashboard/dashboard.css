@@ -410,3 +410,52 @@
   margin-bottom: 0;
   text-align: left;
 }
+
+/* ---------- Weekly run: when and where ---------- */
+
+.dash-run {
+  padding: 12px;
+  border: var(--line) solid var(--asphalt);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 0.9rem;
+}
+
+.dash-run p {
+  margin: 0 0 6px;
+}
+
+.dash-run__when {
+  font-weight: 800;
+}
+
+.dash-run__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dash-run__actions a {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.dash-run__copied {
+  min-height: 1.2em;
+  margin-top: 6px !important;
+  font-size: 0.8rem;
+}
+
+.dash-run__manual {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.dash-run__manual input {
+  min-height: 44px;
+  font: inherit;
+}

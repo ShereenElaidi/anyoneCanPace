@@ -175,6 +175,10 @@ Process for a new or changed route:
 - **Bring:** a warm layer for the 10–20 min wait at 0 °C and below, or up to 5 °C when wet or windy; dry clothes for after when it's that cold or cool and wet.
 - **Warnings:** frostbite at wind chill −27 or colder (stated neutrally: organisers decide), heat advice at humidex 30 and stronger at 35, reflective vest and headlamp in the dark.
 
+**Sunday run.** A card on the dashboard says when and where the weekly run meets (next Sunday, meet 10:00, start 10:15, Café Tranquille's entrance). **COPY MAP LINK** copies a Google Maps link to the exact spot for Instagram's Link sticker (if the phone won't copy, the link is shown to copy by hand); **OPEN MAP** opens it. Edit `src/data/event.json` to change the day, times or place (a test checks it), then re-make the story's map picture with `?meeting-map` (below).
+
+**Review pages (dev only).** `npm run dev`, then `/anyoneCanPace/?duck-sheet`: every outfit scenario (`src/weather/scenarios.ts`, the 16 approved ones badged) on the dressed duck, a playground, and a print layout for reviewing with other runners. `/anyoneCanPace/?meeting-map`: draws the meeting point on the app's offline map with a pin, street names and the OpenStreetMap credit; **SAVE TO REPO** writes `src/assets/story/meeting-map.webp`. Neither page is in production builds.
+
 **Weather source.** [Open-Meteo](https://open-meteo.com)'s Environment Canada GEM endpoint (`https://api.open-meteo.com/v1/gem`), three days ahead plus the past day (for snow on the ground and refreeze), for fixed central-Montréal coordinates. The data is free for non-commercial use under CC BY 4.0 and credited on the page.
 
 **No sun or UV advice.** GEM has no UV index, and the earlier estimate (from the sun's height and cloud cover) was removed along with sunglasses, so the outfit never mentions sun protection.

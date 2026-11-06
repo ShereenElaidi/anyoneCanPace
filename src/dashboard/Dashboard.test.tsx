@@ -169,6 +169,26 @@ describe('Daily Dashboard', () => {
     expect(screen.queryByRole('button', { name: /USUAL START/ })).toBeNull();
   });
 
+  it('Sunday run: when and where, and the map link copies for a Link sticker', async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    await openDashboard();
+    const run = screen.getByRole('region', { name: 'Sunday run' });
+    expect(run.textContent).toContain('Sunday, November 8 · meet 10:00 a.m., start 10:15 a.m.');
+    expect(run.textContent).toContain('Café Tranquille: at the café entrance, 1442 Rue Clark');
+    const link = 'https://www.google.com/maps/search/?api=1&query=45.50935,-73.56488';
+    expect(screen.getByRole('link', { name: 'OPEN MAP' }).getAttribute('href')).toBe(link);
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'COPY MAP LINK' })));
+    expect(writeText).toHaveBeenCalledWith(link);
+    expect(run.textContent).toContain('Map link copied.');
+
+    // No clipboard (or it refuses): show the link to copy by hand.
+    writeText.mockRejectedValueOnce(new Error('denied'));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'COPY MAP LINK' })));
+    expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe(link);
+    Reflect.deleteProperty(navigator, 'clipboard');
+  });
+
   it('refresh asks again, once at a time', async () => {
     await openDashboard();
     await screen.findByText(/^Updated /);

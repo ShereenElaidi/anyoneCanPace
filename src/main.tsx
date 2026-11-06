@@ -25,6 +25,17 @@ if (import.meta.env.DEV && params.has('duck-sheet')) {
       ),
     )
     .catch((err) => console.error('Duck sheet failed', err));
+} else if (import.meta.env.DEV && params.has('meeting-map')) {
+  // Dev only: `?meeting-map` draws and saves the story's meeting-point picture (src/dev/meetingMap/).
+  import('./dev/meetingMap/MeetingMap')
+    .then(({ default: MeetingMap }) =>
+      createRoot(document.getElementById('root') as HTMLElement).render(
+        <StrictMode>
+          <MeetingMap />
+        </StrictMode>,
+      ),
+    )
+    .catch((err) => console.error('Meeting map failed', err));
 } else if (import.meta.env.DEV && params.has('sim')) {
   import('./dev/simulateGps')
     .then((m) => m.installSimulatedGps(params))

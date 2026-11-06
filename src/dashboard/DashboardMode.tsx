@@ -20,6 +20,7 @@ import { activeNotices, collectNotices, type NoticeFile } from '../advisories/no
 import { ROUTE_NOTICES } from '../advisories/routeAdvisories';
 import type { RouteManifest } from '../nav/types';
 import { DressedDuck } from './duck/DressedDuck';
+import { SundayRun } from './SundayRun';
 import { useForecast } from './useForecast';
 import './dashboard.css';
 
@@ -188,6 +189,7 @@ export default function DashboardMode({ onSwitchMode }: Props) {
           </>
         )}
 
+        <SundayRun now={now} />
         {notices.length === 0 && (
           <p className="dash-clear">
             <span aria-hidden="true">✓ </span>No route advisories. <span className="dash-clear__checked">{lastCheckedText(advisories.lastChecked)}</span>
