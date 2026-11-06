@@ -624,7 +624,20 @@ button {
     -2px 2px 0 var(--asphalt);
 }
 
-/* BETA slapped on next to PACE like a sticker. */
+/* "V2" rides high after PACE, like a superscript, in the same outlined gold. */
+.picker__v2 {
+  position: relative;
+  top: -0.95em;
+  margin-left: 0.1em;
+  font-size: 0.36em;
+  text-shadow:
+    2px 2px 0 var(--asphalt),
+    -1.5px -1.5px 0 var(--asphalt),
+    1.5px -1.5px 0 var(--asphalt),
+    -1.5px 1.5px 0 var(--asphalt);
+}
+
+/* BETA slapped on next to PACE like a sticker (below the V2). */
 .picker__beta {
   position: absolute;
   top: 24%;
