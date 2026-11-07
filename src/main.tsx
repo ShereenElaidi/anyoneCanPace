@@ -1,7 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import Root from './Root';
+import { listenForInstallPrompt } from './lib/installPrompt';
 import './styles.css';
+
+// Before the first render: Chrome can offer its install prompt right away.
+listenForInstallPrompt();
 
 function render() {
   createRoot(document.getElementById('root') as HTMLElement).render(

@@ -398,6 +398,8 @@ The app never reloads itself mid-session. When a new version has been downloaded
 - **iPhone (Safari):** Share → **Add to Home Screen**.
 - **Android (Chrome):** ⋮ menu → **Install app** / **Add to Home screen**.
 
+Phones don't announce this themselves (iOS never does, Chrome on Android rarely), so on phones the home screen shows a small **Add it to your home screen** hint under the modes: an **INSTALL** button when the browser offers its own prompt (`beforeinstallprompt`, caught at startup in `main.tsx`), the Share steps on iPhone/iPad, the browser menu otherwise. It's hidden when the app already runs from the home screen and after **NOT NOW** / **GOT IT** (remembered in localStorage on that phone). Logic: `src/lib/installHint.ts` (pure) and `src/lib/installPrompt.ts`; UI: `src/components/InstallHint.tsx`.
+
 ## Browser limitations
 
 - **Keep the page open and the screen on.** Phones pause web pages when locked or in the background. Timers and sounds can't run then, and no browser app can promise otherwise. The countdown catches up when you return, without replaying missed beeps.

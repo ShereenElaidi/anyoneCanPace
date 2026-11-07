@@ -958,3 +958,44 @@ body:has(.app--paper) {
   flex-shrink: 0;
   box-shadow: none;
 }
+
+/* ---------- Install hint (home screen, phones only) ---------- */
+
+.install-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: var(--line) dashed var(--asphalt);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 0.85rem;
+}
+
+.install-hint__title {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.install-hint p {
+  margin: 0;
+}
+
+.install-hint__icon {
+  vertical-align: -4px;
+  color: var(--blue);
+}
+
+.install-hint__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.install-hint__install {
+  background: var(--gold);
+  color: var(--asphalt);
+}

@@ -1,6 +1,7 @@
 import scene from '../assets/home/riverside.webp';
 import sceneDuck from '../assets/home/riverside-duck.webp';
 import type { AppMode } from '../lib/prefs';
+import { InstallHint } from './InstallHint';
 import { UpdateBanner } from './UpdateBanner';
 
 interface Props {
@@ -59,6 +60,7 @@ export function ModePicker({ onPick }: Props) {
           </li>
         </ul>
         <p className="picker__note">You can switch modes later from each mode’s menu.</p>
+        <InstallHint />
       </main>
 
       <footer className="footer">
