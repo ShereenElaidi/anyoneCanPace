@@ -787,7 +787,7 @@ body:has(.app--paper) {
   height: var(--scene-w);
 }
 
-.picker__hero:has(.picker__scene--square) + .picker__main {
+.picker__hero--square + .picker__main {
   margin-top: calc(var(--scene-w) * -0.05);
 }
 

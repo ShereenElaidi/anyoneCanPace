@@ -19,7 +19,7 @@ export function ModePicker({ onPick }: Props) {
   const special = specialScene(Date.now());
   return (
     <div className="app picker">
-      <header className="picker__hero">
+      <header className={special ? 'picker__hero picker__hero--square' : 'picker__hero'}>
         <div className="picker__sky">
           {/* Read as "AnyoneCanPace 2.0" (plus "BETA"); drawn as ANYONE CAN / PACE 2.0 with a sticker. */}
           <h1 className="picker__title" aria-label={__BETA__ ? 'AnyoneCanPace 2.0 BETA' : 'AnyoneCanPace 2.0'}>
