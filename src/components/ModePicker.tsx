@@ -1,5 +1,7 @@
 import scene from '../assets/home/riverside.webp';
 import sceneDuck from '../assets/home/riverside-duck.webp';
+import diwali from '../assets/home/diwali.webp';
+import { specialScene } from '../lib/homeScene';
 import type { AppMode } from '../lib/prefs';
 import { InstallHint } from './InstallHint';
 import { UpdateBanner } from './UpdateBanner';
@@ -14,6 +16,7 @@ interface Props {
  * thumbnail grid) while the duck, a separate cut-out, stays solid over the fade.
  */
 export function ModePicker({ onPick }: Props) {
+  const special = specialScene(Date.now());
   return (
     <div className="app picker">
       <header className="picker__hero">
@@ -30,10 +33,17 @@ export function ModePicker({ onPick }: Props) {
           </h1>
           <p className="picker__ribbon">Your Stooopid Co-Pacer</p>
         </div>
-        <div className="picker__scene" aria-hidden="true">
-          <img className="picker__scene-bg" src={scene} alt="" width={1080} height={720} />
-          <img className="picker__scene-duck" src={sceneDuck} alt="" width={1080} height={720} />
-        </div>
+        {special?.id === 'diwali' ? (
+          // One square picture, duck and all: shown whole, never cropped.
+          <div className="picker__scene picker__scene--square" aria-hidden="true">
+            <img className="picker__scene-whole" src={diwali} alt="" width={1080} height={1080} />
+          </div>
+        ) : (
+          <div className="picker__scene" aria-hidden="true">
+            <img className="picker__scene-bg" src={scene} alt="" width={1080} height={720} />
+            <img className="picker__scene-duck" src={sceneDuck} alt="" width={1080} height={720} />
+          </div>
+        )}
       </header>
 
       <main className="main picker__main">
