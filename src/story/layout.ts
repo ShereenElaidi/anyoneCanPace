@@ -173,12 +173,17 @@ export function storyLayout(s: StorySnapshot): Op[] {
   // Headline, date and times.
   ops.push(text('SEE YOU SOON!', 240, 92, { weight: 800, color: BRAND.paper, outline: BRAND.navy, align: 'center' }));
   const when = `${dateFmt.format(s.run.startAt)} · meet ${hhmm(s.run.meetAt)}, run ${hhmm(s.run.startAt)}`;
-  const whenW = textWidth(when, 32) + 80;
+  // The place shares the pill, on a second line (like the map page's ribbon).
+  const where = `${s.place.name} · ${s.place.address}`;
+  const whenW = Math.max(textWidth(when, 32), textWidth(where, 32)) + 80;
+  const whenX = (STORY.width - whenW) / 2;
   const whenY = 366;
-  pill((STORY.width - whenW) / 2, whenY, whenW, 68);
-  ops.push(text(when, whenY + 17, 32, { x: (STORY.width - whenW) / 2 + 40, w: whenW - 80, align: 'center', color: BRAND.paper, weight: 800 }));
+  const whenH = 116;
+  pill(whenX, whenY, whenW, whenH, 44);
+  ops.push(text(when, whenY + 17, 32, { x: whenX + 40, w: whenW - 80, align: 'center', color: BRAND.paper, weight: 800 }));
+  ops.push(text(where, whenY + 63, 32, { x: whenX + 40, w: whenW - 80, align: 'center', color: BRAND.paper, weight: 700 }));
   // Room above the bubble for its (Beta) tag, which sticks out over the top.
-  const heroTop = whenY + 68 + SHADOW + 36;
+  const heroTop = whenY + whenH + SHADOW + 36;
 
   // From the bottom up: the welcome, the pointer to the map page, then the outfit words.
   const welcome = ["New here? You're welcome!", 'Run/walk friendly · No experience required.'];

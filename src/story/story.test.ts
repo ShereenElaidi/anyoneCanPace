@@ -141,6 +141,8 @@ describe('page 1, the poster: every scenario fits a 1080 × 1920 story', () => {
     const all = flat(storyLayout(s));
     expect(all).toContain('SEE YOU SOON!');
     expect(all).toContain('Sunday, November 8 · meet 10:00, run 10:15');
+    // Where, on the pill's second line.
+    expect(all).toContain('Café Tranquille · 1442 Rue Clark');
     expect(all).toContain('Dress like me!');
     expect(all).toContain('(Beta)');
     // Every item the website lists, in words (layers, then "Also: …").
