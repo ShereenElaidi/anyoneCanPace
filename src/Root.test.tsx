@@ -545,3 +545,17 @@ describe('Route Library', () => {
     expect(screen.getByRole('button', { name: /ACR Run\/Walk Timer/ })).toBeTruthy();
   });
 });
+
+describe('Stooopid Sunday link', () => {
+  it('?sunday opens Stooopid Sunday and cleans the address', async () => {
+    history.replaceState(null, '', '/?sunday');
+    render(<Root />);
+    expect(await screen.findByRole('heading', { name: 'Stooopid Sunday Dashboard' })).toBeTruthy();
+    expect(location.search).toBe('');
+  });
+
+  it('without it the picker still opens', () => {
+    render(<Root />);
+    expect(screen.getByText(/What are we doing today/i)).toBeTruthy();
+  });
+});

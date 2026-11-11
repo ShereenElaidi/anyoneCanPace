@@ -6,6 +6,7 @@ import { ModePicker } from './components/ModePicker';
 import { AppUpdateContext } from './lib/appUpdate';
 import type { AppMode } from './lib/prefs';
 import { sharedRouteId } from './lib/routeLink';
+import { isSundayLink, withoutSundayParam } from './lib/sundayLink';
 import { SW_OPTIONS, UPDATE_CHECK_MS } from './lib/swUpdate';
 
 // The route library (and its map library) and the dashboard load only when
@@ -31,7 +32,8 @@ function checkWhenBack(registration: ServiceWorkerRegistration | undefined) {
 
 /**
  * Always opens on the mode picker ("What are we doing today?"), except a shared
- * route link (`?route=<id>`, src/lib/routeLink.ts), which opens that route's page.
+ * route link (`?route=<id>`, src/lib/routeLink.ts), which opens that route's page,
+ * and `?sunday` (src/lib/sundayLink.ts), which opens Stooopid Sunday.
  * The app's one service worker registration lives here, so the home screen and
  * every mode share one "new version ready" state (see UpdateBanner).
  */
@@ -58,7 +60,17 @@ export default function Root() {
 function Modes() {
   // A shared route link opens the Route Library on that route, once (SixKMode cleans the address).
   const [openRoute] = useState(() => sharedRouteId(location.search));
-  const [mode, setMode] = useState<AppMode | null>(() => (openRoute ? 'sixk' : null));
+  // A Stooopid Sunday link (`?sunday`, src/lib/sundayLink.ts) opens that mode; the address is cleaned so HOME and a reload go to the picker.
+  const [mode, setMode] = useState<AppMode | null>(() => {
+    if (openRoute) return 'sixk';
+    if (!isSundayLink(location.search)) return null;
+    try {
+      history.replaceState(history.state, '', withoutSundayParam(location.href));
+    } catch {
+      /* address stays as is */
+    }
+    return 'dashboard';
+  });
   const toPicker = () => setMode(null);
 
   if (mode === 'timer') return <App onSwitchMode={toPicker} />;
