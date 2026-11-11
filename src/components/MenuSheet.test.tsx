@@ -12,10 +12,12 @@ function sheet(status: Status) {
       status={status}
       sound
       vibration
+      loud
       vibrationSupported
       wakeLock="off"
       onToggleSound={() => {}}
       onToggleVibration={() => {}}
+      onToggleLoud={() => {}}
       onReset={onReset}
     />,
   );

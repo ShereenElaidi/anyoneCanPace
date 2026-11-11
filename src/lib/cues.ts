@@ -9,6 +9,36 @@ import type { Phase } from '../timer/engine';
  */
 
 let ctx: AudioContext | null = null;
+let limiter: DynamicsCompressorNode | null = null;
+let limiterFor: AudioContext | null = null;
+
+/**
+ * Loud beeps (on by default): harsher sawtooth wave at full level, pitched about
+ * 1.5 octaves higher (phone speakers and ears are strongest around 2-4 kHz), through a
+ * compressor so the peaks don't clip. RUN and WALK cues repeat three times, like an alarm.
+ * Off: the original soft triangle beeps. Set from the saved preference.
+ */
+let loud = true;
+export function setLoudCues(on: boolean): void {
+  loud = on;
+}
+const LOUD_PITCH = 3;
+export const LOUD_REPEATS = 3;
+
+function output(audio: AudioContext): AudioNode {
+  if (!loud) return audio.destination;
+  if (!limiter || limiterFor !== audio) {
+    limiter = audio.createDynamicsCompressor();
+    limiter.threshold.value = -14;
+    limiter.knee.value = 6;
+    limiter.ratio.value = 12;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.1;
+    limiter.connect(audio.destination);
+    limiterFor = audio;
+  }
+  return limiter;
+}
 
 type AudioContextCtor = typeof AudioContext;
 
@@ -37,12 +67,14 @@ export function unlockAudio(): void {
 function beep(audio: AudioContext, at: number, frequency: number, duration: number) {
   const osc = audio.createOscillator();
   const gain = audio.createGain();
-  osc.type = 'triangle';
-  osc.frequency.value = frequency;
+  osc.type = loud ? 'sawtooth' : 'triangle';
+  osc.frequency.value = loud ? frequency * LOUD_PITCH : frequency;
   gain.gain.setValueAtTime(0.0001, at);
-  gain.gain.exponentialRampToValueAtTime(0.5, at + 0.015);
+  gain.gain.exponentialRampToValueAtTime(loud ? 1 : 0.5, at + 0.015);
+  // Hold loud beeps at full level for most of their length instead of fading straight out.
+  if (loud) gain.gain.setValueAtTime(1, at + Math.max(0.016, duration - 0.03));
   gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
-  osc.connect(gain).connect(audio.destination);
+  osc.connect(gain).connect(output(audio));
   osc.start(at);
   osc.stop(at + duration + 0.02);
 }
@@ -51,11 +83,15 @@ export function playCue(phase: Phase): void {
   if (!ctx || ctx.state !== 'running') return;
   try {
     const t = ctx.currentTime + 0.01;
-    if (phase === 'run') {
-      beep(ctx, t, 988, 0.14);
-      beep(ctx, t + 0.22, 988, 0.14);
-    } else {
-      beep(ctx, t, 587, 0.45);
+    const times = loud ? LOUD_REPEATS : 1;
+    for (let i = 0; i < times; i++) {
+      if (phase === 'run') {
+        const at = t + i * 0.8;
+        beep(ctx, at, 988, 0.14);
+        beep(ctx, at + 0.22, 988, 0.14);
+      } else {
+        beep(ctx, t + i * 0.7, 587, 0.45);
+      }
     }
   } catch {
     // Never let a sound failure affect the timer.

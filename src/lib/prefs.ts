@@ -3,9 +3,11 @@ import { clampSeconds, DEFAULT_DURATIONS, type Durations } from '../timer/engine
 export interface Prefs extends Durations {
   sound: boolean;
   vibration: boolean;
+  /** Loud, alarm-like beeps (see `setLoudCues`). */
+  loud: boolean;
 }
 
-export const DEFAULT_PREFS: Prefs = { ...DEFAULT_DURATIONS, sound: true, vibration: true };
+export const DEFAULT_PREFS: Prefs = { ...DEFAULT_DURATIONS, sound: true, vibration: true, loud: true };
 
 const KEY = 'anyonecanpace:prefs:v1';
 
@@ -20,6 +22,7 @@ export function loadPrefs(): Prefs {
       walk: typeof saved.walk === 'number' ? clampSeconds(saved.walk) : DEFAULT_PREFS.walk,
       sound: typeof saved.sound === 'boolean' ? saved.sound : DEFAULT_PREFS.sound,
       vibration: typeof saved.vibration === 'boolean' ? saved.vibration : DEFAULT_PREFS.vibration,
+      loud: typeof saved.loud === 'boolean' ? saved.loud : DEFAULT_PREFS.loud,
     };
   } catch {
     return DEFAULT_PREFS;

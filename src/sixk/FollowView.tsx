@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Lazy } from '../components/LoadBoundary';
 import { GEO_ERROR_TEXT, useGeolocation } from '../hooks/useGeolocation';
 import { useWakeLock } from '../hooks/useWakeLock';
-import { canVibrate, unlockAudio } from '../lib/cues';
+import { canVibrate, setLoudCues, unlockAudio } from '../lib/cues';
 import { loadPrefs, savePrefs, type Prefs } from '../lib/prefs';
 import { setSessionBusy } from '../lib/swUpdate';
 import { describe as describeBanner, formatKm, statsLine, type Banner } from '../nav/banner';
@@ -44,6 +44,7 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
   const health = gpsHealth(state, Math.max(now, state.lastFix?.at ?? 0));
 
   useEffect(() => savePrefs(prefs), [prefs]);
+  useEffect(() => setLoudCues(prefs.loud), [prefs.loud]);
   useEffect(() => {
     if (menuRequest > 0) setMenuOpen(true);
   }, [menuRequest]);
@@ -206,6 +207,10 @@ export function FollowView({ route, onExit, menuRequest }: Props) {
           setPrefs((p) => ({ ...p, sound: !p.sound }));
         }}
         onToggleVibration={() => setPrefs((p) => ({ ...p, vibration: !p.vibration }))}
+        onToggleLoud={() => {
+          unlockAudio();
+          setPrefs((p) => ({ ...p, loud: !p.loud }));
+        }}
         onEnd={onExit}
       />
     </div>
@@ -263,6 +268,7 @@ function FollowMenu(props: {
   accuracyM: number | null;
   onToggleSound: () => void;
   onToggleVibration: () => void;
+  onToggleLoud: () => void;
   onEnd: () => void;
 }) {
   const ref = useDialog(props.open);
@@ -320,6 +326,23 @@ function FollowMenu(props: {
             onClick={props.onToggleSound}
           >
             <span className="switch__text">{props.prefs.sound ? 'ON' : 'OFF'}</span>
+          </button>
+        </div>
+        <div className="toggle">
+          <div>
+            <p className="toggle__label">Loud beeps</p>
+            <p className="toggle__help">Alarm-like, so they carry over wind and traffic. Off: soft beeps.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={props.prefs.loud && props.prefs.sound}
+            aria-label="Loud beeps"
+            className="switch"
+            disabled={!props.prefs.sound}
+            onClick={props.onToggleLoud}
+          >
+            <span className="switch__text">{props.prefs.loud && props.prefs.sound ? 'ON' : 'OFF'}</span>
           </button>
         </div>
         <div className="toggle">

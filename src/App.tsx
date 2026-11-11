@@ -7,7 +7,7 @@ import { MenuSheet } from './components/MenuSheet';
 import { TimerDisplay } from './components/TimerDisplay';
 import { useIntervalTimer, type TimerEvent } from './hooks/useIntervalTimer';
 import { useWakeLock } from './hooks/useWakeLock';
-import { canVibrate, playCue, unlockAudio, vibrateCue } from './lib/cues';
+import { canVibrate, playCue, setLoudCues, unlockAudio, vibrateCue } from './lib/cues';
 import { loadPrefs, savePrefs, type Prefs } from './lib/prefs';
 import { clampSeconds, type Phase } from './timer/engine';
 
@@ -27,6 +27,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
   const vibrationSupported = useMemo(canVibrate, []);
 
   useEffect(() => savePrefs(prefs), [prefs]);
+  useEffect(() => setLoudCues(prefs.loud), [prefs.loud]);
 
   const durations = useMemo(() => ({ run: prefs.run, walk: prefs.walk }), [prefs.run, prefs.walk]);
 
@@ -193,6 +194,7 @@ export default function App({ onSwitchMode }: AppProps = {}) {
         status={status}
         sound={prefs.sound}
         vibration={prefs.vibration}
+        loud={prefs.loud}
         vibrationSupported={vibrationSupported}
         wakeLock={wakeLock}
         onToggleSound={() => {
@@ -200,6 +202,10 @@ export default function App({ onSwitchMode }: AppProps = {}) {
           setPrefs((p) => ({ ...p, sound: !p.sound }));
         }}
         onToggleVibration={() => setPrefs((p) => ({ ...p, vibration: !p.vibration }))}
+        onToggleLoud={() => {
+          unlockAudio();
+          setPrefs((p) => ({ ...p, loud: !p.loud }));
+        }}
         onReset={timer.reset}
       />
     </div>

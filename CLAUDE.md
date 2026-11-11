@@ -65,7 +65,7 @@ Live: https://anyonecanpace.pages.dev/ · Beta: https://anyonecanpacebeta.pages.
 - Cloudflare builds `main` (live project `anyonecanpace`) and the beta repo's `main` (project `anyonecanpace-beta`, `BETA=1`) with `npm run build`; its env vars are `NODE_VERSION=26` and `BASE_PATH=/`. The build includes the typecheck but not the tests: run all three locally and rely on CI for pull requests. `.github/workflows/deploy.yml` (GitHub Pages) is disabled on the main repo and GitHub Pages and Actions are off on the beta repo; remove `deploy.yml` when convenient. Pull requests run `.github/workflows/ci.yml` (typecheck, test, build, `npm audit --audit-level=high`), which never deploys. Actions are pinned to verified commit SHAs (comment = release). Repo is public.
 - Feature work happens on branches. Never merge into `main` or open PRs unless asked.
 - Pushing workflow-file changes needs gh's `workflow` scope (`gh auth refresh -s workflow`).
-- **Ask before pushing.** Committing locally is fine.
+- **Ask before pushing.** Committing locally is fine, but before any commit (this repo or the beta), ask whether the update banner should carry a short "what's new" note for users: propose a sample, and wait for approve / edit / "no details needed".
 - Beta channel: remote `beta` = github.com/ShereenElaidi/anyoneCanPace-beta (deploys to `anyonecanpacebeta.pages.dev` through Cloudflare). Same code; `BETA=1` or a base path containing "beta" sets `__BETA__` (BETA tag, "AnyoneCanPace Beta" name/title). Pushing a branch to `beta`'s `main` makes Cloudflare deploy it there without touching the live app. Still ask before each push.
 
 ## Brand

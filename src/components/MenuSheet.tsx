@@ -8,10 +8,12 @@ interface Props {
   status: Status;
   sound: boolean;
   vibration: boolean;
+  loud: boolean;
   vibrationSupported: boolean;
   wakeLock: WakeLockStatus;
   onToggleSound: () => void;
   onToggleVibration: () => void;
+  onToggleLoud: () => void;
   onReset: () => void;
 }
 
@@ -81,6 +83,9 @@ export function MenuSheet(props: Props) {
         <Toggle label="Sound cues" on={props.sound} onToggle={props.onToggleSound}>
           Two beeps for RUN, one long beep for WALK.
         </Toggle>
+        <Toggle label="Loud beeps" on={props.loud && props.sound} disabled={!props.sound} onToggle={props.onToggleLoud}>
+          Alarm-like and repeated three times. Turn it off for short, soft beeps.
+        </Toggle>
         <Toggle
           label="Vibration"
           on={props.vibration && props.vibrationSupported}
@@ -107,7 +112,7 @@ export function MenuSheet(props: Props) {
           <ul>
             <li>Keep this page open and the screen on. Phones pause web pages when locked or in the background, so cues can’t play then.</li>
             <li>When you come back, the timer jumps to the right interval. Missed beeps are not replayed.</li>
-            <li>iPhone: the ring/silent switch can mute sound cues.</li>
+            <li>iPhone: the ring/silent switch can mute sound cues. Beeps can’t be louder than your phone’s media volume, so turn it up.</li>
             <li>Your interval settings stay on this device only. Nothing is tracked.</li>
           </ul>
         </details>

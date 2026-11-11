@@ -970,6 +970,12 @@ body:has(.app--paper) {
   font-weight: 700;
 }
 
+.update-banner__note {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
 .update-banner .btn {
   flex-shrink: 0;
   box-shadow: none;
