@@ -1,0 +1,61 @@
+[
+  {
+    "id": "sample-loop",
+    "gpx": "onthegomap-6.4-km-route.gpx",
+    "name": "Sample Loop",
+    "source": {
+      "name": "On The Go Map",
+      "url": "https://onthegomap.com",
+      "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
+    }
+  },
+  {
+    "id": "pi-day",
+    "gpx": "onthegomap-4.7-km-route.gpx",
+    "name": "Pi Day",
+    "source": {
+      "name": "On The Go Map",
+      "url": "https://onthegomap.com",
+      "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
+    }
+  },
+  {
+    "id": "canal-test",
+    "gpx": "onthegomap-12.5-km-route.gpx",
+    "name": "Canal Test",
+    "source": {
+      "name": "On The Go Map",
+      "url": "https://onthegomap.com",
+      "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
+    }
+  },
+  {
+    "id": "verdun-with-this-test",
+    "gpx": "verdun-with-this-test.gpx",
+    "name": "Verdun with this (Test)",
+    "source": {
+      "name": "On The Go Map",
+      "url": "https://onthegomap.com",
+      "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors"
+    }
+  },
+  {
+    "id": "1st-bday-of-the-stooopidverse",
+    "gpx": "1st-bday-of-the-stooopidverse.gpx",
+    "name": "1st bday of the StooopidVerse",
+    "source": {
+      "name": "On The Go Map",
+      "url": "https://onthegomap.com",
+      "attribution": "Route drawn with On The Go Map · © OpenStreetMap contributors · drawn by RN, LD"
+    }
+  },
+  {
+    "id": "leonard-cohen-run",
+    "gpx": "leonard-cohen-run.gpx",
+    "name": "Leonard Cohen Run",
+    "source": {
+      "name": "PlotARoute",
+      "attribution": "Route from PlotARoute · drawn by VB"
+    }
+  }
+]

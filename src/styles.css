@@ -102,6 +102,60 @@ button {
   gap: 14px;
 }
 
+/* Browsing screens (Dashboard, Route Library): the home screen's look as a
+   quiet backdrop. The riverside sky (its own picture, already faded to
+   transparent at the bottom) over graph paper fainter than the home
+   screen's, painted on the page itself so it scrolls with it and covers the
+   full width. The sky is sized so its colour reaches about halfway down the
+   screen (62vh tall, never narrower than the screen; the sides crop).
+   Cards stay solid paper on top. Left off while following a route (no
+   .app--paper there). */
+body:has(.app--paper) {
+  background-color: var(--pavement);
+  background-image:
+    url('./assets/home/sky.webp'),
+    linear-gradient(rgb(55 138 221 / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(55 138 221 / 0.09) 1px, transparent 1px);
+  background-position: top center, 0 0, 0 0;
+  background-size:
+    auto max(100vw * 2 / 3, 62vh),
+    10px 10px,
+    10px 10px;
+  background-repeat: no-repeat, repeat, repeat;
+}
+
+/* On the sky, the page title wears the home screen's "Your Stooopid
+   Co-Pacer" ribbon (paper on navy) instead of navy text on pink, and the
+   small brand line goes Asphalt. */
+.app--paper .dash__title,
+.app--paper .sixk__title,
+.app--paper .timer__title {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 5px 14px 6px;
+  border: 2px solid var(--asphalt);
+  border-radius: 16px;
+  background: var(--navy);
+  color: var(--gold);
+  box-shadow: 0 3px 0 var(--asphalt);
+}
+
+.timer__title {
+  font-size: clamp(1.3rem, 6vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.brand.brand--small {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.app--paper .brand--small {
+  color: var(--asphalt);
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -142,6 +196,15 @@ button {
   transform: rotate(-3deg);
 }
 
+.header .status {
+  display: inline-block;
+  margin: 8px 0 0 4px;
+}
+
+.btn--secondary.is-confirming {
+  background: var(--gold);
+}
+
 .status--active {
   background: var(--gold);
 }
@@ -165,6 +228,15 @@ button {
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--navy);
+}
+
+/* Which build is running; small and quiet, but selectable so it can be copied into a bug report. */
+.footer__build {
+  margin: 2px 0 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  user-select: text;
 }
 
 /* ---------- Timer panel ---------- */
@@ -361,6 +433,14 @@ button {
   fill: currentColor;
 }
 
+.btn--icon svg.gear-icon {
+  fill: none;
+  stroke: var(--asphalt);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .controls {
   display: flex;
   flex-direction: column;
@@ -546,6 +626,285 @@ button {
   cursor: not-allowed;
 }
 
+/* ---------- Mode picker ---------- */
+
+/* The hero runs edge to edge, so the picker drops the side and top padding
+   and gives it back to the cards and footer. */
+.picker {
+  /* The riverside scene (a 3:2 picture) always runs the full width. Its
+     height takes what the screen can spare: 412px is roughly the sky band
+     plus the three cards. From the picture's own 3:2 on short screens up to
+     a square on tall ones (cropping the sides, never the duck). svh (browser
+     bars shown) keeps it from jumping while the bars slide away. */
+  --scene-w: min(100vw, 34rem);
+  --scene-h: min(var(--scene-w), max(var(--scene-w) * 2 / 3, 100vh - 412px));
+  --scene-h: min(var(--scene-w), max(var(--scene-w) * 2 / 3, 100svh - 412px));
+  padding-top: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.picker__main,
+.picker > .footer {
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-left: max(16px, env(safe-area-inset-left));
+}
+
+/* Graph paper behind the whole page: the same grid as the Route Library's
+   thumbnails, on Pavement. */
+.picker::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--pavement);
+  background-image: linear-gradient(#d6e2ee 1px, transparent 1px), linear-gradient(90deg, #d6e2ee 1px, transparent 1px);
+  background-size: 10px 10px;
+}
+
+.picker__hero {
+  /* The picture's own sky colour, so the band and the image meet without a seam. */
+  --picker-sky: #9db5ea;
+  display: flex;
+  flex-direction: column;
+}
+
+.picker__sky {
+  padding: max(18px, env(safe-area-inset-top)) 16px 10px;
+  background: var(--picker-sky);
+  text-align: center;
+}
+
+.picker__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  font-weight: 800;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.picker__t1 {
+  /* Trailing letter-spacing would push the line off centre. */
+  margin-right: -0.32em;
+  color: var(--navy);
+  font-size: clamp(1.15rem, 6vw, 1.45rem);
+  letter-spacing: 0.32em;
+}
+
+.picker__t2 {
+  position: relative;
+  color: var(--gold);
+  font-size: clamp(3.4rem, 18vw, 4.4rem);
+  text-shadow:
+    4px 4px 0 var(--asphalt),
+    -2px -2px 0 var(--asphalt),
+    2px -2px 0 var(--asphalt),
+    -2px 2px 0 var(--asphalt);
+}
+
+/* "2.0" rides high after PACE, like a superscript, in the same outlined gold. */
+.picker__version {
+  position: relative;
+  top: -0.95em;
+  margin-left: 0.1em;
+  font-size: 0.36em;
+  text-shadow:
+    2px 2px 0 var(--asphalt),
+    -1.5px -1.5px 0 var(--asphalt),
+    1.5px -1.5px 0 var(--asphalt),
+    -1.5px 1.5px 0 var(--asphalt);
+}
+
+/* BETA slapped on like a sticker, under the 2.0 and hanging off the corner,
+   so it fits even on a 320px-wide phone. */
+.picker__beta {
+  position: absolute;
+  top: 60%;
+  left: calc(100% - 22px);
+  margin-left: 0;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-shadow: none;
+  white-space: nowrap;
+  box-shadow: 2px 3px 0 var(--asphalt);
+  transform: rotate(10deg);
+}
+
+.picker__ribbon {
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 5px 14px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--paper);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 3px 0 var(--asphalt);
+}
+
+/* The riverside fades into the paper; the duck is a separate cut-out on top,
+   so his feet stay solid over the fade. */
+.picker__scene {
+  position: relative;
+  width: var(--scene-w);
+  height: var(--scene-h);
+  /* Tuck under the sky band so no hairline shows between them. */
+  margin: -2px auto 0;
+}
+
+/* The bottom of the picture is already faded out: start the cards over it. */
+.picker__main {
+  margin-top: calc(var(--scene-h) * -0.06);
+}
+
+/* Both layers crop the same way, so the duck stays exactly on his spot (and
+   his shadow, which is part of his layer). Centred on the duck, not the
+   picture. */
+.picker__scene img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 46% 50%;
+}
+
+.picker__scene-bg {
+  -webkit-mask-image: linear-gradient(#000 72%, transparent 97%);
+  mask-image: linear-gradient(#000 72%, transparent 97%);
+}
+
+/* A holiday scene (src/lib/homeScene.ts): one square picture with the duck
+   in it, so it's shown whole and only its pavement fades out. */
+.picker__scene--square {
+  height: var(--scene-w);
+}
+
+.picker__hero--square + .picker__main {
+  margin-top: calc(var(--scene-w) * -0.05);
+}
+
+.picker__scene-whole {
+  object-position: 50% 50%;
+  -webkit-mask-image: linear-gradient(#000 90%, transparent 100%);
+  mask-image: linear-gradient(#000 90%, transparent 100%);
+}
+
+/* Compact cards with one-line help, so the three fit under the scene. */
+.picker .picker__list {
+  gap: 12px;
+}
+
+.picker .mode-card {
+  gap: 2px;
+  min-height: 64px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.picker .mode-card__name {
+  font-size: 1.1rem;
+}
+
+.picker .mode-card__help {
+  font-size: 0.8rem;
+}
+
+.picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 88px;
+  padding: 14px 16px 14px 20px;
+  border: var(--line) solid var(--asphalt);
+  border-left-width: 14px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 var(--press) 0 var(--asphalt);
+  touch-action: manipulation;
+}
+
+.mode-card:active:not(:disabled) {
+  transform: translateY(var(--press));
+  box-shadow: none;
+}
+
+.mode-card--timer {
+  border-left-color: var(--navy);
+}
+
+.mode-card--sixk {
+  border-left-color: var(--gold);
+}
+
+.mode-card--dashboard {
+  border-left-color: var(--blue);
+}
+
+.beta-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--asphalt);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+}
+
+.mode-card:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  border-left-style: solid;
+  border-left-color: #8a877f;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.mode-card__name {
+  color: var(--navy);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.mode-card__help {
+  font-size: 0.85rem;
+}
+
+.picker__note {
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.loading {
+  padding: 40px 16px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--navy);
+}
+
 /* ---------- Small and short screens ---------- */
 
 @media (max-height: 640px) {
@@ -568,4 +927,97 @@ button {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* ---------- A part of the app that didn't load ---------- */
+
+.load-failed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 24px 0;
+  padding: 16px;
+  border: var(--line) dashed var(--asphalt);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.load-failed__title {
+  color: var(--navy);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.load-failed__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- New version banner (every screen) ---------- */
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  border: 2px solid var(--asphalt);
+  border-radius: 14px;
+  background: var(--gold);
+  color: var(--asphalt);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.update-banner__note {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.update-banner .btn {
+  flex-shrink: 0;
+  box-shadow: none;
+}
+
+/* ---------- Install hint (home screen, phones only) ---------- */
+
+.install-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: var(--line) dashed var(--asphalt);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 0.85rem;
+}
+
+.install-hint__title {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.install-hint p {
+  margin: 0;
+}
+
+.install-hint__icon {
+  vertical-align: -4px;
+  color: var(--blue);
+}
+
+.install-hint__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.install-hint__install {
+  background: var(--gold);
+  color: var(--asphalt);
 }

@@ -1,0 +1,67 @@
+[
+  {
+    "atM": 765,
+    "dir": "right",
+    "street": "Rue Turgeon"
+  },
+  {
+    "atM": 833,
+    "dir": "left",
+    "street": "Rue Saint-Ambroise"
+  },
+  {
+    "atM": 2497,
+    "dir": "slight-left",
+    "street": "Chemin de la Côte-Saint-Paul"
+  },
+  {
+    "atM": 2824,
+    "dir": "slight-left",
+    "street": "Piste Cyclable du Canal de Lachine"
+  },
+  {
+    "atM": 5203,
+    "dir": "slight-right",
+    "street": "Rue Notre-Dame Ouest"
+  },
+  {
+    "atM": 5597,
+    "dir": "left",
+    "street": "Boulevard Angrignon"
+  },
+  {
+    "atM": 5797,
+    "dir": "left",
+    "street": "Rue Saint-Patrick"
+  },
+  {
+    "atM": 9426,
+    "dir": "slight-left",
+    "street": "Piste multifonctionnelle"
+  },
+  {
+    "atM": 10962,
+    "dir": "slight-left",
+    "street": ""
+  },
+  {
+    "atM": 11170,
+    "dir": "slight-right",
+    "street": "Piste multifonctionnelle"
+  },
+  {
+    "atM": 11211,
+    "dir": "slight-left",
+    "street": "Piste multifonctionnelle"
+  },
+  {
+    "atM": 11897,
+    "dir": "slight-left",
+    "street": "Rue des Seigneurs"
+  },
+  {
+    "atM": 11947,
+    "dir": "left",
+    "street": "Piste Atwater - Des Seigneurs"
+  }
+]

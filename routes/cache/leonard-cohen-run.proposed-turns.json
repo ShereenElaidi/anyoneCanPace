@@ -1,0 +1,77 @@
+[
+  {
+    "atM": 260,
+    "dir": "right",
+    "street": "Rue Jeanne-Mance"
+  },
+  {
+    "atM": 1318,
+    "dir": "left",
+    "street": "Avenue des Pins Ouest"
+  },
+  {
+    "atM": 1385,
+    "dir": "right",
+    "street": "Avenue du Parc"
+  },
+  {
+    "atM": 2403,
+    "dir": "left",
+    "street": "Avenue du Mont-Royal Ouest"
+  },
+  {
+    "atM": 3537,
+    "dir": "left",
+    "street": ""
+  },
+  {
+    "atM": 3585,
+    "dir": "slight-right",
+    "street": ""
+  },
+  {
+    "atM": 3618,
+    "dir": "slight-left",
+    "street": ""
+  },
+  {
+    "atM": 3661,
+    "dir": "right",
+    "street": "Boulevard du Mont-Royal"
+  },
+  {
+    "atM": 4638,
+    "dir": "right",
+    "street": "Chemin de la Côte-Sainte-Catherine"
+  },
+  {
+    "atM": 4811,
+    "dir": "slight-right",
+    "street": "Avenue du Parc"
+  },
+  {
+    "atM": 6550,
+    "dir": "left",
+    "street": "Avenue du Président-Kennedy"
+  },
+  {
+    "atM": 6863,
+    "dir": "right",
+    "street": "Rue Saint-Urbain"
+  },
+  {
+    "atM": 6888,
+    "dir": "left",
+    "street": "Boulevard De Maisonneuve Ouest"
+  },
+  {
+    "atM": 6976,
+    "dir": "right",
+    "street": "Rue Clark"
+  },
+  {
+    "atM": 7192,
+    "dir": "right",
+    "street": "Rue Sainte-Catherine Ouest"
+  }
+]

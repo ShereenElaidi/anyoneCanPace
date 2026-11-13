@@ -1,0 +1,52 @@
+/* Advisories list, shared by the route page and the dashboard (loaded with them). */
+
+.notices__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notice-item {
+  padding: 10px 12px;
+  border: 2px solid var(--asphalt);
+  border-left-width: 8px;
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.notice-item--closure,
+.notice-item--weather-warning {
+  border-left-color: var(--gold);
+}
+
+.notice-item__kind {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.notice-item__text {
+  margin-top: 2px;
+  font-weight: 700;
+}
+
+.notice-item__meta {
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+
+.notice-item__meta a {
+  display: inline-block;
+  min-height: 24px;
+  color: var(--navy);
+  font-weight: 800;
+}
+
+.notices__checked {
+  margin-top: 8px;
+  font-size: 0.75rem;
+}

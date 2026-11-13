@@ -1,24 +1,33 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
+import { setSessionBusy } from './lib/swUpdate';
+import { UpdateBanner } from './components/UpdateBanner';
+import { GearIcon } from './components/GearIcon';
 import { EditPanel } from './components/EditPanel';
 import { MenuSheet } from './components/MenuSheet';
 import { TimerDisplay } from './components/TimerDisplay';
 import { useIntervalTimer, type TimerEvent } from './hooks/useIntervalTimer';
 import { useWakeLock } from './hooks/useWakeLock';
-import { canVibrate, playCue, unlockAudio, vibrateCue } from './lib/cues';
+import { canVibrate, playCue, setLoudCues, unlockAudio, vibrateCue } from './lib/cues';
 import { loadPrefs, savePrefs, type Prefs } from './lib/prefs';
 import { clampSeconds, type Phase } from './timer/engine';
 
 const STATUS_LABEL = { ready: 'READY', active: 'ACTIVE', paused: 'PAUSED' } as const;
 
-export default function App() {
+interface AppProps {
+  /** Shows HOME in the header. Omitted when the timer runs on its own. */
+  onSwitchMode?: () => void;
+}
+
+export default function App({ onSwitchMode }: AppProps = {}) {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [armedModes, setArmedModes] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const vibrationSupported = useMemo(canVibrate, []);
 
   useEffect(() => savePrefs(prefs), [prefs]);
+  useEffect(() => setLoudCues(prefs.loud), [prefs.loud]);
 
   const durations = useMemo(() => ({ run: prefs.run, walk: prefs.walk }), [prefs.run, prefs.walk]);
 
@@ -56,11 +65,28 @@ export default function App() {
   const timer = useIntervalTimer(durations, onEvent);
   const { status } = timer.state;
   const wakeLock = useWakeLock(status === 'active');
+  // A running or paused session must never be lost to an update reload.
+  useEffect(() => {
+    setSessionBusy('timer', status !== 'ready');
+    return () => setSessionBusy('timer', false);
+  }, [status]);
 
-  const {
-    needRefresh: [updateReady],
-    updateServiceWorker,
-  } = useRegisterSW();
+  // The arm lapses, so a stray later tap never ends a session.
+  useEffect(() => {
+    if (!armedModes) return;
+    const id = window.setTimeout(() => setArmedModes(false), 4000);
+    return () => window.clearTimeout(id);
+  }, [armedModes]);
+
+  /** HOME in the header: one tap when ready, two mid-session (it ends the session). */
+  const switchMode = () => {
+    if (status !== 'ready' && !armedModes) {
+      setArmedModes(true);
+      return;
+    }
+    setArmedModes(false);
+    onSwitchMode?.();
+  };
 
   const setDuration = (phase: Phase, seconds: number) =>
     setPrefs((p) => ({ ...p, [phase]: clampSeconds(seconds) }));
@@ -80,31 +106,37 @@ export default function App() {
   const screenMaySleep = status === 'active' && (wakeLock === 'failed' || wakeLock === 'unsupported');
 
   return (
-    <div className={`app${editing ? ' app--editing' : ''}`}>
+    <div className={`app app--paper${editing ? ' app--editing' : ''}`}>
       <header className="header">
         <div>
-          <h1 className="brand">AnyoneCanPace</h1>
-          <p className="tagline">RUN TOGETHER. WALK TOGETHER.</p>
+          <p className="brand brand--small">AnyoneCanPace</p>
+          <h1 className="timer__title">ACR Timer</h1>
+          <span className={`status status--${status}`}>{STATUS_LABEL[status]}</span>
         </div>
         <div className="header__side">
-          <span className={`status status--${status}`}>{STATUS_LABEL[status]}</span>
           <button
             type="button"
-            className="btn btn--icon"
+            className="btn btn--secondary btn--icon"
             aria-label="Settings"
             aria-haspopup="dialog"
             onClick={() => setMenuOpen(true)}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="5" cy="12" r="2.2" />
-              <circle cx="12" cy="12" r="2.2" />
-              <circle cx="19" cy="12" r="2.2" />
-            </svg>
+            <GearIcon />
           </button>
+          {onSwitchMode && (
+            <button
+              type="button"
+              className={`btn btn--secondary btn--small${armedModes ? ' is-confirming' : ''}`}
+              onClick={switchMode}
+            >
+              {armedModes ? 'END? TAP AGAIN' : 'HOME'}
+            </button>
+          )}
         </div>
       </header>
 
       <main className="main">
+        <UpdateBanner />
         <TimerDisplay state={timer.state} remainingMs={timer.remainingMs} />
 
         <div className="controls">
@@ -162,16 +194,19 @@ export default function App() {
         status={status}
         sound={prefs.sound}
         vibration={prefs.vibration}
+        loud={prefs.loud}
         vibrationSupported={vibrationSupported}
         wakeLock={wakeLock}
-        updateReady={updateReady}
         onToggleSound={() => {
           unlockAudio();
           setPrefs((p) => ({ ...p, sound: !p.sound }));
         }}
         onToggleVibration={() => setPrefs((p) => ({ ...p, vibration: !p.vibration }))}
+        onToggleLoud={() => {
+          unlockAudio();
+          setPrefs((p) => ({ ...p, loud: !p.loud }));
+        }}
         onReset={timer.reset}
-        onUpdate={() => void updateServiceWorker(true)}
       />
     </div>
   );

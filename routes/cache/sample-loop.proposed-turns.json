@@ -1,0 +1,42 @@
+[
+  {
+    "atM": 46,
+    "dir": "left",
+    "street": "Rue Sainte-Catherine Ouest"
+  },
+  {
+    "atM": 144,
+    "dir": "right",
+    "street": "Boulevard Saint-Laurent"
+  },
+  {
+    "atM": 1124,
+    "dir": "right",
+    "street": "Rue de la Commune Ouest"
+  },
+  {
+    "atM": 2147,
+    "dir": "left",
+    "street": "Rue de la Commune Ouest"
+  },
+  {
+    "atM": 2225,
+    "dir": "slight-right",
+    "street": "Rue de la Commune Ouest"
+  },
+  {
+    "atM": 2522,
+    "dir": "right",
+    "street": "Rue de la Commune Ouest"
+  },
+  {
+    "atM": 4620,
+    "dir": "right",
+    "street": "Rue Sherbrooke Ouest"
+  },
+  {
+    "atM": 5900,
+    "dir": "sharp-right",
+    "street": "Rue Clark"
+  }
+]
